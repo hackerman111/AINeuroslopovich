@@ -1,0 +1,12 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{+w}{ }\PYG{n}{mtx}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{blocked\PYGZus{}op}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{mtx}\PYG{p}{.}\PYG{n}{lock}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// CRITICAL SECTION}
+\PYG{+w}{    }\PYG{c+c1}{// Если поток будет остановлен здесь (OS scheduler, crash),}
+\PYG{+w}{    }\PYG{c+c1}{// то НИКТО больше не сможет войти в секцию.}
+\PYG{+w}{    }\PYG{c+c1}{// Прогресс системы равен нулю.}
+\PYG{+w}{    }\PYG{n}{mtx}\PYG{p}{.}\PYG{n}{unlock}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

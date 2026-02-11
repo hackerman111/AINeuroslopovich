@@ -1,0 +1,264 @@
+\chapter{User-Space Concurrency: Implementing Fibers}
+
+В предыдущих главах мы работали с потоками операционной системы (\texttt{std::thread}). Мы выяснили, что это тяжеловесные объекты: переключение контекста требует вмешательства ядра (syscall), загрязняет кэш и занимает микросекунды.
+
+Для систем, требующих обработки сотен тысяч одновременных соединений (C100K+), модель "один поток на соединение" становится узким местом. Решением является \textbf{User-Space Concurrency} — реализация многозадачности силами самого приложения, без участия ядра ОС в планировании конкретных задач.
+
+В этой главе мы реализуем библиотеку \textbf{Файберов} (Fibers, также известны как Green Threads или Coroutines) с нуля. Мы опустимся на самый низкий уровень — уровень ассемблера и регистров процессора.
+
+\section{Кооперативная многозадачность}
+
+В отличие от вытесняющей (preemptive) многозадачности, где ОС насильно прерывает потоки по таймеру, файберы используют \textbf{кооперативную} (cooperative) модель.
+
+\begin{definition}{Файбер (Fiber)}
+Легковесный поток исполнения, управляемый планировщиком в пространстве пользователя (User Space). Переключение между файберами происходит только тогда, когда сам файбер явно отдает управление (вызывает \texttt{Yield}).
+\end{definition}
+
+\textbf{Модель M:N Threading}: Мы запускаем $M$ файберов поверх $N$ физических потоков ОС (обычно $N$ равно числу ядер). Если файбер блокируется (ждет I/O или мьютекс), физический поток не блокируется, а переключается на выполнение другого файбера.
+
+\section{Архитектура Файбера}
+
+Чтобы превратить функцию в "поток", который можно остановить и продолжить, нам нужно сохранить его состояние. Что определяет состояние исполнения?
+
+\begin{enumerate}
+    \item \textbf{Стек (Stack):} Локальные переменные и цепочка вызовов. У файбера должен быть свой собственный стек, выделенный в куче.
+    \item \textbf{Регистры процессора (Context):} Значения переменных, находящихся в данный момент на "верхушке" вычислений.
+    \item \textbf{Указатель инструкций (RIP):} Место в коде, где мы остановились.
+\end{enumerate}
+
+\subsection{Инфраструктура: Стек}
+Стек — это просто непрерывный блок памяти. Стек растет "вниз" (от старших адресов к младшим) на архитектуре x86\_64.
+
+\begin{cppcode}
+class Stack {
+public:
+    explicit Stack(size_t size)
+        : stack_{std::make_unique<char[]>(size)}
+        , top_{stack_.get() + size} // Указатель на КОНЕЦ массива (старший адрес)
+    {
+        // Выравнивание стека по границе 16 байт (требование ABI)
+        top_ = reinterpret_cast<char*>(
+            reinterpret_cast<uintptr_t>(top_) & ~0xF
+        );
+    }
+
+    void* Top() const { return top_; }
+private:
+    std::unique_ptr<char[]> stack_;
+    char* top_;
+};
+\end{cppcode}
+
+\section{Deep Dive: Assembly \& Calling Conventions}
+
+Самая сложная часть реализации — переключение контекста. C++ не имеет стандартных средств для прямой записи в регистры `RSP` (Stack Pointer) и `RIP` (Instruction Pointer). Нам придется использовать ассемблер.
+
+Согласно \textbf{System V AMD64 ABI} (соглашение о вызовах в Linux/Unix), регистры делятся на две группы:
+\begin{itemize}
+    \item \textbf{Caller-saved (Volatile):} `rax`, `rcx`, `rdx`, `rsi`, `rdi`, `r8`-`r11`. Функция может менять их как угодно. Если вызывающему коду они нужны, он сам их сохраняет \textit{перед} вызовом.
+    \item \textbf{Callee-saved (Non-volatile):} `rbx`, `rbp`, `r12`-`r15`. Вызываемая функция \textbf{обязана} сохранить их значения и восстановить перед возвратом.
+\end{itemize}
+
+\begin{important}
+Для реализации переключения контекста нам достаточно сохранять только \textbf{Callee-saved} регистры.
+Почему? Потому что переключение контекста выглядит как вызов функции `SaveContext`. Компилятор C++, генерирующий код вызова этой функции, \textit{уже} сохранил все нужные ему Volatile-регистры на стеке (или они ему не нужны). Наша задача — сохранить только те регистры, которые компилятор ожидает увидеть неизменными после возврата из функции.
+\end{important}
+
+Структура контекста:
+\begin{cppcode}
+struct Context {
+    void* rip; // Instruction Pointer (адрес возврата)
+    void* rsp; // Stack Pointer
+
+    // Callee-saved регистры
+    void* rbp; // Base Pointer
+    void* rbx;
+    void* r12;
+    void* r13;
+    void* r14;
+    void* r15;
+};
+\end{cppcode}
+
+\subsection{Магия переключения: SaveContext и JumpContext}
+
+Мы реализуем две функции на ассемблере.
+
+\subsubsection{1. SaveContext}
+Сохраняет текущее состояние в структуру `Context` и возвращает `0`.
+Сигнатура: `extern "C" int SaveContext(Context* ctx);`
+
+\begin{note}
+В System V ABI первый аргумент функции (в данном случае указатель `ctx`) передается в регистре \texttt{RDI}. Возвращаемое значение — в \texttt{RAX}.
+\end{note}
+
+\begin{lstlisting}[language={[x86masm]Assembler}, basicstyle=\ttfamily\small, backgroundcolor=\color{nordCodeBg}, frame=single]
+.global SaveContext
+SaveContext:
+    // RDI содержит указатель на Context
+
+    // 1. Сохраняем адрес возврата (RIP).
+    // Текущий RIP лежит на верхушке стека (положила инструкция call).
+    mov rax, [rsp]
+    mov [rdi + 0], rax  // ctx->rip = [rsp]
+
+    // 2. Сохраняем указатель стека (RSP).
+    // Нам нужен RSP до вызова call, поэтому +8 байт (пропускаем адрес возврата)
+    lea rax, [rsp + 8]
+    mov [rdi + 8], rax  // ctx->rsp = rsp + 8
+
+    // 3. Сохраняем остальные регистры
+    mov [rdi + 16], rbp
+    mov [rdi + 24], rbx
+    mov [rdi + 32], r12
+    mov [rdi + 40], r13
+    mov [rdi + 48], r14
+    mov [rdi + 56], r15
+
+    // 4. Возвращаем 0 (ESaveContextResult::Saved)
+    xor rax, rax
+    ret
+\end{lstlisting}
+
+\subsubsection{2. JumpContext}
+Восстанавливает состояние из структуры и передает управление. Эта функция \textbf{не возвращает управление} туда, откуда её вызвали. Она "возвращается" туда, где был сохранен контекст.
+Сигнатура: `extern "C" void JumpContext(Context* ctx);`
+
+\begin{lstlisting}[language={[x86masm]Assembler}, basicstyle=\ttfamily\small, backgroundcolor=\color{nordCodeBg}, frame=single]
+.global JumpContext
+JumpContext:
+    // RDI содержит указатель на Context
+
+    // 1. Восстанавливаем Callee-saved регистры
+    mov rbp, [rdi + 16]
+    mov rbx, [rdi + 24]
+    mov r12, [rdi + 32]
+    mov r13, [rdi + 40]
+    mov r14, [rdi + 48]
+    mov r15, [rdi + 56]
+
+    // 2. Восстанавливаем Стек! (Самый важный момент)
+    mov rsp, [rdi + 8]
+
+    // 3. Подготавливаем "возврат".
+    // Мы хотим, чтобы поток продолжил выполнение так, будто
+    // SaveContext только что вернул управление, но с другим результатом.
+    // Загружаем сохраненный RIP в стек, чтобы инструкция ret его забрала.
+    
+    mov rax, [rdi + 0] // Загружаем целевой RIP
+    push rax           // Кладем его на стек
+
+    // 4. Устанавливаем возвращаемое значение 1 (ESaveContextResult::Resumed)
+    mov rax, 1
+
+    // 5. Прыжок!
+    ret // Снимет RIP со стека и прыгнет туда
+\end{lstlisting}
+
+\begin{important}
+Атрибут `\_\_attribute\_\_((returns\_twice))` для `SaveContext` критически важен. Он сообщает компилятору, что функция может вернуть управление дважды (как `setjmp`), запрещая агрессивные оптимизации (например, хранение переменных только в регистрах без сброса на стек перед вызовом).
+\end{important}
+
+\section{Трамплин и Запуск файбера}
+
+Мы научились переключаться. Но как запустить новый файбер в первый раз? У него нет сохраненного контекста.
+
+Мы должны \textit{сфабриковать} контекст вручную.
+\begin{enumerate}
+    \item Выделяем стек.
+    \item Устанавливаем `context.rsp` на вершину этого стека.
+    \item Устанавливаем `context.rip` на адрес функции-трамплина.
+\end{enumerate}
+
+\textbf{Зачем нужен трамплин?}
+Мы не можем просто указать `rip` на пользовательскую функцию. Когда пользовательская функция завершится (`ret`), процессору нужно знать, куда вернуться. В пустом стеке нет адреса возврата $\to$ Segfault.
+Трамплин — это обертка, которая вызывает пользовательский код, а после его завершения вызывает `Scheduler::Terminate()`, корректно завершая жизнь файбера.
+
+\begin{cppcode}
+// static
+void Fiber::Trampoline() {
+    // Получаем текущий файбер (установленный шедулером перед прыжком)
+    Fiber* fiber = GetCurrentFiber(); 
+    fiber->RunUserRoutine(); // Вызов пользовательской лямбды
+    
+    // Если мы здесь, значит задача выполнена.
+    // Файбер нельзя просто удалить, нужно уйти в шедулер.
+    GetCurrentScheduler()->Terminate();
+}
+
+Fiber::Fiber(std::function<void()> routine) 
+    : stack_(kStackSize), routine_(std::move(routine)) {
+    
+    context_.rsp = stack_.Top();
+    context_.rip = reinterpret_cast<void*>(Trampoline);
+}
+\end{cppcode}
+
+\section{Планировщик (Scheduler)}
+
+Планировщик управляет очередью готовых файберов (`Runnable`) и распределяет процессорное время. Поскольку мы пишем однопоточный планировщик (для простоты), он работает в главном потоке программы.
+
+\subsection{Intrusive List}
+Чтобы избежать аллокаций памяти при каждом добавлении файбера в очередь планировщика (что убило бы производительность), мы используем \textbf{Интрузивный список}.
+Файбер сам является узлом списка:
+\begin{cppcode}
+class Fiber : public IntrusiveListItem<Fiber> { ... };
+\end{cppcode}
+Это позволяет перемещать файбер между очередями (Ready Queue $\leftrightarrow$ Wait Queue мьютекса) простым переписыванием указателей `prev/next` внутри объекта файбера, без `new/delete`.
+
+\subsection{Цикл планирования}
+
+\begin{cppcode}
+void Scheduler::Run() {
+    while (!queue_.Empty()) {
+        Fiber* fiber = queue_.PopFront();
+        current_fiber_ = fiber;
+        
+        // Магия переключения:
+        // 1. Сохраняем контекст планировщика в main_context_
+        // 2. Загружаем контекст файбера
+        Switch(&main_context_, fiber->GetContext());
+        
+        // Сюда мы попадаем, когда файбер вернул управление (Yield/Suspend)
+        
+        if (fiber->GetState() == EFiberState::Finished) {
+            delete fiber;
+        } else if (fiber->GetState() == EFiberState::Runnable) {
+            queue_.PushBack(fiber);
+        }
+        // Если Suspended, то ничего не делаем (он хранится в wait queue примитива)
+    }
+}
+\end{cppcode}
+
+\section{Примитивы синхронизации: Yield и Suspend}
+
+В мире файберов нельзя использовать `std::mutex`, так как он заблокирует весь физический поток, остановив все файберы планировщика. Нам нужны свои примитивы.
+
+\subsection{Yield (Добровольная уступка)}
+Файбер говорит: "Я еще не закончил, но готов уступить место другим".
+\begin{enumerate}
+    \item Состояние файбера остается `Runnable`.
+    \item Переключаемся в контекст шедулера.
+    \item Шедулер кладет файбер в конец очереди.
+\end{enumerate}
+
+\subsection{Suspend (Блокировка)}
+Используется в мьютексах и condition variables.
+\begin{enumerate}
+    \item Файбер меняет состояние на `Suspended`.
+    \item Переключаемся в контекст шедулера.
+    \item \textbf{Важно:} Шедулер НЕ кладет файбер обратно в очередь `RunQueue`. Файбер "исчезает" для планировщика.
+    \item Ответственность за возвращение файбера к жизни берет на себя тот, кто его заблокировал (например, `Mutex::Unlock` вызовет `Schedule(fiber)`).
+\end{enumerate}
+
+\begin{summary}
+Мы реализовали файберы — механизм User-Space многозадачности.
+\begin{itemize}
+    \item Мы контролируем стек и регистры вручную.
+    \item Переключение контекста стоит десятки наносекунд (просто `mov` регистров), в отличие от микросекунд у потоков ОС.
+    \item Мы используем только Callee-saved регистры, полагаясь на System V ABI.
+    \item Кооперативная многозадачность требует явного `Yield` или ожидания на примитивах синхронизации, чтобы система была отзывчивой.
+\end{itemize}
+Эта технология лежит в основе Goroutines в Go, Coroutines в C++20 и Fiber API в Windows.
+\end{summary}

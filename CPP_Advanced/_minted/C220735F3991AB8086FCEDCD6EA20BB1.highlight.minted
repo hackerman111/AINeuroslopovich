@@ -1,0 +1,11 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{requires}\PYG{+w}{ }\PYG{k}{requires}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{x}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{         }\PYG{c+c1}{// Должен быть метод size()}
+\PYG{+w}{    }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value\PYGZus{}type}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Должен быть вложенный тип value\PYGZus{}type}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{convertible\PYGZus{}to}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Результат сложения приводим к int}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{process}\PYG{p}{(}\PYG{n}{T}\PYG{+w}{ }\PYG{n}{obj}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ...}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

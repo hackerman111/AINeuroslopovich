@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{call\PYGZus{}wrapper}\PYG{p}{(}\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{obj}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Ошибка: \PYGZlt{} интерпретируется как оператор \PYGZdq{}меньше\PYGZdq{}}
+\PYG{+w}{    }\PYG{c+c1}{// obj.foo\PYGZlt{}int\PYGZgt{}();}
+
+\PYG{+w}{    }\PYG{c+c1}{// Правильно:}
+\PYG{+w}{    }\PYG{n}{obj}\PYG{p}{.}\PYG{k}{template}\PYG{+w}{ }\PYG{n}{foo}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

@@ -1,0 +1,19 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Texture}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{public}\PYG{+w}{ }\PYG{n}{RefCounted}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ... данные текстуры ...}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{use\PYGZus{}texture}\PYG{p}{(}\PYG{n}{IntrusivePtr}\PYG{o}{\PYGZlt{}}\PYG{n}{Texture}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{tex}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Копирование tex увеличивает счетчик внутри самого объекта Texture}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{main}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Обычный new, никаких make\PYGZus{}shared}
+\PYG{+w}{    }\PYG{n}{IntrusivePtr}\PYG{o}{\PYGZlt{}}\PYG{n}{Texture}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Texture}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Можно восстановить умный указатель из сырого}
+\PYG{+w}{    }\PYG{n}{Texture}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{raw}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{IntrusivePtr}\PYG{o}{\PYGZlt{}}\PYG{n}{Texture}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{t2}\PYG{p}{(}\PYG{n}{raw}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// OK! Счетчик инкрементируется.}
+\PYG{+w}{    }\PYG{c+c1}{// Оба указателя смотрят на один объект, счетчик = 2.}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

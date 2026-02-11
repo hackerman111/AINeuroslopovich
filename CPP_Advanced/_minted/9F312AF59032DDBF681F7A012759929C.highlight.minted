@@ -1,0 +1,18 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{bad\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{local\PYGZus{}vec}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// ...}
+\PYG{+w}{    }\PYG{c+c1}{// ОШИБКА! Мы явно приводим к rvalue\PYGZhy{}ссылке.}
+\PYG{+w}{    }\PYG{c+c1}{// Это ЗАПРЕЩАЕТ RVO, так как типы не совпадают (Obj vs Obj\PYGZam{}\PYGZam{}).}
+\PYG{+w}{    }\PYG{c+c1}{// Компилятор обязан вызвать Move Constructor.}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{local\PYGZus{}vec}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{good\PYGZus{}func}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{local\PYGZus{}vec}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// ...}
+\PYG{+w}{    }\PYG{c+c1}{// ПРАВИЛЬНО! Работает NRVO (Named RVO).}
+\PYG{+w}{    }\PYG{c+c1}{// Объект будет построен сразу в целевой памяти.}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{local\PYGZus{}vec}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

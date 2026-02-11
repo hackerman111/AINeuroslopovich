@@ -1,0 +1,242 @@
+\chapter{Лямбда-выражения: От сахара до мета-типов}
+
+Лямбда-выражения, появившиеся в C++11, часто воспринимаются как синтаксический сахар для создания анонимных функций. Однако с точки зрения языка это гораздо более мощный механизм, создающий уникальные типы (closure types) с состоянием. В современном C++ (C++20/23) лямбды эволюционировали в инструмент метапрограммирования, позволяющий манипулировать типами и контекстами на этапе компиляции.
+
+\section{Анатомия замыкания (Closure Type)}
+
+Когда компилятор встречает лямбда-выражение, он генерирует уникальный класс (функтор), который называется \textit{closure type}.
+
+\begin{cppcode}[]
+int x = 10;
+auto l = [x](int y) { return x + y; };
+\end{cppcode}
+
+Этот код разворачивается компилятором примерно в следующую структуру:
+
+\begin{cppcode}[]
+class __lambda_unique_name {
+    int x; // Захваченная переменная (по значению)
+
+public:
+    __lambda_unique_name(int x_val) : x(x_val) {}
+
+    // Оператор вызова по умолчанию const!
+    int operator()(int y) const {
+        return x + y;
+    }
+};
+\end{cppcode}
+
+\begin{important}
+Каждое лямбда-выражение имеет свой \textbf{уникальный тип}, даже если их сигнатуры и тела полностью совпадают.
+\end{important}
+
+\begin{cppcode}[]
+auto l1 = []{};
+auto l2 = []{};
+static_assert(!std::is_same_v<decltype(l1), decltype(l2)>); // Типы разные
+\end{cppcode}
+
+По этой причине нельзя объявить переменную типа "лямбда" без \texttt{auto} или шаблона, если не использовать type-erasure обертки вроде \texttt{std::function}.
+
+\section{Механика захвата (Captures)}
+
+Список захвата \texttt{[]} определяет, какие переменные из окружающего контекста будут доступны внутри лямбды и как именно они будут храниться в объекте замыкания.
+
+\subsection{Reference vs Value}
+\begin{itemize}
+    \item \texttt{[x]}: Создает копию \texttt{x} внутри объекта лямбды (поле класса).
+    \item \texttt{[\&x]}: Сохраняет ссылку (технически — указатель) на переменную в стеке.
+    \item \texttt{[=]}: Копирует все используемые внешние переменные.
+    \item \texttt{[\&]}: Захватывает все используемые внешние переменные по ссылке.
+\end{itemize}
+
+\begin{important}
+Захват по ссылке \texttt{[\&]} опасен висячими ссылками (dangling references). Если время жизни лямбды превышает время жизни захваченных переменных (например, лямбда возвращается из функции или передается в другой поток), программа падает или работает некорректно.
+\end{important}
+
+\subsection{Ловушка неявного захвата this}
+
+При использовании \texttt{[=]} внутри метода класса программисты часто ожидают, что члены класса будут скопированы. Это ошибка.
+
+\begin{cppcode}[]
+struct Processor {
+    std::vector<int> data;
+    
+    auto get_filter() {
+        // ОШИБКА: [=] захватывает this, а не копию data!
+        return [=](int val) {
+            // Эквивалентно this->data.size()
+            return val > data.size(); 
+        };
+    }
+};
+\end{cppcode}
+
+Если объект \texttt{Processor} будет уничтожен, а лямбда продолжит жить, обращение к \texttt{data} приведет к Use-After-Free, так как лямбда хранит сырой указатель \texttt{this}, а не копию вектора. Для решения этой проблемы в C++17 ввели явный захват \texttt{[*this]}, который копирует объект целиком.
+
+\section{Init-capture и Move-semantics (C++14)}
+
+До C++14 было невозможно захватить move-only типы (например, \texttt{std::unique\_ptr}) в лямбду, так как захват по значению требовал копирования.
+
+C++14 ввел \textit{generalized lambda capture} (init-capture), позволяющий объявлять новые переменные прямо в списке захвата.
+
+\begin{cppcode}[]
+auto make_callback() {
+    auto ptr = std::make_unique<int>(42);
+    
+    // Перемещаем ptr внутрь лямбды.
+    // Внешний ptr становится null.
+    return [u = std::move(ptr)]() {
+        std::cout << *u << "\n";
+    };
+}
+\end{cppcode}
+
+Здесь \texttt{u} — это новое поле внутри сгенерированного класса, инициализируемое результатом \texttt{std::move(ptr)}. Тип \texttt{u} выводится автоматически.
+
+\section{Ключевое слово mutable}
+
+По умолчанию \texttt{operator()} у сгенерированного класса помечен как \texttt{const}. Это означает, что лямбда не может изменять свои захваченные по значению переменные (так как они являются полями класса).
+
+Чтобы разрешить модификацию внутреннего состояния, используется ключевое слово \texttt{mutable}.
+
+\begin{cppcode}[]
+int main() {
+    int counter = 0;
+    // mutable убирает const c operator()
+    auto generator = [counter]() mutable {
+        return ++counter; // Изменяем внутреннюю копию, а не внешнюю переменную
+    };
+    
+    std::cout << generator(); // 1
+    std::cout << generator(); // 2
+    std::cout << counter;     // 0 (внешняя переменная не менялась)
+}
+\end{cppcode}
+
+Без \texttt{mutable} компилятор выдал бы ошибку на строке \texttt{++counter}, так как мы пытаемся изменить поле внутри константного метода.
+
+\section{Конвертация в указатель на функцию}
+
+Лямбды, не имеющие состояния (пустой список захвата \texttt{[]}), обладают особым свойством: они могут быть неявно преобразованы в сырой указатель на функцию.
+
+\begin{cppcode}[]
+using FuncPtr = int(*)(int, int);
+
+// Лямбда без захвата
+auto l = [](int a, int b) { return a + b; };
+
+// Неявная конвертация
+FuncPtr p = l; 
+\end{cppcode}
+
+Это работает, потому что для stateless лямбд компилятор генерирует статический метод внутри класса-замыкания.
+
+\subsection{Хак с унарным плюсом}
+
+Иногда нужно форсировать выбор перегрузки функции, принимающей указатель на функцию, а не шаблон. Для этого используется унарный плюс перед лямбдой.
+
+\begin{cppcode}[]
+// +l принудительно вызывает operator void(*)()
+auto ptr = +[]() { std::cout << "Pure lambda"; };
+static_assert(std::is_pointer_v<decltype(ptr)>);
+\end{cppcode}
+
+\section{Templated Lambdas (C++20)}
+
+В C++14 появились \textit{generic lambdas} с параметрами \texttt{auto}. Однако у них есть недостаток: внутри тела лямбды нет легкого доступа к самому типу \texttt{T}, выведенному из \texttt{auto}.
+
+\begin{cppcode}[]
+// C++14
+auto l = [](auto x) {
+    // Как получить тип элементов, если x - это std::vector<T>?
+    using T = typename decltype(x)::value_type; // Громоздко
+};
+\end{cppcode}
+
+C++20 разрешил явные шаблонные параметры для лямбд:
+
+\begin{cppcode}[]
+// C++20
+auto l = []<typename T>(const std::vector<T>& vec) {
+    T val = vec[0]; // T доступен напрямую
+    std::cout << typeid(T).name();
+};
+\end{cppcode}
+
+Это также позволяет накладывать ограничения (Concepts) на аргументы лямбды.
+
+\section{Unevaluated Context: Лямбды в типах}
+
+До C++20 лямбды нельзя было использовать в \textit{unevaluated operands} (таких как \texttt{decltype} или \texttt{sizeof}). C++20 снял это ограничение, что позволяет использовать лямбды для создания компараторов прямо в объявлении типа контейнера.
+
+\begin{cppcode}[]
+// Custom Comparator для set без написания отдельной структуры
+using MySet = std::set<int, decltype([](int a, int b) {
+    return a > b; // Сортировка по убыванию
+})>;
+
+int main() {
+    MySet s; // Работает в C++20
+    s.insert(1);
+    s.insert(2);
+    // s содержит {2, 1}
+}
+\end{cppcode}
+
+Так как каждая лямбда имеет уникальный тип, \texttt{decltype} корректно пробрасывает этот тип в шаблон \texttt{std::set}. А поскольку лямбда без захвата является \textit{default constructible} (начиная с C++20), контейнер может создать экземпляр компаратора.
+
+\section{Передача и хранение лямбд}
+
+Как принимать лямбду в функцию? Есть три основных стратегии, каждая со своей ценой.
+
+\subsection{1. Шаблон (Zero Overhead)}
+
+\begin{cppcode}[]
+template <typename F>
+void run(F&& f) { f(); }
+\end{cppcode}
+
+\begin{itemize}
+    \item \textbf{Плюсы:} Максимальная производительность. Тело лямбды инлайнится. Нет аллокаций.
+    \item \textbf{Минусы:} Код функции \texttt{run} дублируется для каждой новой лямбды (code bloat). Требует нахождения реализации в заголовочном файле.
+\end{itemize}
+
+\subsection{2. Type Erasure (std::function)}
+
+\begin{cppcode}[]
+void run(std::function<void()> f) { f(); }
+\end{cppcode}
+
+\texttt{std::function} — это тяжелый объект, использующий технику стирания типа (похожую на vtable).
+
+\begin{itemize}
+    \item \textbf{Плюсы:} Единый тип для любых вызываемых объектов. Можно хранить в векторе, скрывать реализацию в .cpp.
+    \item \textbf{Минусы:}
+    \begin{enumerate}
+        \item \textbf{Виртуальный вызов:} Вызов оператора \texttt{()} происходит через косвенную адресацию, что мешает инлайнингу.
+        \item \textbf{Аллокация:} Если размер лямбды превышает размер SBO (Small Buffer Optimization, обычно 16-32 байта), происходит выделение памяти в куче.
+    \end{enumerate}
+\end{itemize}
+
+\subsection{3. Function Ref (C++26 / nonstd)}
+
+\texttt{std::function\_ref} (или его аналоги в библиотеках) — это легковесная невладеющая ссылка на вызываемый объект.
+
+\begin{cppcode}[]
+void run(std::function_ref<void()> f) { f(); }
+\end{cppcode}
+
+Внутренне это пара: \texttt{\{void* obj, R(*callback)(void*)\}}. При создании лямбда не копируется, и память не выделяется. Это идеальный вариант для передачи коллбеков в функции, которые не сохраняют их на будущее.
+
+\begin{summary}
+\begin{itemize}
+    \item Лямбда — это объект сгенерированного компилятором уникального класса.
+    \item \texttt{[=]} захватывает \texttt{this}, а не члены класса, что опасно.
+    \item Используйте init-capture \texttt{[u = std::move(p)]} для move-only типов.
+    \item \texttt{mutable} позволяет менять состояние внутри лямбды.
+    \item C++20 разрешил лямбды в \texttt{decltype} и шаблонные лямбды \texttt{[]<T>(T x)}.
+    \item Избегайте \texttt{std::function}, если не нужно хранить лямбду долго; используйте шаблоны или \texttt{function\_ref} для передачи параметров.
+\end{itemize}
+\end{summary}

@@ -1,0 +1,17 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Transaction}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{Transaction}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{(}\PYG{n+nb}{false}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+c1}{// Разрешаем исключения}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{uncaught\PYGZus{}exceptions}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{c+c1}{// Стек спокоен, можно кидать исключения.}
+\PYG{+w}{            }\PYG{c+c1}{// Например, коммит транзакции, который может упасть.}
+\PYG{+w}{            }\PYG{n}{commit\PYGZus{}or\PYGZus{}throw}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{else}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{c+c1}{// Мы уже летим из\PYGZhy{}за ошибки.}
+\PYG{+w}{            }\PYG{c+c1}{// Кидать новое нельзя \PYGZhy{}\PYGZgt{} terminate.}
+\PYG{+w}{            }\PYG{c+c1}{// Поэтому делаем только безопасный откат.}
+\PYG{+w}{            }\PYG{n}{rollback\PYGZus{}silent}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

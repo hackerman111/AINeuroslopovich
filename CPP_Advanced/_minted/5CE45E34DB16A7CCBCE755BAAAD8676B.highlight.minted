@@ -1,0 +1,27 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// NetworkClient.cpp}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}NetworkClient.h\PYGZdq{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}asio.hpp\PYGZgt{}}\PYG{c+c1}{ // Тяжелый хедер инклюдится только здесь}
+
+\PYG{c+c1}{// Полное определение класса реализации}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{NetworkClient}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Impl}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{ConnectInternal}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{url}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Логика работы с asio}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n}{asio}\PYG{o}{:}\PYG{o}{:}\PYG{n}{io\PYGZus{}context}\PYG{+w}{ }\PYG{n}{context}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{asio}\PYG{o}{:}\PYG{o}{:}\PYG{n}{ip}\PYG{o}{:}\PYG{o}{:}\PYG{n}{tcp}\PYG{o}{:}\PYG{o}{:}\PYG{n}{socket}\PYG{+w}{ }\PYG{n}{socket}\PYG{p}{\PYGZob{}}\PYG{n}{context}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Конструктор: создаем реализацию}
+\PYG{n}{NetworkClient}\PYG{o}{:}\PYG{o}{:}\PYG{n}{NetworkClient}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{pImpl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Impl}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+
+\PYG{c+c1}{// Деструктор: нужен для unique\PYGZus{}ptr (см. далее)}
+\PYG{n}{NetworkClient}\PYG{o}{:}\PYG{o}{:}\PYG{o}{\PYGZti{}}\PYG{n}{NetworkClient}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+
+\PYG{c+c1}{// Проксирование вызовов}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{NetworkClient::Connect}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{url}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{pImpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{ConnectInternal}\PYG{p}{(}\PYG{n}{url}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

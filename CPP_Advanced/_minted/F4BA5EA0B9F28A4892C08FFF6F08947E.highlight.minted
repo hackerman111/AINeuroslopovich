@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{volatile}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{counter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{increment}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ОШИБКА: Это все еще Read\PYGZhy{}Modify\PYGZhy{}Write операция.}
+\PYG{+w}{    }\PYG{c+c1}{// volatile лишь заставит процессор каждый раз читать из памяти,}
+\PYG{+w}{    }\PYG{c+c1}{// но не запрещает другому потоку вклиниться между чтением и записью.}
+\PYG{+w}{    }\PYG{n}{counter}\PYG{o}{+}\PYG{o}{+}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

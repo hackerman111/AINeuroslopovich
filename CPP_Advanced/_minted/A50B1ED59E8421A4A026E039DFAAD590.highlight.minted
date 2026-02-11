@@ -1,0 +1,7 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Гарантируем, что атомики не попадут в одну линию}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{SafeMetrics}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{64}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{success\PYGZus{}count}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{64}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{error\PYGZus{}count}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

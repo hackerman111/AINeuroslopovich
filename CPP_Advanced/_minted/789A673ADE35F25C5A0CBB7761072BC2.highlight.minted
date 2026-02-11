@@ -1,0 +1,7 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{;}
+\PYG{n}{MyPair}\PYG{+w}{ }\PYG{n+nf}{p}\PYG{p}{(}\PYG{n}{x}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// Сработает гайд. T=int, U=int.}
+\PYG{c+c1}{// Результат вывода \PYGZhy{}\PYGZgt{} MyPair\PYGZlt{}const int\PYGZam{}, const int\PYGZam{}\PYGZgt{}.}
+\PYG{c+c1}{// p.first теперь ссылка на x.}
+\end{MintedVerbatim}

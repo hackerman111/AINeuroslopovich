@@ -1,0 +1,11 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Deleter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{default\PYGZus{}delete}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{unique\PYGZus{}ptr}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{Deleter}\PYG{+w}{ }\PYG{n}{deleter\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Храним экземпляр дилитера}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{unique\PYGZus{}ptr}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{ptr\PYGZus{}}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{deleter\PYGZus{}}\PYG{p}{(}\PYG{n}{ptr\PYGZus{}}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Вызов функтора}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

@@ -1,0 +1,21 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}atomic\PYGZgt{}}
+
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{counter}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{worker}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Атомарная запись (Store)}
+\PYG{+w}{    }\PYG{n}{counter}\PYG{p}{.}\PYG{n}{store}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Атомарное чтение (Load)}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{counter}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 3. Атомарная модификация (Read\PYGZhy{}Modify\PYGZhy{}Write)}
+\PYG{+w}{    }\PYG{c+c1}{// Возвращает ПРЕДЫДУЩЕЕ значение}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{old\PYGZus{}val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{counter}\PYG{p}{.}\PYG{n}{fetch\PYGZus{}add}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Эквивалентно fetch\PYGZus{}add(1), но возвращает}
+\PYG{+w}{    }\PYG{c+c1}{// результат в зависимости от перегрузки (post/pre)}
+\PYG{+w}{    }\PYG{n}{counter}\PYG{o}{+}\PYG{o}{+}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

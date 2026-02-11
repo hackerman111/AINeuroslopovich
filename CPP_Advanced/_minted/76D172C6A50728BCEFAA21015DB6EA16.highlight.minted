@@ -1,0 +1,4 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Паттерн передается как NTTP}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{match}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ctre}\PYG{o}{:}\PYG{o}{:}\PYG{n}{match}\PYG{o}{\PYGZlt{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{([0\PYGZhy{}9]+)\PYGZhy{}([a\PYGZhy{}z]+)}\PYG{l+s}{\PYGZdq{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{123\PYGZhy{}abc}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\end{MintedVerbatim}

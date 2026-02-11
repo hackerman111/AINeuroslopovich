@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{safe\PYGZus{}transfer\PYGZus{}cpp17}\PYG{p}{(}\PYG{n}{Account}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{from}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Account}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{to}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{amount}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Блокирует оба мьютекса безопасно. Порядок аргументов не важен.}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{scoped\PYGZus{}lock}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{(}\PYG{n}{from}\PYG{p}{.}\PYG{n}{m}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{to}\PYG{p}{.}\PYG{n}{m}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{n}{from}\PYG{p}{.}\PYG{n}{balance}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{amount}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{to}\PYG{p}{.}\PYG{n}{balance}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{amount}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

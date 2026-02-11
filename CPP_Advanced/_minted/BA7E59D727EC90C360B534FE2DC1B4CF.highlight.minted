@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{process}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{oldSize}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// Ломаем инвариант \PYGZdq{}size соответствует данным\PYGZdq{}}
+\PYG{+w}{    }\PYG{n}{doWork}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{      }\PYG{c+c1}{// Если тут throw...}
+\PYG{+w}{    }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{oldSize}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ...восстановление не выполнится}
+\PYG{+w}{    }\PYG{c+c1}{// Объект остался с size=0, но старыми данными.}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

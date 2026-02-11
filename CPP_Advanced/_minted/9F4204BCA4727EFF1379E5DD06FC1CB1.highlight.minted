@@ -1,0 +1,7 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// C++14}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{l}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Как получить тип элементов, если x \PYGZhy{} это std::vector\PYGZlt{}T\PYGZgt{}?}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{T}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{decltype}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value\PYGZus{}type}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Громоздко}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

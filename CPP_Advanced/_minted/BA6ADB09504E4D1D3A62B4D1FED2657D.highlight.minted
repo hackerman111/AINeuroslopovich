@@ -1,0 +1,28 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}atomic\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}algorithm\PYGZgt{}}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{atomic\PYGZus{}fetch\PYGZus{}max}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{atom}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Предварительная загрузка текущего состояния (Snapshot)}
+\PYG{+w}{    }\PYG{c+c1}{// Можно использовать memory\PYGZus{}order\PYGZus{}relaxed, так как порядок пока не важен}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{prev}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{atom}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Цикл попыток (CAS Loop)}
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{prev}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// 3. Попытка атомарной подмены}
+\PYG{+w}{        }\PYG{c+c1}{// Если atom == prev, то записать val. Вернуть true.}
+\PYG{+w}{        }\PYG{c+c1}{// Если atom != prev, то prev = atom. Вернуть false.}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{atom}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}weak}\PYG{p}{(}\PYG{n}{prev}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{,}
+\PYG{+w}{                                       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}release}\PYG{p}{,}
+\PYG{+w}{                                       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{break}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Успех!}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// 4. Неявная ветвь else (при неудаче):}
+\PYG{+w}{        }\PYG{c+c1}{// compare\PYGZus{}exchange\PYGZus{}weak УЖЕ обновил переменную \PYGZsq{}prev\PYGZsq{}}
+\PYG{+w}{        }\PYG{c+c1}{// актуальным значением из атомика.}
+\PYG{+w}{        }\PYG{c+c1}{// Мы просто идем на следующую итерацию while.}
+\PYG{+w}{        }\PYG{c+c1}{// Там условие (prev \PYGZlt{} val) проверится заново с новым prev.}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

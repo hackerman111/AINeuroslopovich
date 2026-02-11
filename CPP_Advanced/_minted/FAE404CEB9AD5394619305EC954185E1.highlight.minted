@@ -1,0 +1,6 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{B}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{Empty}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+c1}{// EBO работает!}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{k}{static\PYGZus{}assert}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{B}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{k+kt}{int}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 4 байта}
+\end{MintedVerbatim}

@@ -1,0 +1,213 @@
+\chapter{Асинхронное ожидание: Концепция Awaitable}
+
+Если \texttt{co\_yield} — это инструмент для \textit{исходящего} потока данных (Output), то \texttt{co\_await} предназначен для \textit{ожидания} событий (Input/Completion). Это самый сложный и мощный оператор в C++20, превращающий синхронный код в асинхронный конечный автомат.
+
+Именно \texttt{co\_await} позволяет корутине "уснуть" в ожидании завершения сетевого запроса, таймера или задачи в другом потоке, и "проснуться" ровно в тот момент, когда результат готов. В этой главе мы разберем механику трансформации этого оператора и напишем свой примитив синхронизации.
+
+\section{Механика трансформации co\_await}
+
+Оператор \texttt{co\_await <expr>} — это унарный оператор. Компилятор преобразует его не в вызов одной функции, а в сложную последовательность действий, известную как \textbf{Await Protocol}.
+
+Пусть у нас есть выражение:
+\begin{cppcode}
+auto result = co_await <expr>;
+\end{cppcode}
+
+Компилятор генерирует следующий код (псевдокод):
+
+\begin{cppcode}[]
+{
+    // 1. Получение "Awaiter" - объекта, который знает, как ждать
+    auto&& awaiter = get_awaiter(<expr>);
+
+    // 2. Оптимизация горячего пути (Fast Path)
+    if (!awaiter.await_ready()) {
+        
+        // 3. Сохранение состояния корутины (Suspend)
+        <suspend-coroutine-state>
+
+        // 4. Интеграция с внешним миром
+        // handle - это дескриптор текущей, уже остановленной корутины
+        using Handle = std::coroutine_handle<P>;
+        
+        // Результат определяет, что делать дальше
+        auto suspend_result = awaiter.await_suspend(Handle::from_promise(p));
+
+        // Логика обработки результата await_suspend (см. далее)
+        if (suspend_result == false) {
+             <resume-immediately>
+        }
+        
+        // Точка, где корутина физически возвращает управление
+        // своему вызывающему (Caller) или переходит в другую корутину
+        <return-to-caller-or-jump>
+    }
+
+    // 5. Точка возобновления (Resume Point)
+    // Сюда мы попадаем после handle.resume()
+    
+    // 6. Получение результата
+    result = awaiter.await_resume();
+}
+\end{cppcode}
+
+\section{Концепт Awaitable}
+
+Чтобы объект мог быть операндом \texttt{co\_await}, он (или результат оператора \texttt{operator co\_await}) должен реализовывать три метода.
+
+\subsection{1. await\_ready() $\rightarrow$ bool}
+Это механизм оптимизации. Метод вызывается \textbf{до} реальной остановки корутины.
+\begin{itemize}
+    \item Возвращает \texttt{true}: "Результат уже готов". Компилятор пропускает шаги 3 и 4 (Suspend и \texttt{await\_suspend}). Корутина продолжает исполнение синхронно. Это экономит циклы процессора на сохранение регистров и переключение контекста.
+    \item Возвращает \texttt{false}: "Результат не готов, нужно ждать". Запускается процедура приостановки.
+\end{itemize}
+
+\textit{Пример:} Если вы делаете \texttt{co\_await TryLockAsync()}, и мьютекс свободен, нет смысла усыплять корутину. \texttt{await\_ready} вернет \texttt{true}.
+
+\subsection{2. await\_suspend(handle) $\rightarrow$ void | bool | handle}
+Это самый важный метод. Он вызывается, когда корутина \textbf{уже остановлена} (все регистры сохранены во фрейм). Аргумент \texttt{handle} — это "пульт управления" текущей корутиной.
+
+Именно здесь происходит передача ответственности. Мы должны сохранить \texttt{handle} куда-то, откуда его потом вызовут (в очередь ThreadPool, в callback сетевой библиотеки, в структуру таймера).
+
+Варианты возвращаемого значения:
+\begin{itemize}
+    \item \texttt{void}: Безусловная остановка. Управление возвращается тому, кто вызвал/возобновил эту корутину.
+    \item \texttt{bool}: Условная остановка. Если вернуть \texttt{false}, корутина немедленно просыпается (как будто \texttt{await\_ready} вернул \texttt{true}). Это нужно для разрешения гонок (Race Conditions), когда результат появился ровно в момент засыпания.
+    \item \texttt{coroutine\_handle}: \textbf{Symmetric Transfer}. Управление передается не вызывающему (Caller), а той корутине, чей хендл мы вернули. Это позволяет делать "хвостовые вызовы" корутин (Tail Call Optimization) и избегать переполнения стека при переключении между множеством корутин.
+\end{itemize}
+
+\subsection{3. await\_resume() $\rightarrow$ T}
+Вызывается при возобновлении. Результат этого метода становится результатом всего выражения \texttt{co\_await}.
+Если в процессе ожидания произошла ошибка (например, разрыв соединения), здесь принято выбрасывать исключение.
+
+\section{Практика: Переключение потоков (Thread Switcher)}
+
+Напишем кастомный Awaitable, который переносит исполнение корутины в фоновый поток. Это база для реализации Thread Pool.
+
+\begin{cppcode}[]
+#include <coroutine>
+#include <thread>
+#include <iostream>
+
+struct ResumeOnNewThread {
+    // 1. Всегда останавливаемся, чтобы сменить поток
+    bool await_ready() const noexcept { 
+        return false; 
+    }
+
+    // 2. Логика переключения
+    void await_suspend(std::coroutine_handle<> h) const {
+        // Создаем новый поток и передаем ему ответственность за handle.
+        // В реальном коде здесь была бы очередь задач (Task Queue).
+        std::thread([h]() {
+            // Эмулируем задержку или работу
+            std::cout << "Thread " << std::this_thread::get_id() 
+                      << ": Resuming coroutine..." << std::endl;
+            
+            // Возобновляем корутину УЖЕ в этом новом потоке
+            h.resume(); 
+            
+        }).detach(); // Внимание: detach опасен, но здесь для примера
+    }
+
+    // 3. Ничего не возвращаем
+    void await_resume() const noexcept {}
+};
+
+// Тестовая корутина
+struct Task {
+    struct promise_type {
+        Task get_return_object() { return {}; }
+        std::suspend_never initial_suspend() { return {}; }
+        std::suspend_never final_suspend() noexcept { return {}; }
+        void unhandled_exception() { std::terminate(); }
+        void return_void() {}
+    };
+};
+
+Task async_op() {
+    std::cout << "Step 1 on thread " << std::this_thread::get_id() << std::endl;
+    
+    // МАГИЯ ЗДЕСЬ
+    co_await ResumeOnNewThread{};
+    
+    // Этот код выполнится уже в другом потоке
+    std::cout << "Step 2 on thread " << std::this_thread::get_id() << std::endl;
+}
+
+int main() {
+    async_op();
+    // Ждем, чтобы detach-поток успел отработать
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    return 0;
+}
+\end{cppcode}
+
+\section{Under the hood: Стандартные Awaitable}
+
+Теперь мы можем понять, как реализованы стандартные заглушки.
+
+\begin{definition}{std::suspend\_always}
+Awaitable, который всегда останавливает корутину.
+\begin{itemize}
+    \item \texttt{await\_ready} возвращает \texttt{false}.
+    \item \texttt{await\_suspend} ничего не делает (возвращает void).
+    \item \texttt{await\_resume} ничего не делает.
+\end{itemize}
+Используется в \texttt{initial\_suspend} (для ленивого старта) и \texttt{yield\_value}.
+\end{definition}
+
+\begin{definition}{std::suspend\_never}
+Awaitable, который никогда не останавливает корутину.
+\begin{itemize}
+    \item \texttt{await\_ready} возвращает \texttt{true}.
+    \item Остальные методы никогда не вызываются (и могут быть пустыми).
+\end{itemize}
+Используется, когда синтаксис требует \texttt{co\_await} (например, в \texttt{final\_suspend} для автоматического удаления), но реальная остановка не нужна.
+\end{definition}
+
+\begin{cppcode}
+// Реализация из libstdc++ (упрощенно)
+struct suspend_always {
+    constexpr bool await_ready() const noexcept { return false; }
+    constexpr void await_suspend(coroutine_handle<>) const noexcept {}
+    constexpr void await_resume() const noexcept {}
+};
+
+struct suspend_never {
+    constexpr bool await_ready() const noexcept { return true; }
+    constexpr void await_suspend(coroutine_handle<>) const noexcept {}
+    constexpr void await_resume() const noexcept {}
+};
+\end{cppcode}
+
+\section{Symmetric Transfer (Симметричная передача)}
+
+В сложных асинхронных системах (например, state-машинах парсеров или планировщиках) одна корутина часто будит другую.
+
+Если делать это наивно через \texttt{h.resume()} внутри \texttt{await\_suspend}, возникает рекурсия вызовов на стеке:
+\texttt{Coroutine A -> await\_suspend -> Coroutine B -> await\_suspend -> Coroutine C...}
+Это быстро приведет к \textbf{Stack Overflow}, так как стек каждого \texttt{await\_suspend} остается в памяти.
+
+Решение — \textbf{Tail Call Optimization} для корутин. Если \texttt{await\_suspend} возвращает \texttt{coroutine\_handle}, компилятор генерирует код вида:
+
+\begin{cppcode}
+// Псевдокод Symmetric Transfer
+auto next_handle = current_awaiter.await_suspend(me);
+if (next_handle) {
+    // JUMP вместо CALL!
+    // Текущий стек очищается, происходит переход на next_handle
+    jump_to(next_handle); 
+}
+\end{cppcode}
+
+Это позволяет создавать бесконечные цепочки переключений между корутинами без потребления стековой памяти.
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{co\_await} разбивает исполнение функции на три этапа: проверка готовности (\texttt{await\_ready}), регистрация ожидания (\texttt{await\_suspend}) и получение результата (\texttt{await\_resume}).
+    \item \texttt{await\_suspend} получает полный контроль над остановленной корутиной через \texttt{handle}.
+    \item Этот механизм позволяет интегрировать корутины C++ с любой асинхронной подсистемой: от \texttt{select/poll} в Linux до GUI-циклов событий в Windows.
+    \item Стандартные типы \texttt{suspend\_always/never} — это простейшие реализации этого концепта.
+\end{itemize}
+\end{summary}

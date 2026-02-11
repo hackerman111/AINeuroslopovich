@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYGZdl{}\PYG{+w}{ }gdb\PYG{+w}{ }./my\PYGZus{}app
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }\PYG{k}{break}\PYG{+w}{ }main\PYG{+w}{          }\PYG{c+c1}{\PYGZsh{} Поставить точку останова на main}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }run\PYG{+w}{                 }\PYG{c+c1}{\PYGZsh{} Запустить программу}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }next\PYG{+w}{                }\PYG{c+c1}{\PYGZsh{} Следующая строка (шаг без захода внутрь)}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }step\PYG{+w}{                }\PYG{c+c1}{\PYGZsh{} Шаг с заходом внутрь функции}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }print\PYG{+w}{ }variable\PYGZus{}name\PYG{+w}{ }\PYG{c+c1}{\PYGZsh{} Вывести значение переменной}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }\PYG{k}{continue}\PYG{+w}{            }\PYG{c+c1}{\PYGZsh{} Продолжить выполнение до следующей точки}
+\PYG{o}{(}gdb\PYG{o}{)}\PYG{+w}{ }bt\PYG{+w}{                  }\PYG{c+c1}{\PYGZsh{} Backtrace: показать стек вызовов}
+\end{MintedVerbatim}

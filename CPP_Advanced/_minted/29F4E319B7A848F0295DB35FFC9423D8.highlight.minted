@@ -1,0 +1,12 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{current\PYGZus{}head}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{push}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{new\PYGZus{}val}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{old\PYGZus{}head}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{current\PYGZus{}head}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// Пытаемся обновить head, только если он не изменился с момента чтения.}
+\PYG{+w}{    }\PYG{c+c1}{// Если изменился (кто\PYGZhy{}то другой успел запушить), повторяем цикл.}
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{current\PYGZus{}head}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}weak}\PYG{p}{(}\PYG{n}{old\PYGZus{}head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{new\PYGZus{}val}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Тело цикла может быть пустым, old\PYGZus{}head обновляется автоматически внутри CAS}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

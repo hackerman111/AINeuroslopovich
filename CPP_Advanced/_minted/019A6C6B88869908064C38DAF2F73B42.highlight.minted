@@ -1,0 +1,55 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{FutexMutex}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{;}
+\PYG{+w}{        }\PYG{c+c1}{// 1. Fast Path: Попытка атомарно сменить 0 \PYGZhy{}\PYGZgt{} 1.}
+\PYG{+w}{        }\PYG{c+c1}{// Если успешно, мы захватили мьютекс без системных вызовов.}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{(}\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{cmpxchg}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{            }\PYG{c+c1}{// 2. Slow Path: Мьютекс занят.}
+\PYG{+w}{            }\PYG{c+c1}{// Если состояние было 1, меняем его на 2 (сигнализируя о наличии ждущего).}
+\PYG{+w}{            }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{c}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{xchg}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{            }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{            }\PYG{c+c1}{// Крутимся в цикле, пока не захватим}
+\PYG{+w}{            }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{c}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                }\PYG{c+c1}{// Пытаемся уснуть.}
+\PYG{+w}{                }\PYG{c+c1}{// Ядро усыпит нас ТОЛЬКО если state == 2.}
+\PYG{+w}{                }\PYG{c+c1}{// Если state изменился (кто\PYGZhy{}то сделал unlock), мы не уснем.}
+\PYG{+w}{                }\PYG{n}{sys\PYGZus{}futex}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{state}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{FUTEX\PYGZus{}WAIT}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{                }\PYG{c+c1}{// Проснулись (или не спали). Пробуем захватить 2 \PYGZhy{}\PYGZgt{} 2}
+\PYG{+w}{                }\PYG{c+c1}{// (фактически просто check, но нам нужно атомарно убедиться)}
+\PYG{+w}{                }\PYG{c+c1}{// В реальной реализации тут стоит повторить попытку 0 \PYGZhy{}\PYGZgt{} 2}
+\PYG{+w}{                }\PYG{n}{c}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{xchg}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{            }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{unlock}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// 1. Fast Path: Атомарно меняем любое значение на 0.}
+\PYG{+w}{        }\PYG{c+c1}{// fetch\PYGZus{}sub(1) было бы оптимизацией, чтобы отличить 1 от 2,}
+\PYG{+w}{        }\PYG{c+c1}{// но здесь для простоты используем exchange.}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{state}\PYG{p}{.}\PYG{n}{exchange}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{c+c1}{// 2. Slow Path: Будим одного ждущего, только если старое значение было 2.}
+\PYG{+w}{            }\PYG{n}{sys\PYGZus{}futex}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{state}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{FUTEX\PYGZus{}WAKE}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{c+c1}{// Вспомогательные обертки над std::atomic}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{cmpxchg}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{expected}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{desired}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{expected\PYGZus{}copy}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{expected}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{state}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}strong}\PYG{p}{(}\PYG{n}{expected\PYGZus{}copy}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{desired}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{expected\PYGZus{}copy}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{xchg}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{desired}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{state}\PYG{p}{.}\PYG{n}{exchange}\PYG{p}{(}\PYG{n}{desired}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{state}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Требует выравнивания (обычно 4 байта)}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

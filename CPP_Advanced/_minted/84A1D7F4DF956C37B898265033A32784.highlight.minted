@@ -1,0 +1,8 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Alloc}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Vector}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{private}\PYG{+w}{ }\PYG{n}{Alloc}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+c1}{// Наследование вместо композиции}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{begin\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{end\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{cap\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

@@ -1,0 +1,22 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Scheduler::Run}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{queue\PYGZus{}}\PYG{p}{.}\PYG{n}{Empty}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{Fiber}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fiber}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{queue\PYGZus{}}\PYG{p}{.}\PYG{n}{PopFront}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{current\PYGZus{}fiber\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{fiber}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// Магия переключения:}
+\PYG{+w}{        }\PYG{c+c1}{// 1. Сохраняем контекст планировщика в main\PYGZus{}context\PYGZus{}}
+\PYG{+w}{        }\PYG{c+c1}{// 2. Загружаем контекст файбера}
+\PYG{+w}{        }\PYG{n}{Switch}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{main\PYGZus{}context\PYGZus{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{fiber}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{GetContext}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// Сюда мы попадаем, когда файбер вернул управление (Yield/Suspend)}
+
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{fiber}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{GetState}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{EFiberState}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Finished}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{fiber}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{else}\PYG{+w}{ }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{fiber}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{GetState}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{EFiberState}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Runnable}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n}{queue\PYGZus{}}\PYG{p}{.}\PYG{n}{PushBack}\PYG{p}{(}\PYG{n}{fiber}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{c+c1}{// Если Suspended, то ничего не делаем (он хранится в wait queue примитива)}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

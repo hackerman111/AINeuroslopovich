@@ -1,0 +1,13 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{i}\PYG{p}{;}\PYG{+w}{                    }\PYG{c+c1}{// OK: i \PYGZhy{} это lvalue}
+\PYG{c+c1}{// y = \PYGZam{}42;                     // ОШИБКА: 42 \PYGZhy{} это prvalue, адреса нет}
+\PYG{c+c1}{// 1 = i;                       // ОШИБКА: 1 \PYGZhy{} prvalue, нельзя присвоить В него}
+
+\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{p}{(}\PYG{o}{*}\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{[}\PYG{l+m+mi}{5}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{abcd}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// ВНИМАНИЕ: \PYGZdq{}abcd\PYGZdq{} \PYGZhy{} это lvalue!}
+\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{arr}\PYG{p}{[}\PYG{l+m+mi}{20}\PYG{p}{]}\PYG{p}{;}
+\PYG{n}{arr}\PYG{p}{[}\PYG{l+m+mi}{10}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s+sc}{\PYGZsq{}}\PYG{l+s+sc}{z}\PYG{l+s+sc}{\PYGZsq{}}\PYG{p}{;}\PYG{+w}{                  }\PYG{c+c1}{// Результат arr[10] \PYGZhy{} lvalue (ссылка на char)}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{;}
+\PYG{p}{(}\PYG{n}{a}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{b}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{;}\PYG{+w}{                     }\PYG{c+c1}{// Оператор запятая возвращает lvalue (ссылку на b)}
+\end{MintedVerbatim}

@@ -1,0 +1,11 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Псевдокод логики вектора при реаллокации}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}nothrow\PYGZus{}move\PYGZus{}constructible}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Безопасно муваем. Если упадем \PYGZhy{} значит terminate, терять нечего.}
+\PYG{+w}{    }\PYG{n}{move\PYGZus{}elements}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{else}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Приходится копировать.}
+\PYG{+w}{    }\PYG{c+c1}{// Если копия упадет, старый вектор останется нетронутым.}
+\PYG{+w}{    }\PYG{n}{copy\PYGZus{}elements}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

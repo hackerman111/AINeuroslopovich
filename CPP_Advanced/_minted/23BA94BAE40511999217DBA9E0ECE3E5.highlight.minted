@@ -1,0 +1,14 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{enum}\PYG{+w}{ }\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Color}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define X(name) name,}
+\PYG{+w}{    }\PYG{n}{LIST\PYGZus{}OF\PYGZus{}COLORS}\PYG{p}{(}\PYG{n}{X}\PYG{p}{)}
+\PYG{+w}{    }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{undef X}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{c+c1}{// Раскроется в:}
+\PYG{c+c1}{// enum class Color \PYGZob{}}
+\PYG{c+c1}{//     Red,}
+\PYG{c+c1}{//     Green,}
+\PYG{c+c1}{//     Blue,}
+\PYG{c+c1}{//     Yellow,}
+\PYG{c+c1}{// \PYGZcb{};}
+\end{MintedVerbatim}

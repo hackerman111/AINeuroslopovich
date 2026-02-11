@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Database}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ... подключение к БД ...}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{n}{Database}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n+nf}{GetDB}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Инициализация произойдет только при первом вызове GetDB()}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Database}\PYG{+w}{ }\PYG{n}{db\PYGZus{}instance}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{db\PYGZus{}instance}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{ClientCode}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Гарантированно инициализированный объект}
+\PYG{+w}{    }\PYG{n}{GetDB}\PYG{p}{(}\PYG{p}{)}\PYG{p}{.}\PYG{n}{query}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{SELECT * FROM users}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

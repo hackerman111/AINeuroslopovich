@@ -1,0 +1,18 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{ef} \PYG{n}{range\PYGZus{}gen}\PYG{p}{(}\PYG{n}{max\PYGZus{}val}\PYG{p}{)}\PYG{p}{:}
+    \PYG{n}{num} \PYG{o}{=} \PYG{l+m+mi}{0}
+    \PYG{k}{while} \PYG{k+kc}{True}\PYG{p}{:}
+        \PYG{c+c1}{\PYGZsh{} yield возвращает значение и \PYGZdq{}замораживает\PYGZdq{} функцию}
+        \PYG{k}{yield} \PYG{n}{num}
+        \PYG{n}{num} \PYG{o}{+}\PYG{o}{=} \PYG{l+m+mi}{1}
+        \PYG{k}{if} \PYG{n}{num} \PYG{o}{\PYGZgt{}}\PYG{o}{=} \PYG{n}{max\PYGZus{}val}\PYG{p}{:}
+            \PYG{k}{return}
+
+\PYG{c+c1}{\PYGZsh{} Использование}
+\PYG{n}{gen} \PYG{o}{=} \PYG{n}{range\PYGZus{}gen}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)}
+
+\PYG{n+nb}{print}\PYG{p}{(}\PYG{n+nb}{next}\PYG{p}{(}\PYG{n}{gen}\PYG{p}{)}\PYG{p}{)} \PYG{c+c1}{\PYGZsh{} Вывод: 0. Функция дошла до yield num}
+\PYG{n+nb}{print}\PYG{p}{(}\PYG{n+nb}{next}\PYG{p}{(}\PYG{n}{gen}\PYG{p}{)}\PYG{p}{)} \PYG{c+c1}{\PYGZsh{} Вывод: 1. Функция продолжилась с num += 1}
+\PYG{n+nb}{print}\PYG{p}{(}\PYG{n+nb}{next}\PYG{p}{(}\PYG{n}{gen}\PYG{p}{)}\PYG{p}{)} \PYG{c+c1}{\PYGZsh{} Вывод: 2}
+\PYG{c+c1}{\PYGZsh{} print(next(gen)) \PYGZsh{} StopIteration}
+\end{MintedVerbatim}

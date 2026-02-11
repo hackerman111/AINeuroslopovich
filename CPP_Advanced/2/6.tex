@@ -1,0 +1,157 @@
+\chapter{Perfect Forwarding и Универсальные ссылки}
+
+Одной из самых мощных, но в то же время запутанных возможностей C++11 стала "Идеальная передача" (Perfect Forwarding). Эта механика позволяет писать обобщенные функции-обертки (wrappers), которые передают свои аргументы в другие функции \textbf{в точности} так, как они были получены: с сохранением категории значения (lvalue/rvalue) и cv-квалификаторов (const/volatile).
+
+\section{6.1 Проблема передачи аргументов}
+
+Представьте, что мы пишем фабричную функцию \texttt{make\_shared}, которая должна создать объект типа \texttt{T}, передав аргументы в его конструктор.
+
+Наивный подход с использованием константных ссылок:
+\begin{cppcode}[]
+template <typename T, typename Arg>
+T* factory(const Arg& arg) {
+    return new T(arg);
+}
+\end{cppcode}
+Проблема: Если конструктор \texttt{T} принимает неконстантную ссылку (хочет изменить аргумент), этот код не скомпилируется. Если конструктор принимает rvalue-ссылку (move-семантика), мы передадим ему lvalue (так как \texttt{arg} имеет имя), и перемещения не произойдет.
+
+Попытка перегрузки:
+\begin{cppcode}[]
+template <typename T, typename Arg>
+void wrapper(Arg& arg) { func(arg); }
+
+template <typename T, typename Arg>
+void wrapper(const Arg& arg) { func(arg); }
+\end{cppcode}
+Проблема: Количество перегрузок растет экспоненциально ($2^N$) от количества аргументов. Для 5 аргументов нужно написать 32 версии функции. Это неприемлемо.
+
+\section{6.2 Универсальные ссылки (Forwarding References)}
+
+Скотт Мейерс ввел термин "Universal Reference" (в стандарте C++17 закреплен термин \textbf{Forwarding Reference}), чтобы описать особый вид ссылок в шаблонах.
+
+\begin{definition}{Forwarding Reference (T\&\&)}
+Если переменная или параметр объявлены как \texttt{T\&\&}, где \texttt{T} — это \textbf{выводимый} тип шаблона (deduced type), то это не rvalue-ссылка, а универсальная ссылка. Она может "превращаться" как в lvalue-ссылку, так и в rvalue-ссылку в зависимости от того, что передали на вход.
+\end{definition}
+
+Синтаксис \texttt{T\&\&} работает по-разному в двух контекстах:
+
+\begin{cppcode}[]
+// 1. Rvalue Reference
+void foo(int&& x); // Нет вывода типов. Это точно rvalue ref.
+
+template <typename T>
+void bar(std::vector<T>&& x); // T выводится, но && относится к vector, а не к T.
+
+// 2. Forwarding Reference
+template <typename T>
+void func(T&& x); // T выводится. Это универсальная ссылка.
+
+auto&& var = some_expression; // auto выводится. Это универсальная ссылка.
+\end{cppcode}
+
+\section{6.3 Правила схлопывания ссылок (Reference Collapsing)}
+
+Как компилятор понимает, во что превратить \texttt{T\&\&}? Это определяется механизмом дедукции типа и правилами схлопывания ссылок.
+
+Когда мы передаем аргумент в шаблонную функцию \texttt{func(T\&\& x)}:
+
+\begin{enumerate}
+    \item Если передан \textbf{lvalue} (например, \texttt{int i}), то \texttt{T} выводится как \texttt{int\&}.
+    \item Если передан \textbf{rvalue} (например, \texttt{42}), то \texttt{T} выводится как \texttt{int}.
+\end{enumerate}
+
+Теперь подставим выведенные типы в сигнатуру \texttt{T\&\&}. В C++ запрещены ссылки на ссылки (нельзя написать \texttt{int\& \&}), но компилятор может их генерировать в процессе инстанцирования. В этот момент вступают в силу правила "схлопывания":
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Тип T} & \textbf{Сигнатура (T + \&\&)} & \textbf{Результат} \\ \hline
+\texttt{int\&} (lvalue) & \texttt{int\& \&\&} & \texttt{int\&} (lvalue ref) \\ \hline
+\texttt{int} (rvalue) & \texttt{int \&\&} & \texttt{int\&\&} (rvalue ref) \\ \hline
+\end{tabular}
+\caption{Упрощенное правило: "Lvalue выигрывает всегда"}
+\end{table}
+
+\textbf{Полная таблица Collapsing Rules:}
+\begin{itemize}
+    \item \texttt{T\&} + \texttt{\&} $\rightarrow$ \texttt{T\&}
+    \item \texttt{T\&} + \texttt{\&\&} $\rightarrow$ \texttt{T\&}
+    \item \texttt{T\&\&} + \texttt{\&} $\rightarrow$ \texttt{T\&}
+    \item \texttt{T\&\&} + \texttt{\&\&} $\rightarrow$ \texttt{T\&\&}
+\end{itemize}
+
+Именно это позволяет одной сигнатуре \texttt{T\&\&} принимать всё.
+
+\section{6.4 Механика std::forward}
+
+Теперь, когда у нас есть универсальная ссылка \texttt{x}, нам нужно передать её дальше. Но помните: \textbf{именованная rvalue-ссылка — это lvalue}. Если мы просто напишем \texttt{call(x)}, мы всегда будем передавать lvalue, теряя move-семантику. Нам нужен механизм, который делает \texttt{std::move}, но \textit{только если изначально пришло rvalue}.
+
+Эту роль выполняет \texttt{std::forward<T>}.
+
+\begin{cppcode}[]
+template <typename T>
+void wrapper(T&& arg) {
+    // std::forward кастит arg обратно к его "изначальной" категории
+    target_func(std::forward<T>(arg));
+}
+\end{cppcode}
+
+Как это работает "под капотом"? Реализация \texttt{std::forward} выглядит примерно так (упрощенно):
+
+\begin{cppcode}[]
+// Если T = int& (передали lvalue)
+// Возвращает: int& && -> int& (lvalue)
+template <typename T>
+T&& forward(typename remove_reference<T>::type& t) {
+    return static_cast<T&&>(t);
+}
+
+// Если T = int (передали rvalue)
+// Возвращает: int&& (rvalue)
+template <typename T>
+T&& forward(typename remove_reference<T>::type& t) {
+    return static_cast<T&&>(t);
+}
+\end{cppcode}
+
+Таким образом, \texttt{std::forward} — это \textbf{условный cast}:
+\begin{itemize}
+    \item Если \texttt{T} — ссылочный тип, он кастит к ссылке (lvalue).
+    \item Если \texttt{T} — не ссылочный тип, он кастит к rvalue-ссылке (действует как \texttt{std::move}).
+\end{itemize}
+
+\section{6.5 Практическое применение}
+
+\section{1. Emplace-методы контейнеров}
+Методы \texttt{emplace\_back} вектора используют perfect forwarding для конструирования элемента прямо в памяти контейнера, минуя создание временных объектов.
+
+\begin{cppcode}[]
+std::vector<std::string> v;
+
+// Плохо: создание временного string, затем move
+v.push_back(std::string("hello")); 
+
+// Идеально: аргумент "hello" пробрасывается в конструктор string,
+// который вызывается прямо в памяти вектора (placement new).
+v.emplace_back("hello"); 
+\end{cppcode}
+
+\section{2. make\_unique / make\_shared}
+Эти функции просто пересылают все свои аргументы в конструктор целевого типа.
+
+\begin{cppcode}[]
+template<typename T, typename... Args>
+unique_ptr<T> make_unique(Args&&... args) {
+    return unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+\end{cppcode}
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{T\&\&} в шаблоне — это Forwarding Reference, а не rvalue reference.
+    \item Правила схлопывания ссылок гарантируют, что lvalue остается lvalue.
+    \item \texttt{std::move} — безусловное приведение к rvalue.
+    \item \texttt{std::forward<T>} — условное приведение, восстанавливающее исходную категорию значения.
+\end{itemize}
+\end{summary}

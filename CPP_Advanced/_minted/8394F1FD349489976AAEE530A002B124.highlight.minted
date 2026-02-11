@@ -1,0 +1,29 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Semaphore}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{Semaphore}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{initial\PYGZus{}count}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{counter\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{initial\PYGZus{}count}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Захват ресурса (аналог lock)}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{acquire}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}lock}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{\PYGZob{}}\PYG{n}{mutex\PYGZus{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{        }\PYG{c+c1}{// Ждем, пока появятся свободные слоты (counter \PYGZgt{} 0)}
+\PYG{+w}{        }\PYG{n}{not\PYGZus{}empty\PYGZus{}}\PYG{p}{.}\PYG{n}{wait}\PYG{p}{(}\PYG{n}{lock}\PYG{p}{,}\PYG{+w}{ }\PYG{p}{[}\PYG{k}{this}\PYG{p}{]}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{counter\PYGZus{}}\PYG{+w}{ }\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZhy{}}\PYG{n}{counter\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Освобождение ресурса (аналог unlock)}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{release}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}lock}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{\PYGZob{}}\PYG{n}{mutex\PYGZus{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\PYG{+w}{            }\PYG{o}{+}\PYG{o}{+}\PYG{n}{counter\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{c+c1}{// Будим только один поток, так как освободился всего один слот}
+\PYG{+w}{        }\PYG{n}{not\PYGZus{}empty\PYGZus{}}\PYG{p}{.}\PYG{n}{notify\PYGZus{}one}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{counter\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{+w}{ }\PYG{n}{mutex\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{condition\PYGZus{}variable}\PYG{+w}{ }\PYG{n}{not\PYGZus{}empty\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

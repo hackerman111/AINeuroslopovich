@@ -1,0 +1,19 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// static}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Fiber::Trampoline}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Получаем текущий файбер (установленный шедулером перед прыжком)}
+\PYG{+w}{    }\PYG{n}{Fiber}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{fiber}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GetCurrentFiber}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{fiber}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{RunUserRoutine}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Вызов пользовательской лямбды}
+
+\PYG{+w}{    }\PYG{c+c1}{// Если мы здесь, значит задача выполнена.}
+\PYG{+w}{    }\PYG{c+c1}{// Файбер нельзя просто удалить, нужно уйти в шедулер.}
+\PYG{+w}{    }\PYG{n}{GetCurrentScheduler}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{Terminate}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{Fiber}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Fiber}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{function}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{void}\PYG{p}{(}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{routine}\PYG{p}{)}
+\PYG{+w}{    }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{stack\PYGZus{}}\PYG{p}{(}\PYG{n}{kStackSize}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{routine\PYGZus{}}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{routine}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{    }\PYG{n}{context\PYGZus{}}\PYG{p}{.}\PYG{n}{rsp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{stack\PYGZus{}}\PYG{p}{.}\PYG{n}{Top}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{context\PYGZus{}}\PYG{p}{.}\PYG{n}{rip}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{void}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{Trampoline}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

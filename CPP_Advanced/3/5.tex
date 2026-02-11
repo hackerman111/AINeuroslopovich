@@ -1,0 +1,176 @@
+\chapter{Безопасное управление жизненным циклом: WeakPtr и ESFT}
+
+В этой главе мы разберем две взаимосвязанные концепции, без которых экосистема \texttt{shared\_ptr} была бы неполной и опасной: \texttt{std::weak\_ptr} и идиому \texttt{enable\_shared\_from\_this}. Мы увидим, как разрывать циклические ссылки, почему нельзя создавать умные указатели из \texttt{this} напрямую, и как C++ решает эту проблему через сложную машинерию SFINAE и наследования.
+
+\section{Проклятие циклических ссылок}
+
+Модель подсчета ссылок (\textit{Reference Counting}) имеет фундаментальный недостаток: она не умеет обрабатывать циклы.
+
+Представьте два объекта, которые ссылаются друг на друга через \texttt{shared\_ptr}:
+
+\begin{cppcode}[]
+struct Node {
+    std::shared_ptr<Node> neighbor;
+    ~Node() { std::cout << "Deleted\n"; }
+};
+
+void create_cycle() {
+    auto a = std::make_shared<Node>(); // A refs=1
+    auto b = std::make_shared<Node>(); // B refs=1
+    
+    a->neighbor = b; // B refs=2
+    b->neighbor = a; // A refs=2
+} 
+// При выходе из функции:
+// a уничтожается -> A refs=1
+// b уничтожается -> B refs=1
+// Итог: оба объекта живы, память утекла навсегда. Деструкторы не вызваны.
+\end{cppcode}
+
+Чтобы разорвать цикл, одна из ссылок должна быть "слабой" — то есть не влиять на время жизни объекта, но позволять проверить, жив ли он.
+
+\section{std::weak\_ptr: Наблюдатель}
+
+\texttt{std::weak\_ptr} — это умный указатель, который ссылается на объект, управляемый \texttt{shared\_ptr}, но не увеличивает \textit{Strong Ref Count}. Вместо этого он увеличивает \textit{Weak Ref Count} в контрольном блоке.
+
+Свойства \texttt{weak\_ptr}:
+\begin{itemize}
+    \item Его нельзя разыменовать напрямую (операторов \texttt{*} и \texttt{->} нет). Это сделано специально: объект может исчезнуть в любой момент (в другом потоке), поэтому доступ к нему должен быть транзакционным.
+    \item Метод \texttt{expired()} проверяет, удален ли объект.
+    \item Метод \texttt{lock()} пытается создать \texttt{shared\_ptr} из слабой ссылки. Если объект жив, мы получаем валидный \texttt{shared\_ptr} (и счетчик сильных ссылок временно растет). Если мертв — получаем \texttt{nullptr} (пустой \texttt{shared\_ptr}).
+\end{itemize}
+
+Исправление примера с циклом:
+
+\begin{cppcode}[]
+struct Node {
+    // Используем weak_ptr для обратной ссылки
+    std::weak_ptr<Node> neighbor; 
+};
+
+void safe_cycle() {
+    auto a = std::make_shared<Node>();
+    auto b = std::make_shared<Node>();
+    
+    a->neighbor = b; // std::shared_ptr конвертируется в weak_ptr
+    b->neighbor = a;
+}
+// При выходе:
+// a уничтожается -> A refs=0 (удаляется!)
+// Деструктор A уничтожает поле neighbor (слабую ссылку на B).
+// b уничтожается -> B refs=0 (удаляется!).
+// Память чиста.
+\end{cppcode}
+
+\section{Проблема "this" и enable\_shared\_from\_this}
+
+Часто возникает ситуация, когда объект внутри своего метода хочет передать указатель на самого себя в функцию, принимающую \texttt{shared\_ptr}.
+
+\begin{cppcode}[]
+struct Widget {
+    void register_in_system(std::vector<std::shared_ptr<Widget>>& registry) {
+        // ОШИБКА! Создается НОВЫЙ контрольный блок!
+        registry.emplace_back(this); 
+    }
+};
+
+int main() {
+    auto w = std::make_shared<Widget>(); // Control Block 1 (refs=1)
+    
+    std::vector<std::shared_ptr<Widget>> reg;
+    w->register_in_system(reg); // Создает Control Block 2 (refs=1)
+    
+    // При выходе:
+    // w уничтожается -> удаляет Widget (Block 1)
+    // reg уничтожается -> удаляет ТОТ ЖЕ Widget (Block 2)
+    // Double Free! Крэш программы.
+}
+\end{cppcode}
+
+Проблема в том, что сырой указатель \texttt{this} ничего не знает о том, что он уже управляется каким-то \texttt{shared\_ptr} где-то снаружи. Создавая \texttt{shared\_ptr(this)}, мы создаем \textit{вторую независимую иерархию владения} для того же адреса памяти.
+
+\subsection{Решение: std::enable\_shared\_from\_this}
+
+Стандартная библиотека предлагает паттерн (Mix-in класс) \texttt{std::enable\_shared\_from\_this<T>}.
+
+Механика работы "под капотом":
+1. Класс \texttt{Widget} наследуется от \texttt{std::enable\_shared\_from\_this<Widget>}.
+2. В базовом классе хранится скрытое поле \texttt{std::weak\_ptr<Widget> weak\_this}.
+3. Когда мы создаем \texttt{shared\_ptr<Widget>}, конструктор \texttt{shared\_ptr} проверяет (через SFINAE или концепты), является ли \texttt{Widget} наследником \texttt{ESFT}.
+4. Если да, то \texttt{shared\_ptr} инициализирует поле \texttt{weak\_this} внутри объекта, записывая туда слабую ссылку на \textit{тот самый} контрольный блок, который он только что создал.
+
+Теперь объект может восстановить \texttt{shared\_ptr} на себя, используя сохраненный \texttt{weak\_this}.
+
+\begin{cppcode}[]
+// 1. Наследуемся (CRTP паттерн)
+struct Widget : public std::enable_shared_from_this<Widget> {
+    
+    void register_in_system(std::vector<std::shared_ptr<Widget>>& registry) {
+        // 2. Используем shared_from_this()
+        registry.push_back(shared_from_this());
+    }
+};
+
+int main() {
+    auto w = std::make_shared<Widget>();
+    // Внутри make_shared происходит магия инициализации weak_this
+    
+    std::vector<std::shared_ptr<Widget>> reg;
+    w->register_in_system(reg); // Всё безопасно, счетчик увеличился до 2
+}
+\end{cppcode}
+
+\section{Ловушки ESFT}
+
+Несмотря на удобство, \texttt{enable\_shared\_from\_this} имеет строгие ограничения.
+
+\subsection{Ловушка 1: Вызов в конструкторе}
+
+\begin{important}
+Нельзя вызывать \texttt{shared\_from\_this()} в конструкторе объекта!
+\end{important}
+
+Почему? В момент работы конструктора \texttt{shared\_ptr}, который будет владеть объектом, \textbf{еще не завершил инициализацию}. Контрольный блок, возможно, уже есть, но инициализация поля \texttt{weak\_this} происходит \textit{после} завершения конструктора объекта (обычно в конструкторе \texttt{shared\_ptr}).
+
+Если вызвать \texttt{shared\_from\_this()} в конструкторе, поле \texttt{weak\_this} еще пустое (expired), и будет выброшено исключение \texttt{std::bad\_weak\_ptr}.
+
+\subsection{Ловушка 2: Объект на стеке}
+
+Если вы создадите объект на стеке:
+\begin{cppcode}
+Widget w;
+w.shared_from_this(); // Крэш (bad_weak_ptr)
+\end{cppcode}
+У стекового объекта нет контрольного блока, \texttt{weak\_this} не инициализирован. \texttt{ESFT} работает \textbf{только} если объект управляется через \texttt{shared\_ptr}.
+
+\section{Реализация инициализации weak\_this (Deep Dive)}
+
+Как именно \texttt{shared\_ptr} узнает, что нужно инициализировать поле внутри T? Это делается через шаблонную магию. Упрощенно:
+
+\begin{cppcode}
+template<typename T>
+class shared_ptr {
+public:
+    template<typename Y>
+    shared_ptr(Y* ptr) {
+        // ... создание control block ...
+        
+        // Магия: если Y наследуется от enable_shared_from_this,
+        // вызвать приватный метод инициализации.
+        if constexpr (std::is_base_of_v<std::enable_shared_from_this<Y>, Y>) {
+            ptr->weak_this = *this; // присваиваем shared_ptr в weak_ptr
+        }
+    }
+};
+\end{cppcode}
+
+В реальности поле \texttt{weak\_this} приватное, и \texttt{shared\_ptr} объявлен другом для \texttt{enable\_shared\_from\_this}, чтобы иметь к нему доступ.
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{weak\_ptr} — единственный способ разорвать циклические ссылки при использовании \texttt{shared\_ptr}.
+    \item Никогда не делайте \texttt{shared\_ptr(this)}. Это приведет к Double Free.
+    \item Используйте \texttt{std::enable\_shared\_from\_this} для безопасного получения \texttt{shared\_ptr} на себя.
+    \item Помните, что \texttt{shared\_from\_this()} не работает в конструкторах и для объектов на стеке.
+\end{itemize}
+\end{summary}

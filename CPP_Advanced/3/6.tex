@@ -1,0 +1,174 @@
+\chapter{Стирание типов и Интрузивные указатели}
+
+В завершающей главе этого раздела мы рассмотрим продвинутые паттерны управления памятью и типами, которые выходят за рамки стандартных \texttt{unique\_ptr} и \texttt{shared\_ptr}. Мы реализуем собственный аналог \texttt{std::any} с использованием техники Type Erasure (стирание типов) и разберем концепцию интрузивных указателей — высокопроизводительной альтернативы \texttt{shared\_ptr}, используемой в ядрах ОС, игровых движках и LLVM.
+
+\section{Паттерн Type Erasure: Реализация std::any}
+
+C++ — язык со строгой статической типизацией. Однако иногда нам нужен полиморфизм без наследования: возможность положить в контейнер объект \textit{любого} типа (int, string, UserClass) и корректно управлять его временем жизни. Стандартный класс \texttt{std::any} делает именно это.
+
+Как он работает внутри? Как он может хранить \texttt{T}, не будучи шаблонным классом \texttt{any<T>}? Ответ кроется в идиоме Type Erasure.
+
+\subsection{Архитектура Any}
+
+Суть идиомы:
+\begin{enumerate}
+    \item Класс-обертка (\texttt{Any}) хранит указатель на \textit{нешаблонный} абстрактный базовый класс (например, \texttt{Base}).
+    \item Внутри методов (обычно в конструкторе) мы создаем \textit{шаблонного} наследника (\texttt{Derived<T>}), который знает конкретный тип \texttt{T}.
+    \item Указатель на наследника сохраняется в поле типа \texttt{Base*}.
+    \item Виртуальные функции в \texttt{Base} (в первую очередь деструктор) позволяют манипулировать объектом, не зная его реального типа в месте хранения.
+\end{enumerate}
+
+\subsection{Реализация}
+
+\begin{cppcode}[]
+class Any {
+private:
+    // 1. Абстрактный интерфейс (Type Erased)
+    struct Base {
+        virtual ~Base() = default;
+        virtual std::unique_ptr<Base> clone() const = 0;
+    };
+
+    // 2. Шаблонная реализация (Type Aware)
+    template <typename T>
+    struct Derived : Base {
+        T value;
+
+        Derived(const T& v) : value(v) {}
+        Derived(T&& v) : value(std::move(v)) {}
+
+        std::unique_ptr<Base> clone() const override {
+            return std::make_unique<Derived<T>>(value);
+        }
+    };
+
+    std::unique_ptr<Base> storage;
+
+public:
+    // Конструктор: принимает любой тип
+    template <typename T>
+    Any(T&& value) {
+        // Выводим чистый тип (без const/volatile/reference)
+        using CleanT = std::decay_t<T>;
+        
+        // Создаем конкретного наследника, но храним как Base
+        storage = std::make_unique<Derived<CleanT>>(std::forward<T>(value));
+    }
+
+    // Copy Constructor (использует clone)
+    Any(const Any& other) {
+        if (other.storage) {
+            storage = other.storage->clone();
+        }
+    }
+
+    // Вспомогательный метод для any_cast (небезопасный для простоты)
+    template <typename T>
+    T* cast() {
+        if (auto d = dynamic_cast<Derived<T>*>(storage.get())) {
+            return &d->value;
+        }
+        return nullptr;
+    }
+};
+\end{cppcode}
+
+\begin{note}
+Обратите внимание: класс \texttt{Any} \textbf{не является} шаблонным. Вы можете объявить \texttt{std::vector<Any>}, и в нем будут лежать объекты разных типов. Магия происходит в конструкторе: именно там "стирается" тип \texttt{T}, превращаясь в полиморфный указатель \texttt{Base*}.
+\end{note}
+
+Деструктор \texttt{Any} автоматически вызовет деструктор \texttt{unique\_ptr<Base>}, который вызовет \texttt{virtual ~Base()}, который диспетчеризируется в \texttt{~Derived<T>()}, корректно уничтожая поле \texttt{value} конкретного типа.
+
+\section{Интрузивные указатели (IntrusivePtr)}
+
+\texttt{std::shared\_ptr} удобен, но имеет недостатки:
+\begin{itemize}
+    \item \textbf{Размер:} 16 байт (2 указателя).
+    \item \textbf{Аллокация:} Требует внешней памяти под Control Block (даже с \texttt{make\_shared} это оверхед на структуру блока).
+    \item \textbf{Оторванность:} Нельзя просто так взять сырой указатель на объект и превратить его в \texttt{shared\_ptr} (нужен \texttt{enable\_shared\_from\_this} или новый блок).
+\end{itemize}
+
+Интрузивные указатели решают эти проблемы, требуя от объекта \textit{самому} хранить счетчик ссылок.
+
+\subsection{Концепция}
+Объект класса \texttt{T} должен содержать поле \texttt{int ref\_count}. Обычно это делается через наследование от базового класса \texttt{RefCounted}.
+
+Умный указатель \texttt{IntrusivePtr<T>} хранит \textbf{только} сырой указатель \texttt{T*} (размер 8 байт). При копировании он вызывает метод \texttt{obj->add\_ref()}, при уничтожении — \texttt{obj->release()}.
+
+\subsection{Реализация RefCounted}
+
+\begin{cppcode}[]
+class RefCounted {
+    mutable std::atomic<int> ref_count_ = 0;
+
+protected:
+    // Деструктор виртуальный, чтобы корректно удалять наследников
+    virtual ~RefCounted() = default;
+
+public:
+    void add_ref() const {
+        ref_count_.fetch_add(1, std::memory_order_relaxed);
+    }
+
+    void release() const {
+        if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+            delete this; // Объект удаляет сам себя!
+        }
+    }
+};
+\end{cppcode}
+
+\begin{important}
+Конструкция \texttt{delete this} абсолютно легальна в C++, если после неё не обращаться к полям объекта. Именно так работают COM-объекты в Windows и многие структуры ядра Linux.
+\end{important}
+
+\subsection{Сравнение с shared\_ptr}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Характеристика} & \textbf{std::shared\_ptr} & \textbf{IntrusivePtr} \\ \hline
+Размер & 16 байт (2 ptr) & 8 байт (1 ptr) \\ \hline
+Аллокации & 1 (make\_shared) или 2 & 0 (дополнительных) \\ \hline
+Локальность & Хорошая (make\_shared) & Идеальная (счетчик внутри) \\ \hline
+Восстановление & Опасно (без ESFT) & Безопасно (счетчик всегда с собой) \\ \hline
+Weak Ptr & Есть & Нет (обычно) \\ \hline
+Требования к T & Любой тип & Должен наследовать RefCounted \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{Пример использования}
+
+\begin{cppcode}
+class Texture : public RefCounted {
+    // ... данные текстуры ...
+};
+
+void use_texture(IntrusivePtr<Texture> tex) {
+    // Копирование tex увеличивает счетчик внутри самого объекта Texture
+}
+
+int main() {
+    // Обычный new, никаких make_shared
+    IntrusivePtr<Texture> t(new Texture()); 
+    
+    // Можно восстановить умный указатель из сырого
+    Texture* raw = t.get();
+    IntrusivePtr<Texture> t2(raw); // OK! Счетчик инкрементируется.
+    // Оба указателя смотрят на один объект, счетчик = 2.
+}
+\end{cppcode}
+
+\section{Итоги раздела Smart Pointers}
+
+Мы прошли путь от базового \texttt{unique\_ptr} до написания собственной системы типов и интрузивного управления памятью.
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Type Erasure} позволяет создавать контейнеры для разнородных типов (\texttt{std::any}, \texttt{std::function}), пряча шаблонную логику за полиморфным фасадом.
+    \item \textbf{IntrusivePtr} — выбор для высоконагруженных систем, где критичен каждый байт и такт процессора, и где вы контролируете иерархию классов.
+    \item Понимание устройства Control Block и EBO делает вас не просто пользователем C++, а инженером, понимающим цену каждой абстракции.
+\end{itemize}
+\end{summary}
+

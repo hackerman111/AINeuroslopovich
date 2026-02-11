@@ -1,0 +1,13 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{try}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ...}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Сюда попадут ВСЕ наследники std::exception}
+\PYG{p}{\PYGZcb{}}
+\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Мертвый код (Dead Code)!}
+\PYG{+w}{    }\PYG{c+c1}{// runtime\PYGZus{}error наследуется от exception,}
+\PYG{+w}{    }\PYG{c+c1}{// поэтому он будет перехвачен первым блоком.}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

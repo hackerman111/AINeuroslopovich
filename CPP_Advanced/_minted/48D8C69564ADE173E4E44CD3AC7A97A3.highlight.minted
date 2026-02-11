@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Hello World}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{sv}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{.}\PYG{n}{substr}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// \PYGZdq{}Hello\PYGZdq{}}
+
+\PYG{c+c1}{// ОШИБКА:}
+\PYG{n}{printf}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{\PYGZpc{}s}\PYG{l+s}{\PYGZdq{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{sv}\PYG{p}{.}\PYG{n}{data}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// sv.data() указывает на \PYGZsq{}H\PYGZsq{}. printf будет печатать байты, пока не встретит \PYGZbs{}0.}
+\PYG{c+c1}{// Он напечатает \PYGZdq{}Hello World\PYGZdq{} (в лучшем случае) или мусор за пределами s.}
+\end{MintedVerbatim}

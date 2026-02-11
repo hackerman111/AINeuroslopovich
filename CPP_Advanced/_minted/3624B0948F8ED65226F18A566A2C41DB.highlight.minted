@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{ToString}\PYG{p}{(}\PYG{n}{Color}\PYG{+w}{ }\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{switch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{c}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define X(name) case Color::name: return \PYGZsh{}name;}
+\PYG{+w}{        }\PYG{n}{LIST\PYGZus{}OF\PYGZus{}COLORS}\PYG{p}{(}\PYG{n}{X}\PYG{p}{)}
+\PYG{+w}{        }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{undef X}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Unknown}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// Раскроется в:}
+\PYG{c+c1}{// switch (c) \PYGZob{}}
+\PYG{c+c1}{//     case Color::Red: return \PYGZdq{}Red\PYGZdq{};}
+\PYG{c+c1}{//     case Color::Green: return \PYGZdq{}Green\PYGZdq{};}
+\PYG{c+c1}{//     ...}
+\PYG{c+c1}{// \PYGZcb{}}
+\end{MintedVerbatim}

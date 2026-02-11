@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}thread\PYGZgt{}}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{safe\PYGZus{}code}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// std::jthread автоматически присоединится при выходе из scope}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{jthread}\PYG{+w}{ }\PYG{n}{t}\PYG{p}{(}\PYG{p}{[}\PYG{p}{]}\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// ... работа ...}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// Здесь будет вызван t.join()}
+\end{MintedVerbatim}

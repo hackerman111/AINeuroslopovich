@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n+nf}{get\PYGZus{}ref}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{trap}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Создается временный int(10).}
+\PYG{+w}{    }\PYG{c+c1}{// 2. Он передается в get\PYGZus{}ref.}
+\PYG{+w}{    }\PYG{c+c1}{// 3. get\PYGZus{}ref возвращает ссылку на него.}
+\PYG{+w}{    }\PYG{c+c1}{// 4. Ссылка привязывается к val.}
+\PYG{+w}{    }\PYG{c+c1}{// ПРОДЛЕНИЯ ЖИЗНИ НЕ ПРОИСХОДИТ!}
+\PYG{+w}{    }\PYG{c+c1}{// Правило работает только если ссылка инициализируется САМИМ prvalue,}
+\PYG{+w}{    }\PYG{c+c1}{// а здесь она инициализируется результатом функции (lvalue/xvalue).}
+\PYG{+w}{    }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{get\PYGZus{}ref}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cout}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{val}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// UB: обращение к памяти мертвого объекта}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

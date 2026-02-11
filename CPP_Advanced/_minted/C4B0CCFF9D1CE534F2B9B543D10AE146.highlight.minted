@@ -1,0 +1,18 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{CreateCycle}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Number}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{n2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Number}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Создаем список (1 2)}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{cell2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Cell}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{n2}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{cell1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}shared}\PYG{o}{\PYGZlt{}}\PYG{n}{Cell}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{n1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{cell2}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// cell1 \PYGZhy{}\PYGZgt{} cell2}
+
+\PYG{+w}{    }\PYG{c+c1}{// Замыкаем цикл: cell2 \PYGZhy{}\PYGZgt{} cell1}
+\PYG{+w}{    }\PYG{c+c1}{// Теперь refcount у обоих объектов равен 2 (1 внешний + 1 внутренний)}
+\PYG{+w}{    }\PYG{n}{cell2}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{second}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{cell1}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// При выходе из функции внешние указатели (cell1, cell2) уничтожаются.}
+\PYG{+w}{    }\PYG{c+c1}{// Refcount обоих объектов уменьшается до 1.}
+\PYG{+w}{    }\PYG{c+c1}{// Память НЕ освобождается. УТЕЧКА.}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

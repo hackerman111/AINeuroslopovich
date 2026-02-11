@@ -1,0 +1,6 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n+nb}{if}\PYG{p}{(}\PYG{l+s}{ENABLE\PYGZus{}ASAN}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n+nb}{add\PYGZus{}compile\PYGZus{}options}\PYG{p}{(}\PYG{l+s}{\PYGZhy{}fsanitize=address}\PYG{+w}{ }\PYG{l+s}{\PYGZhy{}g}\PYG{p}{)}
+\PYG{+w}{    }\PYG{n+nb}{add\PYGZus{}link\PYGZus{}options}\PYG{p}{(}\PYG{l+s}{\PYGZhy{}fsanitize=address}\PYG{p}{)}
+\PYG{n+nb}{endif}\PYG{p}{(}\PYG{p}{)}
+\end{MintedVerbatim}

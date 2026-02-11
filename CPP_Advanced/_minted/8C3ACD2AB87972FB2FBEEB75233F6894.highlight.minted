@@ -1,0 +1,14 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{generator}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{sequence}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// Локальная переменная}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{          }\PYG{c+c1}{// Переменная, живущая \PYGZdq{}сквозь\PYGZdq{} yield}
+
+\PYG{+w}{    }\PYG{c+c1}{// Точка остановки 1}
+\PYG{+w}{    }\PYG{k}{co\PYGZus{}yield}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Точка остановки 2}
+\PYG{+w}{    }\PYG{k}{co\PYGZus{}yield}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

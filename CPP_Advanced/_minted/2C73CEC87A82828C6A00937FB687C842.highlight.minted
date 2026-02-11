@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{fixed\PYGZus{}string}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{[}\PYG{n}{N}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Публичный массив (обязательно)}
+
+\PYG{+w}{    }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{n}{fixed\PYGZus{}string}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{N}\PYG{p}{;}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{+}\PYG{n}{i}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{s}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Оператор для удобного приведения к строке}
+\PYG{+w}{    }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k}{operator}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{o}{*}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{buf}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Deduction guide для вывода N из длины литерала}
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{N}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{fixed\PYGZus{}string}\PYG{p}{(}\PYG{k+kt}{char}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{p}{[}\PYG{n}{N}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{fixed\PYGZus{}string}\PYG{o}{\PYGZlt{}}\PYG{n}{N}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\end{MintedVerbatim}

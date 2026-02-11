@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{FreeDeleter}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{operator}\PYG{p}{(}\PYG{p}{)}\PYG{p}{(}\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{free}\PYG{p}{(}\PYG{n}{p}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// free корректно работает с void*}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Теперь это легально и безопасно}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{void}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{FreeDeleter}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{memory}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{malloc}\PYG{p}{(}\PYG{l+m+mi}{1024}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\end{MintedVerbatim}

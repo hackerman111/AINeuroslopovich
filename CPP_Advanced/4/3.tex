@@ -1,0 +1,243 @@
+\chapter{Метапрограммирование: Traits и Control Flow}
+
+Метапрограммирование в C++ — это написание программ, которые выполняются компилятором и манипулируют другими программами (типами и константами) как данными. Фундаментом этой парадигмы являются \textit{Traits} (свойства типов) и механизмы управления потоком компиляции.
+
+\section{Трейты (Traits): API для типов}
+
+Трейт (trait) — это класс-шаблон, который ничего не делает в рантайме, но предоставляет информацию о типе на этапе компиляции. Это "мета-функция", принимающая тип и возвращающая значение (обычно \texttt{bool}) или другой тип.
+
+Стандартная библиотека предоставляет богатый набор трейтов в заголовке \texttt{<type\_traits>}: \texttt{std::is\_integral}, \texttt{std::remove\_reference}, \texttt{std::enable\_if} и т.д.
+
+\subsection{Механика: Частичная специализация}
+
+В основе работы трейтов лежит механизм частичной специализации шаблонов. Рассмотрим реализацию простейшего трейта \texttt{is\_pointer}, который определяет, является ли тип указателем.
+
+\begin{cppcode}[]
+// 1. Базовый шаблон (General Case)
+// По умолчанию считаем, что T — не указатель.
+template <typename T>
+struct is_pointer {
+    static constexpr bool value = false;
+};
+
+// 2. Частичная специализация для указателей
+// Если тип совпадает с паттерном T*, выбирается эта версия.
+template <typename T>
+struct is_pointer<T*> {
+    static constexpr bool value = true;
+};
+\end{cppcode}
+
+При использовании \texttt{is\_pointer<int*>::value}:
+\begin{enumerate}
+    \item Компилятор видит, что \texttt{int*} подходит под специализацию \texttt{T*} (где \texttt{T = int}).
+    \item Специализация более специфична, чем общий шаблон.
+    \item Выбирается версия с \texttt{value = true}.
+\end{enumerate}
+
+\section{Проблема обобщенного доступа: Iterator Traits}
+
+Рассмотрим классическую проблему написания обобщенного алгоритма. Мы пишем функцию, которая должна работать как с итераторами контейнеров (\texttt{std::vector<int>::iterator}), так и с обычными указателями (\texttt{int*}).
+
+\begin{cppcode}[]
+template <typename Iter>
+void algorithm(Iter it) {
+    // Нам нужно создать временную переменную того типа, 
+    // на который указывает итератор.
+    typename Iter::value_type temp = *it; // ОШИБКА для int*
+}
+\end{cppcode}
+
+У класса итератора есть вложенный тип \texttt{value\_type}. Но у встроенного типа \texttt{int*} нет вложенных типов. Это делает невозможным единообразное обращение к свойствам типа напрямую.
+
+\subsection{Решение: Слой косвенности}
+
+Для решения этой проблемы стандарт вводит сущность \texttt{std::iterator\_traits}. Это посредник, который унифицирует интерфейс доступа к свойствам итераторов.
+
+Мы можем реализовать его самостоятельно:
+
+\begin{cppcode}[]
+// 1. Общая версия: делегирует запрос самому итератору
+template <typename Iter>
+struct iterator_traits {
+    using value_type = typename Iter::value_type;
+    using pointer    = typename Iter::pointer;
+    // ... другие свойства
+};
+
+// 2. Специализация для сырых указателей (T*)
+template <typename T>
+struct iterator_traits<T*> {
+    using value_type = T;   // Для int* значением является int
+    using pointer    = T*;
+    // ...
+};
+\end{cppcode}
+
+Теперь наш алгоритм работает корректно для любых видов итераторов:
+
+\begin{cppcode}[]
+template <typename Iter>
+void algorithm(Iter it) {
+    // Работает и для std::vector::iterator, и для int*
+    using T = typename std::iterator_traits<Iter>::value_type;
+    T temp = *it;
+}
+\end{cppcode}
+
+\section{Синтаксический ад: typename и template}
+
+При написании шаблонов вы неизбежно столкнетесь с ошибками парсинга, требующими ключевых слов \texttt{typename} и \texttt{template} в неочевидных местах.
+
+\subsection{Зависимые имена типов (Dependent Types)}
+
+Когда компилятор парсит шаблон, он еще не знает конкретного типа \texttt{T}. Рассмотрим выражение:
+
+\begin{cppcode}[]
+T::x * y;
+\end{cppcode}
+
+Как это интерпретировать?
+\begin{enumerate}
+    \item Это умножение статической переменной \texttt{T::x} на переменную \texttt{y}?
+    \item Или это объявление указателя \texttt{y} на тип \texttt{T::x}?
+\end{enumerate}
+
+В C++ принято правило: \textbf{по умолчанию любое зависимое имя считается значением (переменной или функцией)}. Если вы хотите сказать компилятору, что это тип, вы \textit{обязаны} использовать ключевое слово \texttt{typename}.
+
+\begin{cppcode}[]
+template <typename T>
+void foo() {
+    // Ошибка: компилятор думает, что const_iterator — это статическое поле
+    // T::const_iterator * it; 
+    
+    // Правильно:
+    typename T::const_iterator * it;
+}
+\end{cppcode}
+
+\subsection{Зависимые шаблоны (Dependent Templates)}
+
+Аналогичная проблема возникает, когда у зависимого типа есть шаблонный метод.
+
+\begin{cppcode}[]
+template <typename T>
+void call_wrapper(T& obj) {
+    // Ошибка: < интерпретируется как оператор "меньше"
+    // obj.foo<int>(); 
+    
+    // Правильно:
+    obj.template foo<int>();
+}
+\end{cppcode}
+
+Без слова \texttt{template} компилятор распарсит строку как `(obj.foo) < (int) > ...`.
+
+\section{Compile-Time Control Flow}
+
+В рантайме мы используем \texttt{if}, чтобы выбрать ветку исполнения. В шаблонах нам часто нужно выбрать ветку \textit{компиляции} в зависимости от свойств типа.
+
+\subsection{Tag Dispatching (Диспетчеризация по тегам)}
+
+До C++17 стандартным способом выбора алгоритма была перегрузка функций. Рассмотрим \texttt{std::advance}, которая сдвигает итератор на N шагов. Для векторов это просто \texttt{it += n} ($O(1)$), для списков — цикл ($O(N)$).
+
+Мы используем пустые структуры-теги для выбора перегрузки:
+
+\begin{cppcode}[]
+// Реализация для Random Access (быстрая)
+template <typename Iter>
+void advance_impl(Iter& it, int n, std::random_access_iterator_tag) {
+    it += n;
+}
+
+// Реализация для остальных (медленная)
+template <typename Iter>
+void advance_impl(Iter& it, int n, std::input_iterator_tag) {
+    while (n--) ++it;
+}
+
+// Фасад
+template <typename Iter>
+void advance(Iter& it, int n) {
+    // Извлекаем категорию итератора и создаем объект-тег
+    using category = typename std::iterator_traits<Iter>::iterator_category;
+    advance_impl(it, n, category{}); 
+}
+\end{cppcode}
+
+\subsection{If Constexpr (C++17)}
+
+C++17 ввел конструкцию \texttt{if constexpr}, которая позволяет писать условную логику в одной функции. Компилятор вычисляет условие и инстанцирует \textbf{только одну} ветку. Вторая ветка отбрасывается (discarded statement).
+
+\begin{cppcode}[]
+template <typename Iter>
+void advance(Iter& it, int n) {
+    using cat = typename std::iterator_traits<Iter>::iterator_category;
+    
+    if constexpr (std::is_base_of_v<std::random_access_iterator_tag, cat>) {
+        it += n; // Компилируется только для RA итераторов
+    } else {
+        while (n--) ++it;
+    }
+}
+\end{cppcode}
+
+Преимущество \texttt{if constexpr} в том, что код внутри отброшенной ветки не обязан быть полностью валидным для текущего типа \texttt{T}, достаточно лишь синтаксической корректности. Например, выражение \texttt{it += n} вызвало бы ошибку компиляции для \texttt{std::list}, если бы мы использовали обычный \texttt{if}, но с \texttt{constexpr} эта проверка отключается.
+
+\section{Ловушка безусловного static\_assert}
+
+При использовании \texttt{if constexpr} часто возникает соблазн написать проверку на "неподдерживаемый тип" в ветке \texttt{else}.
+
+\begin{important}
+Следующий код \textbf{не скомпилируется никогда}, даже если мы заходим в ветку \texttt{true}.
+\end{important}
+
+\begin{cppcode}[]
+template <typename T>
+void process(T t) {
+    if constexpr (std::is_integral_v<T>) {
+        // ...
+    } else {
+        // ОШИБКА: static_assert срабатывает всегда!
+        static_assert(false, "Type not supported");
+    }
+}
+\end{cppcode}
+
+\textbf{Причина:} Согласно стандарту, если \texttt{static\_assert} не зависит от шаблонного параметра (в данном случае \texttt{false} — это константа), он срабатывает на этапе разбора шаблона, до инстанциации. Компилятор видит "всегда ложь" и останавливает сборку.
+
+\subsection{Решение: Dependent False}
+
+Чтобы \texttt{static\_assert} срабатывал только при инстанциации ветки \texttt{else}, условие должно зависеть от \texttt{T}.
+
+\begin{cppcode}[]
+// Хелпер, который всегда равен false, но зависит от типа
+template <typename T>
+struct always_false : std::false_type {};
+
+template <typename T>
+inline constexpr bool always_false_v = always_false<T>::value;
+
+template <typename T>
+void process(T t) {
+    if constexpr (std::is_integral_v<T>) {
+        // ...
+    } else {
+        // Теперь проверка отложена до инстанциации этой ветки
+        static_assert(always_false_v<T>, "Type not supported");
+    }
+}
+\end{cppcode}
+
+В C++23 планируется разрешить \texttt{static\_assert(false)} в таких контекстах, но для текущих стандартов (C++17/20) использование идиомы \texttt{always\_false} обязательно.
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Traits} позволяют получать свойства типов через специализацию шаблонов.
+    \item \textbf{iterator\_traits} — необходимый слой абстракции для поддержки встроенных типов (указателей) в обобщенном коде.
+    \item Используйте \textbf{typename} перед типами, зависящими от параметра шаблона, и \textbf{template} перед шаблонными методами зависимых объектов.
+    \item \textbf{Tag Dispatching} — старый, но рабочий способ выбора реализации через перегрузки.
+    \item \textbf{if constexpr} — современный способ compile-time ветвления.
+    \item Остерегайтесь \texttt{static\_assert(false)} в ветках \texttt{if constexpr}, делайте условие зависимым от \texttt{T}.
+\end{itemize}
+\end{summary}

@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}header.h\PYGZdq{}}
+\PYG{c+c1}{// После препроцессинга здесь тоже появится: int globalVar = 42;}
+\PYG{c+c1}{// Компилятор создаст b.o с символом globalVar (Defined)}
+\end{MintedVerbatim}

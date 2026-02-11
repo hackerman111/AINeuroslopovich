@@ -1,0 +1,26 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Holder}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{data\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size\PYGZus{}}\PYG{p}{;}
+
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{Holder}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{size\PYGZus{}}\PYG{p}{(}\PYG{n}{size}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{data\PYGZus{}}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{n}{size}\PYG{p}{]}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{Holder}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{delete}\PYG{p}{[}\PYG{p}{]}\PYG{+w}{ }\PYG{n}{data\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Деструктор должен быть безопасным для nullptr}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Move Constructor}
+\PYG{+w}{    }\PYG{c+c1}{// Принимает неконстантную rvalue\PYGZhy{}ссылку}
+\PYG{+w}{    }\PYG{n}{Holder}\PYG{p}{(}\PYG{n}{Holder}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}
+\PYG{+w}{        }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{data\PYGZus{}}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{data\PYGZus{}}\PYG{p}{)}\PYG{+w}{  }\PYG{c+c1}{// 1. Крадем указатель}
+\PYG{+w}{        }\PYG{p}{,}\PYG{+w}{ }\PYG{n}{size\PYGZus{}}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{size\PYGZus{}}\PYG{p}{)}\PYG{+w}{  }\PYG{c+c1}{// 2. Крадем метаданные}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// 3. Зануляем источник!}
+\PYG{+w}{        }\PYG{c+c1}{// Если этого не сделать, деструктор \PYGZsq{}other\PYGZsq{} удалит память,}
+\PYG{+w}{        }\PYG{c+c1}{// которой теперь владеем мы. Будет double free.}
+\PYG{+w}{        }\PYG{n}{other}\PYG{p}{.}\PYG{n}{data\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{other}\PYG{p}{.}\PYG{n}{size\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

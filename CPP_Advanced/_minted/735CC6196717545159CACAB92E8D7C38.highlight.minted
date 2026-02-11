@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{\PYGZsh{} 1. Создаем директорию build и запускаем конфигурацию}
+\PYG{c+c1}{\PYGZsh{} \PYGZhy{}S . указывает, что исходники в текущей папке}
+\PYG{c+c1}{\PYGZsh{} \PYGZhy{}B build указывает, что артефакты сборки кладем в папку build}
+cmake\PYG{+w}{ }\PYGZhy{}S\PYG{+w}{ }.\PYG{+w}{ }\PYGZhy{}B\PYG{+w}{ }build
+
+\PYG{c+c1}{\PYGZsh{} 2. Запускаем непосредственно сборку}
+\PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}build build — абстрактная команда, вызывающая make/ninja внутри папки build}
+cmake\PYG{+w}{ }\PYGZhy{}\PYGZhy{}build\PYG{+w}{ }build
+\end{MintedVerbatim}

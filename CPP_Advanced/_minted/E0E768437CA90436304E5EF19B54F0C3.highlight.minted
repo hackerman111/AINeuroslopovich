@@ -1,0 +1,22 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{SafeTask}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ... promise\PYGZus{}type с final\PYGZus{}suspend = suspend\PYGZus{}always ...}
+
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{coroutine\PYGZus{}handle}\PYG{o}{\PYGZlt{}}\PYG{n}{promise\PYGZus{}type}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{n}{SafeTask}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{coroutine\PYGZus{}handle}\PYG{o}{\PYGZlt{}}\PYG{n}{promise\PYGZus{}type}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{handle}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{(}\PYG{n}{handle}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Запрещаем копирование (чтобы не удалить дважды)}
+\PYG{+w}{    }\PYG{n}{SafeTask}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{SafeTask}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Разрешаем перемещение}
+\PYG{+w}{    }\PYG{n}{SafeTask}\PYG{p}{(}\PYG{n}{SafeTask}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{other}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{(}\PYG{n}{other}\PYG{p}{.}\PYG{n}{h}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{other}\PYG{p}{.}\PYG{n}{h}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{SafeTask}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Если хендл валиден, мы обязаны его уничтожить}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{h}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{h}\PYG{p}{.}\PYG{n}{destroy}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

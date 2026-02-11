@@ -1,0 +1,8 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{rx}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+
+\PYG{n}{MyPair}\PYG{+w}{ }\PYG{n+nf}{p}\PYG{p}{(}\PYG{n}{rx}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{rx}\PYG{p}{)}\PYG{p}{;}
+\PYG{c+c1}{// T выведется как int, U как int.}
+\PYG{c+c1}{// Поля first и second будут копиями x.}
+\end{MintedVerbatim}

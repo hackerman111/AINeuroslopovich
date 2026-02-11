@@ -1,0 +1,12 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Big}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{[}\PYG{l+m+mi}{100}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{n}{Big}\PYG{+w}{ }\PYG{n+nf}{make}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{Big}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// Возвращает prvalue (инициализатор)}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{use}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Big}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{make}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// В C++17 здесь нет ни копирования, ни перемещения.}
+\PYG{+w}{    }\PYG{c+c1}{// prvalue из make() материализуется прямо в память переменной \PYGZsq{}b\PYGZsq{}.}
+\PYG{+w}{    }\PYG{c+c1}{// Это гарантированная RVO (Return Value Optimization).}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

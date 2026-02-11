@@ -1,0 +1,14 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Widget}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{Widget}\PYG{p}{(}\PYG{n}{Widget}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Пользовательский move ctor}
+\PYG{+w}{    }\PYG{c+c1}{// Copy ctor неявно удален!}
+\PYG{+w}{    }\PYG{c+c1}{// Copy assignment неявно удален!}
+\PYG{+w}{    }\PYG{c+c1}{// Move assignment не объявлен (но и не удален, просто не сгенерирован)}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Widget}\PYG{+w}{ }\PYG{n}{w1}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{Widget}\PYG{+w}{ }\PYG{n}{w2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{w1}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ОШИБКА КОМПИЛЯЦИИ: call to deleted constructor}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

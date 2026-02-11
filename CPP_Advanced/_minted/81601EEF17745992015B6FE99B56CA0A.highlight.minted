@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{Derived}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{d}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Derived}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{n}{Base1}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Адрес совпадает: (void*)b1 == (void*)d}
+\PYG{n}{Base2}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{b2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{d}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Адрес СМЕЩЕН: (void*)b2 == (char*)d + sizeof(Base1)}
+\end{MintedVerbatim}

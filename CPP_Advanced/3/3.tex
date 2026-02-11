@@ -1,0 +1,212 @@
+\chapter{Архитектура эксклюзивного владения: std::unique\_ptr}
+
+Умные указатели — краеугольный камень современного C++. В этой главе мы не просто рассмотрим, "как пользоваться" \texttt{std::unique\_ptr}, а разберем его устройство до байта. Мы реализуем собственный \texttt{unique\_ptr}, столкнемся с проблемой пустого базового класса (EBO) и узнаем, как специализировать шаблоны для массивов.
+
+\section{Концепция эксклюзивного владения}
+
+\texttt{std::unique\_ptr<T>} моделирует семантику единоличного владения ресурсом. Это означает:
+\begin{enumerate}
+    \item В любой момент времени ресурсом владеет ровно один указатель.
+    \item Копирование указателя запрещено (компилятор выдаст ошибку).
+    \item Перемещение разрешено (владение переходит от A к B, A становится пустым).
+    \item При уничтожении указателя ресурс освобождается автоматически.
+\end{enumerate}
+
+Это идеальная абстракция для ресурсов, которые не должны быть разделены: дескрипторы файлов, соединения с базой данных, динамические массивы внутри классов.
+
+\subsection{Базовый интерфейс}
+
+Минимальный интерфейс \texttt{unique\_ptr} выглядит так:
+
+\begin{cppcode}[]
+template <typename T>
+class UniquePtr {
+    T* ptr_ = nullptr;
+
+public:
+    // Конструктор по умолчанию и от сырого указателя
+    explicit UniquePtr(T* ptr = nullptr) : ptr_(ptr) {}
+
+    // ЗАПРЕТ копирования (Rule of 5)
+    UniquePtr(const UniquePtr&) = delete;
+    UniquePtr& operator=(const UniquePtr&) = delete;
+
+    // Move-конструктор
+    UniquePtr(UniquePtr&& other) noexcept 
+        : ptr_(std::exchange(other.ptr_, nullptr)) {}
+
+    // Move-оператор присваивания
+    UniquePtr& operator=(UniquePtr&& other) noexcept {
+        if (this != &other) {
+            delete ptr_; // Очищаем свой ресурс
+            ptr_ = std::exchange(other.ptr_, nullptr); // Забираем чужой
+        }
+        return *this;
+    }
+
+    // Деструктор
+    ~UniquePtr() {
+        delete ptr_;
+    }
+
+    // Доступ к данным
+    T& operator*() const { return *ptr_; }
+    T* operator->() const { return ptr_; }
+    T* get() const { return ptr_; }
+};
+\end{cppcode}
+
+\subsection{Release vs Reset}
+
+Два важнейших метода управления владением:
+
+\begin{itemize}
+    \item \texttt{reset(ptr)}: Уничтожает старый объект (вызывает \texttt{delete}) и захватывает новый \texttt{ptr}. Если вызван без аргументов, просто уничтожает объект.
+    \item \texttt{release()}: Отказывается от владения, \textbf{не уничтожая} объект. Возвращает сырой указатель и зануляет внутреннее поле. Используется для передачи владения в C-API или легаси код.
+\end{itemize}
+
+\begin{cppcode}[]
+void reset(T* ptr = nullptr) {
+    T* old_ptr = std::exchange(ptr_, ptr);
+    delete old_ptr; // Удаляем старый ресурс
+}
+
+T* release() {
+    return std::exchange(ptr_, nullptr); // Просто отдаем и забываем
+}
+\end{cppcode}
+
+\section{Проблема размера (The Sizeof Problem)}
+
+В реальном \texttt{std::unique\_ptr} есть второй шаблонный параметр — \textbf{Deleter}. Это функтор, который определяет, \textit{как} удалять ресурс.
+
+\begin{cppcode}
+template <typename T, typename Deleter = std::default_delete<T>>
+class unique_ptr {
+    T* ptr_;
+    Deleter deleter_; // Храним экземпляр дилитера
+public:
+    ~unique_ptr() {
+        if (ptr_) deleter_(ptr_); // Вызов функтора
+    }
+};
+\end{cppcode}
+
+По умолчанию \texttt{Deleter} — это пустая структура:
+\begin{cppcode}
+template <typename T>
+struct default_delete {
+    void operator()(T* ptr) const { delete ptr; }
+};
+\end{cppcode}
+
+Проблема:
+\begin{enumerate}
+    \item \texttt{sizeof(T*)} = 8 байт (на 64-бит).
+    \item \texttt{sizeof(default\_delete)} = 1 байт (пустая структура не может иметь размер 0, иначе у неё не будет адреса).
+    \item Из-за выравнивания (alignment) компилятор добавит padding.
+\end{enumerate}
+
+Итог: \texttt{sizeof(unique\_ptr)} становится $8 + 1 + \text{padding}(7) = 16$ байт. Это недопустимо! Умный указатель должен весить столько же, сколько сырой (Zero Overhead Principle).
+
+\section{Empty Base Optimization (EBO)}
+
+В C++ есть специальное правило: \textbf{базовый класс} может иметь размер 0 байт, если он пустой. Это называется \textit{Empty Base Optimization}.
+
+Чтобы воспользоваться этим, мы не можем хранить \texttt{Deleter} как поле. Мы должны от него \textbf{унаследоваться}. Но мы не можем просто унаследовать \texttt{unique\_ptr} от \texttt{Deleter}, так как \texttt{Deleter} может быть:
+\begin{itemize}
+    \item Финальным классом (final).
+    \item Указателем на функцию (наследоваться нельзя).
+    \item Ссылкой.
+\end{itemize}
+
+Решение: использование вспомогательной структуры \texttt{CompressedPair}.
+
+\subsection{Реализация CompressedPair}
+
+Идея: храним два значения. Если второе пустое — наследуемся от него.
+
+\begin{cppcode}[]
+// Основной шаблон (если T2 не пустой)
+template <typename T1, typename T2, bool = std::is_empty_v<T2>>
+class CompressedPair {
+    T1 first_;
+    T2 second_;
+public:
+    T1& GetFirst() { return first_; }
+    T2& GetSecond() { return second_; }
+};
+
+// Специализация для пустого T2 (включаем EBO)
+template <typename T1, typename T2>
+class CompressedPair<T1, T2, true> : private T2 { // Наследуемся!
+    T1 first_;
+public:
+    T1& GetFirst() { return first_; }
+    T2& GetSecond() { return *this; } // Кастим себя к базе
+};
+\end{cppcode}
+
+Теперь, используя \texttt{CompressedPair<T*, Deleter>} внутри \texttt{unique\_ptr}, мы получаем размер 8 байт для stateless дилитеров.
+
+\section{Специализация для массивов}
+
+\texttt{std::unique\_ptr} поддерживает массивы: \texttt{std::unique\_ptr<int[]>}. Это критически важно, потому что для массивов нужно вызывать \texttt{delete[]} вместо \texttt{delete}.
+
+Если бы специализации не было:
+\begin{cppcode}
+std::unique_ptr<int> p(new int[10]); 
+// Деструктор вызовет delete p (без скобок) -> UB!
+\end{cppcode}
+
+Как реализована специализация \texttt{unique\_ptr<T[]>}:
+1. Дефолтный дилитер вызывает \texttt{delete[]}.
+2. Оператор \texttt{*} и \texttt{->} удалены (логически к массиву нельзя применить \texttt{->}).
+3. Добавлен оператор индексации \texttt{operator[]}.
+
+\begin{cppcode}
+template <typename T, typename Deleter>
+class unique_ptr<T[], Deleter> {
+public:
+    // ...
+    T& operator[](size_t i) const { 
+        return ptr_[i]; 
+    }
+    
+    // operator* и operator-> отсутствуют
+};
+\end{cppcode}
+
+\section{Угловой кейс: unique\_ptr<void>}
+
+Можно ли создать \texttt{std::unique\_ptr<void>}?
+
+С дефолтным дилитером — \textbf{нет}.
+\begin{cppcode}
+std::unique_ptr<void> p(malloc(100)); // Ошибка компиляции или UB
+\end{cppcode}
+Причина: \texttt{delete ptr}, где \texttt{ptr} имеет тип \texttt{void*}, является Undefined Behavior (если мы не знаем реальный тип объекта, мы не можем вызвать его деструктор). Стандартная библиотека часто ставит \texttt{static\_assert(!is\_void\_v<T>)} в \texttt{default\_delete}.
+
+Однако, \texttt{unique\_ptr<void>} полезен для управления памятью, выделенной через \texttt{malloc}, или для C-API хендлов. Для этого \textbf{обязательно} нужно предоставить кастомный дилитер.
+
+\begin{cppcode}[]
+struct FreeDeleter {
+    void operator()(void* p) const {
+        std::free(p); // free корректно работает с void*
+    }
+};
+
+// Теперь это легально и безопасно
+std::unique_ptr<void, FreeDeleter> memory(std::malloc(1024));
+\end{cppcode}
+
+Это мощный паттерн для RAII-оберток над любыми ресурсами C-библиотек (FILE*, SDL\_Surface*, SSL*).
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{unique\_ptr} — это "золотой стандарт" владения. Нулевой оверхед.
+    \item \textbf{EBO (Empty Base Optimization)} позволяет дилитеру не занимать память, если он не имеет состояния.
+    \item Специализация для массивов \texttt{<T[]>} меняет \texttt{delete} на \texttt{delete[]} и добавляет \texttt{operator[]}.
+    \item Для \texttt{void*} или системных ресурсов всегда используйте кастомный дилитер.
+\end{itemize}
+\end{summary}

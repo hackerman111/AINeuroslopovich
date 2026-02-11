@@ -1,0 +1,32 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Псевдокод того, что делает компилятор}
+\PYG{n}{RetType}\PYG{+w}{ }\PYG{n+nf}{my\PYGZus{}coro\PYGZus{}transformed}\PYG{p}{(}\PYG{n}{Args}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{+w}{ }\PYG{n}{args}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Выделение памяти под фрейм (через operator new)}
+\PYG{+w}{    }\PYG{c+c1}{// Размер вычисляется компилятором (Promise + Locals + Save points)}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{frame\PYGZus{}mem}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{allocate\PYGZus{}frame}\PYG{p}{(}\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{Frame}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Конструирование Promise в этой памяти}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{P}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{RetType}\PYG{o}{:}\PYG{o}{:}\PYG{n}{promise\PYGZus{}type}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Магия поиска типа!}
+\PYG{+w}{    }\PYG{n}{P}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{promise}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{frame\PYGZus{}mem}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{P}\PYG{p}{(}\PYG{n}{args}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 3. Создание Return Object, который уйдет наружу}
+\PYG{+w}{    }\PYG{n}{RetType}\PYG{+w}{ }\PYG{n}{return\PYGZus{}val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{promise}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{get\PYGZus{}return\PYGZus{}object}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 4. Начальная приостановка}
+\PYG{+w}{    }\PYG{k}{try}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{co\PYGZus{}await}\PYG{+w}{ }\PYG{n}{promise}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{initial\PYGZus{}suspend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{c+c1}{// Если suspend\PYGZus{}always \PYGZhy{}\PYGZgt{} возврат управления caller\PYGZsq{}у сразу.}
+\PYG{+w}{        }\PYG{c+c1}{// Если suspend\PYGZus{}never \PYGZhy{}\PYGZgt{} выполнение тела до первого реального await.}
+
+\PYG{+w}{        }\PYG{c+c1}{// ... выполнение тела корутины ...}
+
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{p}{.}\PYG{p}{.}\PYG{p}{.}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{promise}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{unhandled\PYGZus{}exception}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// 5. Финальная стадия}
+\PYG{+w}{    }\PYG{k}{co\PYGZus{}await}\PYG{+w}{ }\PYG{n}{promise}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{final\PYGZus{}suspend}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{return\PYGZus{}val}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Возврат объекта, созданного на шаге 3}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

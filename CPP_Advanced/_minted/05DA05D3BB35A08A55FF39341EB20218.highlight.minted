@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Fast PImpl (упрощенно)}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{FastWidget}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Резервируем память внутри объекта (на стеке)}
+\PYG{+w}{    }\PYG{c+c1}{// Риск: если Impl станет больше 64 байт, придется менять хедер}
+\PYG{+w}{    }\PYG{k}{alignas}\PYG{p}{(}\PYG{l+m+mi}{8}\PYG{p}{)}\PYG{+w}{ }\PYG{k+kt}{unsigned}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{+w}{ }\PYG{n}{storage}\PYG{p}{[}\PYG{l+m+mi}{64}\PYG{p}{]}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Impl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Реализация будет placement new в этот буфер}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

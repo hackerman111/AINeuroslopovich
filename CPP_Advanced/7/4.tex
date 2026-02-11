@@ -1,0 +1,193 @@
+\chapter{Архитектура сборки и идиома Pimpl}
+
+C++ имеет архаичную модель компиляции, унаследованную от языка C. Программа состоит из набора единиц трансляции (Translation Units), которые компилируются независимо друг от друга, а затем связываются линковщиком. Заголовочные файлы (\texttt{.h}) работают через примитивную текстовую подстановку (\texttt{\#include}).
+
+Эта архитектура порождает проблему физических зависимостей. Любое изменение в заголовочном файле (даже в \texttt{private} секции класса) изменяет бинарный интерфейс (ABI) и контрольную сумму файла, вынуждая систему сборки перекомпилировать \textbf{все} \texttt{.cpp} файлы, которые (прямо или транзитивно) включают этот заголовок. В крупных проектах добавление одного поля \texttt{private int x;} в популярный хедер может вызвать "лавину пересборки" (Include Avalanche), занимающую часы.
+
+Идиома Pimpl (Pointer to Implementation) — это архитектурный паттерн, разрывающий эту зависимость путем выноса деталей реализации в отдельный класс, скрытый внутри единицы трансляции.
+
+\section{Анатомия Pimpl}
+
+Суть идиомы заключается в замене всех приватных полей класса на единственный непрозрачный указатель (Opaque Pointer) на структуру реализации.
+
+Рассмотрим класс \texttt{NetworkClient}, который использует тяжелую библиотеку \texttt{<asio.hpp>}.
+
+\textbf{Без Pimpl (NetworkClient.h):}
+\begin{cppcode}
+// Проблема: ВЕСЬ asio.hpp попадает к каждому пользователю NetworkClient
+#include <asio.hpp> 
+
+class NetworkClient {
+public:
+    void Connect(std::string_view url);
+private:
+    // Детали реализации "протекают" в интерфейс
+    asio::io_context context; 
+    asio::ip::tcp::socket socket;
+};
+\end{cppcode}
+
+Любой файл, включающий \texttt{NetworkClient.h}, будет вынужден парсить тысячи строк \texttt{asio.hpp}.
+
+\textbf{С применением Pimpl:}
+
+Мы объявляем структуру \texttt{Impl}, но не определяем её в хедере (Forward Declaration).
+
+\begin{cppcode}
+// NetworkClient.h
+#include <memory>
+#include <string_view>
+
+class NetworkClient {
+public:
+    NetworkClient();
+    ~NetworkClient(); // Важно: деструктор должен быть объявлен!
+    
+    void Connect(std::string_view url);
+
+private:
+    // Предварительное объявление (Forward Declaration)
+    class Impl; 
+    
+    // Указатель на неполный тип (Incomplete Type)
+    std::unique_ptr<Impl> pImpl;
+};
+\end{cppcode}
+
+Теперь хедер ничего не знает о \texttt{asio}. Зависимости переносятся в \texttt{.cpp} файл.
+
+\begin{cppcode}
+// NetworkClient.cpp
+#include "NetworkClient.h"
+#include <asio.hpp> // Тяжелый хедер инклюдится только здесь
+
+// Полное определение класса реализации
+class NetworkClient::Impl {
+public:
+    void ConnectInternal(std::string_view url) {
+        // Логика работы с asio
+    }
+    
+    asio::io_context context;
+    asio::ip::tcp::socket socket{context};
+};
+
+// Конструктор: создаем реализацию
+NetworkClient::NetworkClient() : pImpl(std::make_unique<Impl>()) {}
+
+// Деструктор: нужен для unique_ptr (см. далее)
+NetworkClient::~NetworkClient() = default;
+
+// Проксирование вызовов
+void NetworkClient::Connect(std::string_view url) {
+    pImpl->ConnectInternal(url);
+}
+\end{cppcode}
+
+\section{Проблема std::unique\_ptr и неполных типов}
+
+При использовании сырых указателей (\texttt{Impl*}) код выше скомпилировался бы без проблем. Однако ручное управление памятью (\texttt{new}/\texttt{delete}) в современном C++ недопустимо. Стандартом де-факто является \texttt{std::unique\_ptr}.
+
+Здесь возникает тонкий момент, связанный с генерацией деструктора.
+
+Если мы не объявим деструктор \texttt{\textasciitilde NetworkClient()} явно в хедере, компилятор попытается сгенерировать его автоматически как \texttt{inline} метод.
+Деструктор \texttt{std::unique\_ptr<Impl>} вызывает \texttt{default\_delete<Impl>}, который, в свою очередь, делает \texttt{delete ptr}.
+
+Для безопасного вызова \texttt{delete} компилятор должен видеть \textbf{полное определение типа} \texttt{Impl}. Если тип неполный (только forward declaration), оператор \texttt{delete} может вызвать Undefined Behavior (если у класса есть нетривиальный деструктор), поэтому \texttt{static\_assert} внутри \texttt{default\_delete} выдаст ошибку компиляции: \textit{"invalid application of sizeof to incomplete type"}.
+
+\begin{important}
+Если деструктор генерируется в хедере (автоматически или явно через \texttt{= default}), тип \texttt{Impl} еще не определен, и компиляция падает.
+\end{important}
+
+\textbf{Решение:}
+1. Объявить деструктор в хедере: \texttt{\textasciitilde NetworkClient();}
+2. Определить его в \texttt{.cpp} файле, \textbf{после} того как определен класс \texttt{Impl}: \texttt{NetworkClient::\textasciitilde NetworkClient() = default;}
+
+В этой точке (в \texttt{.cpp}) тип \texttt{Impl} уже является полным (Complete Type), и \texttt{unique\_ptr} может корректно сгенерировать код удаления.
+
+\section{Fast Pimpl: Избавление от аллокации}
+
+Классический Pimpl с \texttt{unique\_ptr} имеет недостаток производительности: каждый объект требует динамической аллокации памяти (heap allocation). Это создает нагрузку на аллокатор и снижает локальность данных (Pointer Chasing).
+
+Техника \textbf{Fast Pimpl} позволяет разместить объект реализации прямо внутри основного объекта (на стеке или внутри его layout), сохраняя инкапсуляцию.
+
+Для этого используется буфер сырой памяти (\texttt{std::aligned\_storage} или массив \texttt{std::byte}), размер и выравнивание которого совпадают с скрытым классом \texttt{Impl}.
+
+\subsection{Реализация Fast Pimpl}
+
+В хедере мы резервируем место "вслепую". Нам приходится угадывать размер реализации или фиксировать его константой.
+
+\begin{cppcode}
+// Header
+#include <new> // для std::launder и placement new
+#include <type_traits>
+
+class FastWidget {
+public:
+    FastWidget();
+    ~FastWidget();
+    void DoWork();
+
+private:
+    struct Impl; // Только объявление
+    
+    // Константы подбираются экспериментально
+    static constexpr size_t ImplSize = 64; 
+    static constexpr size_t ImplAlign = 8;
+    
+    // Сырой буфер памяти
+    alignas(ImplAlign) std::byte storage[ImplSize];
+    
+    // Вспомогательный метод для каста
+    Impl* GetImpl() {
+        return reinterpret_cast<Impl*>(&storage);
+    }
+};
+\end{cppcode}
+
+В файле реализации мы обязаны проверить, что наши догадки о размере верны, и инициализировать объект через \textit{Placement New}.
+
+\begin{cppcode}
+// CPP file
+class FastWidget::Impl {
+    int data[10]; 
+    // ... поля реализации
+};
+
+// Критическая проверка: если Impl вырастет, компиляция упадет
+static_assert(sizeof(FastWidget::Impl) <= sizeof(FastWidget::storage), 
+              "Storage size is too small for Impl");
+static_assert(alignof(FastWidget::Impl) <= alignof(FastWidget::storage),
+              "Alignment mismatch");
+
+FastWidget::FastWidget() {
+    // Placement new: конструируем объект в буфере storage
+    new (&storage) Impl();
+}
+
+FastWidget::~FastWidget() {
+    // Явный вызов деструктора обязателен!
+    GetImpl()->~Impl();
+}
+
+void FastWidget::DoWork() {
+    GetImpl()->DoWorkInternal();
+}
+\end{cppcode}
+
+\subsection{Trade-offs Fast Pimpl}
+
+\begin{itemize}
+    \item \textbf{Преимущество:} Нулевая аллокация в куче. Лучшая локальность кэша (данные лежат рядом).
+    \item \textbf{Недостаток 1:} Сложность поддержки. При добавлении полей в \texttt{Impl} может сработать \texttt{static\_assert}, и придется вручную править константы размера в хедере.
+    \item \textbf{Недостаток 2:} Работа с сырой памятью опасна. Забытый вызов деструктора приведет к утечке ресурсов (если \texttt{Impl} держит дескрипторы).
+    \item \textbf{Недостаток 3:} Strict Aliasing. Использование \texttt{reinterpret\_cast} требует осторожности. В C++17 для легального доступа к объекту, созданному через placement new, желательно использовать \texttt{std::launder}, хотя в данном простом случае доступ через указатель на storage работает на практике.
+\end{itemize}
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Pimpl} разрывает зависимость компиляции, скрывая реализацию за указателем. Это ускоряет сборку и обеспечивает стабильность ABI.
+    \item Использование \textbf{std::unique\_ptr} с Pimpl требует определения деструктора в \texttt{.cpp} файле, чтобы тип реализации был полным.
+    \item \textbf{Fast Pimpl} использует буфер на стеке (\texttt{alignas}) вместо кучи, убирая оверхед аллокации, но требует ручного управления жизненным циклом (placement new, явный вызов деструктора) и контроля размеров (\texttt{static\_assert}).
+\end{itemize}
+\end{summary}

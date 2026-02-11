@@ -1,0 +1,17 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Buffer}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{Buffer}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// ОПАСНО!}
+\PYG{+w}{        }\PYG{n}{size}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// 1. Установили размер}
+\PYG{+w}{        }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{p}{[}\PYG{n}{n}\PYG{p}{]}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// 2. Пытаемся выделить память}
+\PYG{+w}{        }\PYG{c+c1}{// Если new бросит std::bad\PYGZus{}alloc:}
+\PYG{+w}{        }\PYG{c+c1}{// \PYGZhy{} Конструктор прервется.}
+\PYG{+w}{        }\PYG{c+c1}{// \PYGZhy{} Деструктор НЕ будет вызван (объект не достроен).}
+\PYG{+w}{        }\PYG{c+c1}{// \PYGZhy{} У нас остался \PYGZdq{}объект\PYGZdq{} с size \PYGZgt{} 0, но без памяти.}
+\PYG{+w}{        }\PYG{c+c1}{// Хотя самого объекта технически нет, это нарушение логики построения.}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

@@ -1,0 +1,20 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{n}{Node}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{\PYGZob{}}\PYG{k}{nullptr}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{Push}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Node}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{new\PYGZus{}node}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Node}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Фаза 1: Читаем текущую голову}
+\PYG{+w}{    }\PYG{n}{new\PYGZus{}node}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{next}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Фаза 2: Пытаемся подменить голову на нашу новую ноду}
+\PYG{+w}{    }\PYG{c+c1}{// Если head изменился (кто\PYGZhy{}то успел сделать push/pop),}
+\PYG{+w}{    }\PYG{c+c1}{// CAS обновит new\PYGZus{}node\PYGZhy{}\PYGZgt{}next актуальным значением head}
+\PYG{+w}{    }\PYG{c+c1}{// и мы попробуем снова.}
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{head}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}weak}\PYG{p}{(}\PYG{n}{new\PYGZus{}node}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{next}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{new\PYGZus{}node}\PYG{p}{,}
+\PYG{+w}{                                       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}release}\PYG{p}{,}
+\PYG{+w}{                                       }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Тело цикла пустое, вся работа в условии}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

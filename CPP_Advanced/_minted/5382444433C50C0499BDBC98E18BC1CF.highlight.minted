@@ -1,0 +1,7 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Pre\PYGZhy{}C++11 стиль}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{temp}\PYG{p}{;}
+\PYG{n}{LoadBigData}\PYG{p}{(}\PYG{n}{temp}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Передача по ссылке (out\PYGZhy{}parameter)}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{my\PYGZus{}data}\PYG{p}{;}
+\PYG{n}{my\PYGZus{}data}\PYG{p}{.}\PYG{n}{swap}\PYG{p}{(}\PYG{n}{temp}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Обмен указателями за O(1)}
+\end{MintedVerbatim}

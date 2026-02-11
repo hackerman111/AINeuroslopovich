@@ -1,0 +1,238 @@
+\chapter{Механика C++20: Триада Promise, Handle, Return Object}
+
+C++20 предоставляет самый мощный, но и самый низкоуровневый API для корутин среди популярных языков программирования. В то время как Python или C\# скрывают механизмы управления состоянием за простыми ключевыми словами, C++ заставляет разработчика самостоятельно проектировать поведение корутины.
+
+Это сделано намеренно: стандарт C++20 определяет не «корутины» как готовую фичу (feature), а «фреймворк для создания корутин». В этой главе мы разберем анатомию этого фреймворка, состоящего из трех взаимосвязанных сущностей: \textbf{Promise Type}, \textbf{Coroutine Handle} и \textbf{Return Object}.
+
+\section{Синтаксис и ключевые слова}
+
+Корутина в C++ определяется не сигнатурой функции, а её телом. Если в теле функции встречается хотя бы одно из следующих ключевых слов, компилятор автоматически считает её корутиной и применяет трансформацию в конечный автомат:
+
+\begin{itemize}
+    \item \texttt{co\_await <expr>} — приостановить исполнение до завершения асинхронной операции.
+    \item \texttt{co\_yield <expr>} — вернуть промежуточное значение и приостановиться (генератор).
+    \item \texttt{co\_return <expr>} — завершить выполнение корутины и вернуть финальный результат.
+\end{itemize}
+
+\begin{note}
+\textbf{Почему префикс `co\_`?}
+При разработке стандарта (C++20) возникла проблема обратной совместимости. Миллионы строк кода уже использовали переменные с именами `await`, `yield` или `return`. Введение таких ключевых слов сломало бы существующий код. Комитет выбрал префикс `co\_` (от coroutine). Существует шутка, что это также напоминает химическую формулу угарного газа (CO), намекая на опасность неправильного использования этого механизма.
+\end{note}
+
+\section{Архитектура Триады}
+
+Чтобы функция могла стать корутиной, её возвращаемый тип должен удовлетворять особому контракту. Этот контракт связывает три объекта.
+
+\subsection{1. Promise Type (Обещание)}
+Это «мозг» корутины. Пользовательский тип, который живет внутри фрейма корутины.
+\begin{itemize}
+    \item Хранит входные аргументы и локальные переменные (если они перемещены во фрейм).
+    \item Аккумулирует результаты (`co\_yield` или `co\_return` пишут данные сюда).
+    \item Определяет точки остановки при старте и завершении.
+    \item Обрабатывает исключения, вылетевшие из тела корутины.
+\end{itemize}
+
+\subsection{2. Return Object (Возвращаемый объект)}
+Это «интерфейс» для вызывающего кода (Caller). То, что возвращает функция-корутина.
+\begin{itemize}
+    \item Обычно реализует паттерн RAII: владеет корутиной и уничтожает её в деструкторе.
+    \item Предоставляет методы для внешнего управления: `next()`, `get()`, `future.wait()`.
+    \item Создается внутри Promise в самом начале работы.
+\end{itemize}
+
+\subsection{3. Coroutine Handle (Ручка)}
+Это низкоуровневый «указатель» (`void*` wrapper) на фрейм корутины. Предоставляется стандартной библиотекой (`std::coroutine\_handle`).
+\begin{itemize}
+    \item Позволяет возобновить (`resume`) или уничтожить (`destroy`) корутину.
+    \item Позволяет получить доступ к Promise извне (`handle.promise()`).
+    \item Передается между Promise и Return Object как связующее звено.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{tcolorbox}[colback=white, colframe=nordDark, title=Схема взаимодействия]
+\textbf{Compiler} $\xrightarrow{\text{creates}}$ \textbf{Frame (Heap)} \\
+Внутри Frame живет \textbf{Promise}. \\
+\textbf{Promise} $\xrightarrow{\text{creates}}$ \textbf{Return Object}. \\
+\textbf{Return Object} содержит \textbf{Handle}, указывающий на Frame. \\
+Caller владеет \textbf{Return Object}.
+\end{tcolorbox}
+\end{figure}
+
+\section{Алгоритм запуска корутины (Under the hood)}
+
+Когда вы вызываете корутину `my\_coro()`, компилятор генерирует следующий код (упрощенно):
+
+\begin{cppcode}
+// Псевдокод того, что делает компилятор
+RetType my_coro_transformed(Args... args) {
+    // 1. Выделение памяти под фрейм (через operator new)
+    // Размер вычисляется компилятором (Promise + Locals + Save points)
+    void* frame_mem = allocate_frame(sizeof(Frame));
+    
+    // 2. Конструирование Promise в этой памяти
+    using P = RetType::promise_type; // Магия поиска типа!
+    P* promise = new (frame_mem) P(args...);
+    
+    // 3. Создание Return Object, который уйдет наружу
+    RetType return_val = promise->get_return_object();
+    
+    // 4. Начальная приостановка
+    try {
+        co_await promise->initial_suspend(); 
+        // Если suspend_always -> возврат управления caller'у сразу.
+        // Если suspend_never -> выполнение тела до первого реального await.
+        
+        // ... выполнение тела корутины ...
+        
+    } catch (...) {
+        promise->unhandled_exception();
+    }
+    
+    // 5. Финальная стадия
+    co_await promise->final_suspend();
+    
+    return return_val; // Возврат объекта, созданного на шаге 3
+}
+\end{cppcode}
+
+Этот алгоритм жестко зашит в компилятор. Мы не можем его изменить, но мы можем настроить каждый шаг, реализуя методы в `promise\_type`.
+
+\section{Реализация Hello World (Resumable)}
+
+Напишем минимальную корутину, которая выводит "Hello", приостанавливается, а при возобновлении выводит "World".
+
+Для этого нам нужно определить тип возвращаемого значения `Resumable`. Компилятор будет искать в нем вложенный тип `promise\_type`.
+
+\begin{cppcode}[]
+#include <coroutine>
+#include <iostream>
+#include <exception>
+
+// 1. Return Object - то, что видит пользователь
+struct Resumable {
+    // Обязательное объявление promise_type
+    struct promise_type; 
+    
+    // Храним handle для управления
+    using handle_type = std::coroutine_handle<promise_type>;
+    handle_type handle_;
+
+    Resumable(handle_type h) : handle_(h) {}
+    
+    // RAII: Уничтожаем корутину при выходе
+    ~Resumable() {
+        if (handle_) handle_.destroy();
+    }
+
+    // Метод для ручного возобновления
+    void resume() {
+        if (handle_ && !handle_.done()) {
+            handle_.resume(); // Переход управления внутрь корутины
+        }
+    }
+    
+    // 2. Promise Type - внутренняя кухня
+    struct promise_type {
+        // Шаг 3 алгоритма: создание Resumable
+        Resumable get_return_object() {
+            return Resumable{handle_type::from_promise(*this)};
+        }
+
+        // Шаг 4: Start Policy
+        // suspend_always = Ленивый старт. Корутина создается, но тело не запускается.
+        std::suspend_always initial_suspend() { return {}; }
+
+        // Шаг 5: End Policy
+        // suspend_always = Не уничтожать фрейм автоматически после завершения.
+        // Это важно, чтобы мы могли проверить .done() снаружи.
+        std::suspend_always final_suspend() noexcept { return {}; }
+
+        // Обработка исключений
+        void unhandled_exception() { std::terminate(); }
+        
+        // Обработка co_return (для void корутин)
+        void return_void() {} 
+    };
+};
+
+// Сама функция-корутина
+Resumable hello_coro() {
+    std::cout << "Hello, ";
+    co_await std::suspend_always{}; // Явная приостановка
+    std::cout << "World!" << std::endl;
+} // Здесь неявный co_return, вызывающий promise.return_void()
+
+int main() {
+    // 1. Создание корутины. Выполняется initial_suspend.
+    Resumable coro = hello_coro(); 
+    
+    std::cout << "Main: Coroutine created." << std::endl;
+    
+    // 2. Первый resume. Выполняется "Hello, " и остановка на co_await.
+    coro.resume(); 
+    
+    std::cout << "Main: Coroutine suspended." << std::endl;
+    
+    // 3. Второй resume. Выполняется "World!" и выход.
+    coro.resume();
+    
+    std::cout << "Main: Coroutine finished." << std::endl;
+    
+    return 0; // Деструктор ~Resumable уничтожит фрейм
+}
+\end{cppcode}
+
+\section{Анализ Boilerplate-кода}
+
+Разберем ключевые методы `promise\_type`, которые мы реализовали.
+
+\subsection{get\_return\_object()}
+Этот метод вызывается до начала исполнения тела корутины. Его задача — создать объект `Resumable`, связав его с текущим просимом.
+\begin{itemize}
+    \item `std::coroutine\_handle<promise\_type>::from\_promise(*this)` — магический метод, который вычисляет адрес начала фрейма, зная адрес просиса (они лежат в памяти рядом).
+\end{itemize}
+
+\subsection{initial\_suspend()}
+Определяет стратегию запуска.
+\begin{itemize}
+    \item Возврат `std::suspend\_always`: Корутина создается в замороженном состоянии. Тело не выполняется ни на шаг. Это типично для генераторов (ленивые вычисления).
+    \item Возврат `std::suspend\_never`: Корутина сразу начинает выполнение (Eager execution) до первого `co\_await`. Это типично для асинхронных задач (Tasks), которые должны начать работу немедленно (например, отправить сетевой запрос).
+\end{itemize}
+
+\subsection{final\_suspend()}
+Определяет поведение при достижении закрывающей фигурной скобки `\}`.
+\begin{itemize}
+    \item \texttt{suspend\_never}: Фрейм корутины уничтожается автоматически сразу после завершения тела. Это опасно, если у нас остался `handle` снаружи — он станет висячим (dangling). Используется для "Fire and Forget" корутин.
+    \item \texttt{suspend\_always}: Корутина "зависает" в финальной точке. Фрейм и переменные внутри Promise остаются живыми. Это позволяет вызывающему коду безопасно считать результат или проверить статус `.done()`. Обязанность уничтожить фрейм ложится на `handle.destroy()`.
+\end{itemize}
+
+\section{std::coroutine\_handle}
+
+Это типизированная обертка над `void*`.
+
+\begin{cppcode}
+template <typename Promise = void>
+struct coroutine_handle;
+\end{cppcode}
+
+\begin{itemize}
+    \item `resume()`: Восстанавливает регистры и переходит по адресу приостановки (хранится во фрейме). Если корутина завершена (`done() == true`), вызов `resume()` — это Undefined Behavior (часто краш).
+    \item `done()`: Проверяет, находится ли корутина в точке `final\_suspend`.
+    \item `destroy()`: Принудительно вызывает деструкторы объектов во фрейме и освобождает память.
+    \item `promise()`: Возвращает ссылку на `Promise` объект. Доступно только для типизированного хендла (`Promise != void`).
+\end{itemize}
+
+\begin{important}
+`coroutine\_handle` не является RAII-объектом. Он ведет себя как сырой указатель. Если вы потеряете хендл и не вызовете `destroy()`, произойдет утечка памяти (фрейм останется в куче). Именно поэтому мы оборачиваем его в класс `Resumable`.
+\end{important}
+
+\begin{summary}
+C++20 предоставляет конструктор, а не готовое здание.
+\begin{enumerate}
+    \item \textbf{Promise} определяет семантику (ленивая/жадная, генератор/задача).
+    \item \textbf{Return Object} инкапсулирует владение (RAII).
+    \item \textbf{Handle} обеспечивает механику переключения.
+\end{enumerate}
+Правильная реализация `initial\_suspend` и `final\_suspend` критически важна для корректного управления памятью и временем жизни корутины.
+\end{summary}

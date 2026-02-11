@@ -1,0 +1,17 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Deque}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{c+c1}{// Параметры чанка}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{CHUNK\PYGZus{}SIZE}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{512}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{k}{sizeof}\PYG{p}{(}\PYG{n}{T}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Центральная \PYGZdq{}карта\PYGZdq{} \PYGZhy{} массив указателей на блоки}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{map\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{map\PYGZus{}size\PYGZus{}}\PYG{p}{;}\PYG{+w}{    }\PYG{c+c1}{// Размер самой карты (емкость указателей)}
+
+\PYG{+w}{    }\PYG{c+c1}{// Итераторы начала и конца}
+\PYG{+w}{    }\PYG{c+c1}{// Хранят индекс в карте + индекс внутри конкретного чанка}
+\PYG{+w}{    }\PYG{n}{iterator}\PYG{+w}{ }\PYG{n}{start\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{iterator}\PYG{+w}{ }\PYG{n}{finish\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

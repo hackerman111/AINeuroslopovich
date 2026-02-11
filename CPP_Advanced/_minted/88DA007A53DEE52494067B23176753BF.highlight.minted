@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{Wrapper}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{text}\PYG{p}{)}
+\PYG{+w}{    }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{str\PYGZus{}}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{text}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{c+c1}{// Правильно: вызывается MOVE constructor}
+\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

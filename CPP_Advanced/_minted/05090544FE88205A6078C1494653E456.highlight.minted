@@ -1,0 +1,27 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Header}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}new\PYGZgt{}}\PYG{c+c1}{ // для std::launder и placement new}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}type\PYGZus{}traits\PYGZgt{}}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{FastWidget}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{FastWidget}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{FastWidget}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{DoWork}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Impl}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Только объявление}
+
+\PYG{+w}{    }\PYG{c+c1}{// Константы подбираются экспериментально}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{ImplSize}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{64}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{ImplAlign}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{8}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Сырой буфер памяти}
+\PYG{+w}{    }\PYG{k}{alignas}\PYG{p}{(}\PYG{n}{ImplAlign}\PYG{p}{)}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{byte}\PYG{+w}{ }\PYG{n}{storage}\PYG{p}{[}\PYG{n}{ImplSize}\PYG{p}{]}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Вспомогательный метод для каста}
+\PYG{+w}{    }\PYG{n}{Impl}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{GetImpl}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{n}{Impl}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{storage}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

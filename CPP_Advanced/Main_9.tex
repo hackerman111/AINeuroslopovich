@@ -1,0 +1,314 @@
+%!TEX program = xelatex
+\documentclass[a4paper, oneside, 12pt]{book}
+
+
+% =========================================================
+% 1. НАСТРОЙКИ СТРАНИЦЫ И ШРИФТОВ
+% =========================================================
+\usepackage{geometry}
+\geometry{top=1.5cm, bottom=1.5cm, left=1.5cm, right=1.5cm}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+
+\setdefaultlanguage{russian}
+\setotherlanguage{english}
+
+% --- ШРИФТЫ ---
+% Используем Roboto и JetBrains Mono. Если их нет, TeX выдаст ошибку.
+% В таком случае замените на Arial / Courier New или установите шрифты.
+\setmainfont{Roboto}[
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic
+]
+\setsansfont{Roboto}[
+    UprightFont = *-Regular,
+    BoldFont = *-Bold,
+    ItalicFont = *-Italic
+]
+\setmonofont{JetBrains Mono}[
+    Scale=0.9,
+    Contextuals=Alternate
+]
+
+% Фикс для кириллицы в Polyglossia (обязательно!)
+\newfontfamily\cyrillicfont{Roboto}[UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Italic]
+\newfontfamily\cyrillicfontsf{Roboto}[UprightFont=*-Regular, BoldFont=*-Bold, ItalicFont=*-Italic]
+\newfontfamily\cyrillicfonttt{JetBrains Mono}[Scale=0.9]
+
+% =========================================================
+% 2. ЦВЕТОВАЯ ПАЛИТРА (Nord Theme)
+% =========================================================
+\usepackage{xcolor}
+
+% Основные цвета
+\definecolor{nordDark}{HTML}{2E3440}    % Текст
+\definecolor{nordLight}{HTML}{ECEFF4}   % Фон страницы (если нужно) или баджей
+\definecolor{nordCodeBg}{HTML}{F7F9FB}  % Фон кода (очень светлый)
+\definecolor{nordBorder}{HTML}{E5E9F0}  % Рамки
+
+% Акценты
+\definecolor{nordBlue}{HTML}{5E81AC}    % Определения, Ссылки
+\definecolor{nordOrange}{HTML}{D08770}  % Заметки
+\definecolor{nordRed}{HTML}{BF616A}     % Важно / Ошибки
+\definecolor{nordPurple}{HTML}{B48EAD}  % Резюме / Итоги
+\definecolor{nordGreen}{HTML}{A3BE8C}   % Советы (опционально)
+
+\color{nordDark} % Установка основного цвета текста
+
+% =========================================================
+% 3. ССЫЛКИ (HYPERREF)
+% =========================================================
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+    colorlinks=true,        % Красить текст, а не делать рамку
+    linkcolor=nordBlue,     % Цвет внутренних ссылок (toc, ref)
+    urlcolor=nordBlue,      % Цвет внешних ссылок
+    citecolor=nordBlue,
+    pdftitle={C++ Notes},
+    pdfauthor={Author}
+}
+
+% =========================================================
+% 4. БЛОКИ И КОД (TCOLORBOX + MINTED)
+% =========================================================
+\usepackage[most, minted]{tcolorbox}
+
+% --- Общие стили (вынесены, чтобы избежать ошибок) ---
+\tcbset{
+    % Стиль для кода C++
+    cppstyle/.style={
+        listing engine=minted,
+        sharp corners,
+        minted language=cpp,
+        colback=nordCodeBg,
+        colframe=nordBorder,
+        coltitle=nordDark,
+        fonttitle=\bfseries,
+        enhanced,   % Обязательно для breakable
+        breakable,  % <--- ДОБАВИТЬ ЭТУ СТРОКУ
+        boxrule=0.5pt,
+        arc=6pt,
+        left=8mm, right=4mm, top=3mm, bottom=3mm,
+        listing only,
+        enhanced,
+        minted options={
+            fontsize=\small,
+            breaklines,
+            autogobble,
+            linenos,
+            numbersep=3mm,
+            style=friendly % Варианты: friendly, xcode, pastie
+        }
+    },
+    % Стиль для "кнопки" ссылки
+    badgestyle/.style={
+        on line,
+        arc=3pt,
+        colback=nordLight,
+        colframe=nordLight,
+        boxrule=0pt,
+        boxsep=0pt,
+        left=3pt, right=3pt, top=2pt, bottom=2pt,
+        fontupper=\sffamily\footnotesize\bfseries
+    }
+}
+
+% 1. Окружение для кода
+\newtcblisting{cppcode}[1][]{cppstyle, #1}
+
+% 2. Макрос для красивой ссылки на стандарт
+% Использование: \stdref{URL}{Название}
+\newtcbox{\stdlinkbox}{badgestyle}
+\newcommand{\stdref}[2]{%
+    \href{#1}{\stdlinkbox{\textcolor{nordBlue}{#2 $\nearrow$}}}%
+}
+
+\newtcblisting{pythoncode}[2][]{
+    listing engine=minted,       % Используем движок minted
+    minted language=python,      % Язык - Python
+    listing only,                % Показываем только код (без результата выполнения)
+    title={#2},                  % Заголовок (аргумент 2)
+    % --- Оформление ---
+    colback=black!5!white,       % Цвет фона (очень светло-серый)
+    colframe=blue!50!black,      % Цвет рамки (темно-синий)
+    coltitle=white,              % Цвет текста заголовка
+    fonttitle=\bfseries,         % Жирный шрифт заголовка
+    % --- Настройки подсветки (minted) ---
+    minted options={
+        linenos,                 % Номера строк
+        breaklines,              % Перенос длинных строк
+        tabsize=4,               % Размер табуляции
+        fontsize=\small,         % Размер шрифта кода
+    },
+    % --- Эстетика рамки ---
+    enhanced,                    % Включаем расширенные настройки рисования
+    drop shadow,                 % Тень
+    #1                           % Сюда пойдут дополнительные опции при вызове
+}
+% 3. Определение (Definition) - Синий
+\newtcolorbox{definition}[2][]{
+    colback=white,
+    colframe=nordBlue,
+    coltitle=nordBlue,
+    title={#2},
+    fonttitle=\bfseries\sffamily,
+    sharp corners, rounded corners=southeast, rounded corners=northeast,
+    arc=4pt,
+    boxrule=0pt,
+    leftrule=3pt,
+    left=4mm, right=4mm, top=2mm, bottom=2mm,
+    parbox=false,
+    enhanced,
+    frame hidden,
+    borderline west={3pt}{0pt}{nordBlue},
+    #1
+}
+
+% 4. Заметка (Note) - Оранжевый
+\newtcolorbox{note}[1][]{
+    colback=nordOrange!10,
+    colframe=nordOrange,
+    boxrule=0pt,
+    arc=6pt,
+    left=4mm, right=4mm, top=3mm, bottom=3mm,
+    parbox=false,
+    title={\textbf{На заметку}},
+    coltitle=nordOrange!40!black,
+    detach title,
+    before upper={\tcbtitle\par\vspace{3pt}},
+    #1
+}
+
+% 5. Важно (Important) - Красный
+\newtcolorbox{important}[1][]{
+    colback=nordRed!8,
+    colframe=nordRed,
+    boxrule=0pt,
+    leftrule=3pt,
+    arc=4pt,
+    left=4mm, right=4mm, top=3mm, bottom=3mm,
+    parbox=false,
+    title={\textbf{\textsc{Важно!}}},
+    coltitle=nordRed,
+    fonttitle=\bfseries\sffamily,
+    enhanced,
+    frame hidden,
+    borderline west={3pt}{0pt}{nordRed},
+    #1
+}
+
+% 6. Резюме (Summary) - Фиолетовый
+\newtcolorbox{summary}[1][]{
+    colback=nordPurple!10,
+    colframe=nordPurple,
+    boxrule=0pt,
+    arc=6pt,
+    left=4mm, right=4mm, top=4mm, bottom=4mm,
+    parbox=false,
+    title={\centering\textbf{Резюме раздела}},
+    coltitle=nordPurple!40!black,
+    detach title,
+    before upper={\tcbtitle\par\vspace{5pt}{\color{nordPurple!50}\hrule height 1pt}\vspace{5pt}},
+    #1
+}
+
+% =========================================================
+% 5. ПСЕВДОКОД И ТИПОГРАФИКА
+% =========================================================
+\usepackage[ruled, vlined, linesnumbered]{algorithm2e}
+\SetAlFnt{\small\sffamily}
+\SetKwComment{Comment}{// }{}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{gray}{#1}}
+\SetCommentSty{mycommfont}
+\setlength{\algomargin}{1.5em}
+
+\usepackage{parskip} % Отступы между абзацами
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{import}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+% Заголовки (Sans Serif)
+\titleformat{\section}{\Large\bfseries\sffamily\color{nordDark}}{}{0em}{}
+\titleformat{\subsection}{\large\bfseries\sffamily\color{nordDark!80}}{}{0em}{}
+
+
+% =========================================================
+% НАЧАЛО ДОКУМЕНТА
+% =========================================================
+\begin{document}
+% =========================================================
+% ОБЛОЖКА (COVER PAGE) - NORD STYLE
+% =========================================================
+\begin{titlepage}
+    % Убираем отступы для фона на всю страницу
+    \newgeometry{left=0cm, right=0cm, top=0cm, bottom=0cm}
+    
+    \begin{tikzpicture}[remember picture, overlay]
+        % 1. Левая темная панель (nordDark)
+        \fill[nordDark] (current page.north west) rectangle ([xshift=7cm]current page.south west);
+        
+        % 2. Тонкая разделительная линия (nordBlue)
+        \fill[nordBlue] ([xshift=7cm]current page.north west) rectangle ([xshift=7.2cm]current page.south west);
+        
+        % 3. Фоновый декоративный элемент "C++" (полупрозрачный)
+        \node[text=nordLight, opacity=0.05, rotate=0, anchor=south east] 
+            at ([xshift=-1cm, yshift=2cm]current page.south east) 
+            {\fontsize{200}{200}\bfseries\sffamily ++};
+
+        % --- КОНТЕНТ В ЛЕВОЙ ПАНЕЛИ ---
+        \node[anchor=north west, text width=6cm, align=flush left] 
+            at ([xshift=0.8cm, yshift=-3cm]current page.north west) {
+            
+            \vspace{1cm}
+            % Логотип или название вуза
+            {\color{nordBlue}\sffamily\bfseries\Large HSE \par}
+            \vspace{0.2cm}
+            {\color{nordLight}\sffamily\small Faculty of Computer Science \par}
+            
+            \vspace{10cm}
+            
+            % Автор
+            {\color{nordBlue}\sffamily\bfseries\small AUTHOR \par}
+            {\color{nordLight}\sffamily\Large Your Name \par}
+            
+            \vspace{1cm}
+            
+            % Курс / Семестр
+            {\color{nordBlue}\sffamily\bfseries\small COURSE \par}
+            {\color{nordLight}\sffamily Advanced C++ \par}
+            {\color{nordLight}\sffamily Fall 2023 \par}
+        };
+    \end{tikzpicture}
+
+    % --- КОНТЕНТ В ПРАВОЙ ЧАСТИ ---
+    \vspace{6cm}
+    \hspace{7.5cm} % Сдвиг вправо, чтобы не наехать на синюю полосу
+    \begin{minipage}{11cm}
+        % ЗАГОЛОВОК
+        {\fontsize{50}{60}\bfseries\sffamily\color{nordDark} 
+        Конспект\\[0.2em] 
+        углубленного курса\\[0.2em] 
+        по C++ \par}
+        
+        \vspace{0.5cm}
+        % Линия под заголовком
+        {\color{nordBlue}\hrule height 2pt width 5cm} 
+        \vspace{0.8cm}
+        
+        
+        \vspace{3cm}
+        
+        
+    \end{minipage}
+    % Возвращаем нормальные отступы для остального документа
+    \restoregeometry
+\end{titlepage}
+
+\tableofcontents
+\part{Лекция 09 – Condition variable}
+\import{9/}{main_9.tex}
+\end{document}

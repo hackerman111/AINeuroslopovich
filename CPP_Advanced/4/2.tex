@@ -1,0 +1,252 @@
+\chapter{Шаблонная магия: NTTP и дедукция типов}
+
+Система шаблонов C++ выходит далеко за рамки простой подстановки типов. Это полноценный тьюрин-полный язык, исполняемый на этапе компиляции. В этой главе мы рассмотрим механизмы параметризации значений (NTTP), революционные изменения C++20 в работе со строковыми литералами в шаблонах, а также тонкости вывода типов (deduction), которые часто становятся источником неочевидных ошибок.
+
+\section{Терминология: class vs typename}
+
+В объявлении параметров шаблона ключевые слова \texttt{class} и \texttt{typename} являются полностью взаимозаменяемыми.
+
+\begin{cppcode}[]
+template <class T> void foo(T t);     // Вариант 1
+template <typename T> void bar(T t);  // Вариант 2
+\end{cppcode}
+
+С точки зрения компилятора разницы нет никакой. Исторически \texttt{class} появился раньше, но \texttt{typename} считается более семантически верным, так как параметром может быть не только класс, но и примитивный тип (например, \texttt{int}). В современном C++ предпочтение отдается \texttt{typename}, однако в существующем коде вы встретите оба варианта.
+
+\begin{note}
+Ключевое слово \texttt{struct} в параметрах шаблона использовать нельзя.
+\end{note}
+
+\section{Non-Type Template Parameters (NTTP)}
+
+Шаблоны могут принимать не только типы, но и значения. Это называется \textit{Non-Type Template Parameters} (NTTP). До стандарта C++20 список допустимых типов для NTTP был строго ограничен:
+\begin{itemize}
+    \item Целочисленные типы (int, long, char, bool и т.д.).
+    \item Перечисления (enum).
+    \item Указатели и ссылки на объекты со статической продолжительностью жизни (редко используется).
+    \item \texttt{std::nullptr\_t}.
+\end{itemize}
+
+Классический пример использования NTTP — контейнер \texttt{std::array}, размер которого должен быть известен на этапе компиляции:
+
+\begin{cppcode}[]
+template <typename T, size_t N>
+struct Array {
+    T data[N];
+};
+
+Array<int, 5> arr; // N = 5 подставляется при компиляции
+\end{cppcode}
+
+Значение NTTP является константой времени компиляции. Попытка передать runtime-значение приведет к ошибке компиляции.
+
+\section{Революция C++20: Structural Types}
+
+До C++20 передать строковый литерал или объект пользовательского класса в качестве параметра шаблона было невозможно.
+
+\begin{cppcode}[]
+// C++17: Ошибка компиляции
+template <auto S> struct Wrapper {};
+Wrapper<"Hello"> w; // Строковые литералы запрещены
+\end{cppcode}
+
+C++20 ослабил это ограничение, введя понятие \textit{Structural Types}. Теперь в качестве NTTP можно использовать классы, если они удовлетворяют ряду требований (в основном: все поля \texttt{public} и сами являются структурными типами/примитивами).
+
+Это открыло возможность передавать строки в шаблоны, предварительно обернув их в структурный тип \texttt{fixed\_string}.
+
+\subsection{Реализация fixed\_string}
+
+Для передачи строки \texttt{"text"} в шаблон, она должна быть скопирована в буфер внутри структурного типа во время компиляции.
+
+\begin{cppcode}[]
+template<size_t N>
+struct fixed_string {
+    char buf[N + 1]{}; // Публичный массив (обязательно)
+
+    constexpr fixed_string(char const* s) {
+        for (unsigned i = 0; i != N; ++i) buf[i] = s[i];
+    }
+    
+    // Оператор для удобного приведения к строке
+    constexpr operator char const*() const { return buf; }
+};
+
+// Deduction guide для вывода N из длины литерала
+template<size_t N> fixed_string(char const (&)[N]) -> fixed_string<N - 1>;
+\end{cppcode}
+
+Теперь мы можем использовать этот тип как NTTP:
+
+\begin{cppcode}[]
+template <fixed_string Str>
+struct Logger {
+    void Log() {
+        std::cout << "Prefix: " << Str.buf << "\n";
+    }
+};
+
+int main() {
+    // Работает в C++20!
+    // Компилятор создает уникальный тип Logger для строки "Debug"
+    Logger<"Debug"> logger; 
+    logger.Log();
+}
+\end{cppcode}
+
+\section{Case Study: Compile Time Regular Expressions (CTRE)}
+
+Главное применение расширенных NTTP — библиотека CTRE (Compile Time Regular Expressions). Традиционный \texttt{std::regex} парсит строку регулярного выражения в рантайме, строит конечный автомат (DFA/NFA) в динамической памяти, что крайне медленно.
+
+Благодаря возможности передать строку паттерна как шаблонный параметр, мы можем:
+\begin{enumerate}
+    \item Распарсить регулярное выражение на этапе компиляции (\texttt{constexpr}).
+    \item Построить конечный автомат как набор типов или switch-case конструкций.
+    \item Сгенерировать оптимизированный машинный код под конкретный паттерн.
+\end{enumerate}
+
+Примерный синтаксис (концептуально):
+
+\begin{cppcode}[]
+// Паттерн передается как NTTP
+auto match = ctre::match<"([0-9]+)-([a-z]+)">("123-abc");
+\end{cppcode}
+
+\begin{important}
+Здесь строка \texttt{"([0-9]+)-([a-z]+)"} обрабатывается компилятором. Если в регулярном выражении есть синтаксическая ошибка, программа \textbf{не скомпилируется}. Это дает гарантию корректности регулярных выражений до запуска программы.
+\end{important}
+
+Производительность такого решения на порядки выше \texttt{std::regex} и сравнима с лучшими JIT-движками (PCRE, RE2), но без оверхеда на инициализацию.
+
+\section{Вывод типов (Template Argument Deduction)}
+
+Компилятор умеет выводить шаблонные аргументы из аргументов функции. Однако этот механизм не производит неявных преобразований типов (implicit conversions), что часто сбивает с толку новичков.
+
+\subsection{Конфликт типов в std::max}
+
+Рассмотрим классическую ошибку:
+
+\begin{cppcode}[]
+void test() {
+    int a = 42;
+    unsigned int b = 100;
+    
+    // ОШИБКА КОМПИЛЯЦИИ:
+    // deduced conflicting types for parameter 'T' ('int' vs 'unsigned int')
+    auto m = std::max(a, b); 
+}
+\end{cppcode}
+
+Шаблон \texttt{std::max} объявлен как:
+\begin{cppcode}[]
+template <typename T>
+const T& max(const T& a, const T& b);
+\end{cppcode}
+
+Компилятор видит первый аргумент \texttt{int} и выводит \texttt{T = int}. Затем видит второй аргумент \texttt{unsigned int} и выводит \texttt{T = unsigned int}. Возникает конфликт. Компилятор не имеет права самовольно решать, какой тип "главнее" или шире, так как это может привести к потере данных (знаковости или точности).
+
+\textbf{Решения:}
+
+1. Явное указание типа (отключает вывод):
+\begin{cppcode}[]
+std::max<int>(a, b); // b приводится к int (опасно переполнением)
+// или
+std::max<unsigned>(a, b); // a приводится к unsigned
+\end{cppcode}
+
+2. Приведение аргументов (предпочтительно):
+\begin{cppcode}[]
+std::max(static_cast<unsigned>(a), b);
+\end{cppcode}
+
+3. Использование \texttt{std::common\_type} (C++20 подход):
+Если вы пишете свой шаблон, можно использовать трейт для вычисления общего типа.
+
+\section{CTAD: Class Template Argument Deduction}
+
+До C++17 при создании экземпляра шаблонного класса мы обязаны были указывать типы:
+
+\begin{cppcode}[]
+std::pair<int, double> p(1, 2.5); // C++14
+\end{cppcode}
+
+Начиная с C++17, компилятор умеет выводить параметры шаблона класса из аргументов конструктора. Это называется CTAD.
+
+\begin{cppcode}[]
+std::pair p(1, 2.5); // p имеет тип std::pair<int, double>
+std::vector v = {1, 2, 3}; // v имеет тип std::vector<int>
+\end{cppcode}
+
+\begin{note}
+CTAD работает только если вы создаете объект класса напрямую. Он \textbf{не работает} для алиасов типов (\texttt{using MyVec = std::vector; MyVec v = ...; // Ошибка}).
+\end{note}
+
+\section{Deduction Guides}
+
+Иногда автоматический вывод типов работает не так, как задумано, особенно при работе со ссылками. Стандартные правила вывода (decay) склонны отбрасывать ссылочность и константность, превращая типы в значения.
+
+Рассмотрим кастомный класс пары:
+
+\begin{cppcode}[]
+template <typename T, typename U>
+struct MyPair {
+    T first;
+    U second;
+    
+    MyPair(const T& t, const U& u) : first(t), second(u) {}
+};
+\end{cppcode}
+
+Использование CTAD:
+\begin{cppcode}[]
+int x = 10;
+const int& rx = x;
+
+MyPair p(rx, rx); 
+// T выведется как int, U как int.
+// Поля first и second будут копиями x.
+\end{cppcode}
+
+Если мы хотим, чтобы \texttt{MyPair} мог хранить ссылки, нам нужно подсказать компилятору, как выводить типы. Для этого используются \textit{Deduction Guides} (руководства по выводу).
+
+Синтаксис deduction guide (пишется вне класса, как свободная функция):
+\begin{cppcode}[]
+// deduction-guide:
+// Если конструктор вызывается с аргументами T и U, 
+// выводим тип класса как MyPair<T, U>.
+template <typename T, typename U>
+MyPair(T, U) -> MyPair<T, U>;
+\end{cppcode}
+
+Этот гайд, по сути, стандартный. Но предположим, мы хотим изменить поведение и форсировать создание ссылок для определенных ситуаций (что в общем случае опасно, но показательно).
+
+Создадим гайд, который сохраняет ссылочность аргументов:
+
+\begin{cppcode}[]
+// Опасный гайд: захватывает ссылки
+template <typename T, typename U>
+MyPair(const T&, const U&) -> MyPair<const T&, const U&>;
+\end{cppcode}
+
+Теперь:
+\begin{cppcode}[]
+int x = 5;
+MyPair p(x, x); 
+// Сработает гайд. T=int, U=int.
+// Результат вывода -> MyPair<const int&, const int&>.
+// p.first теперь ссылка на x.
+\end{cppcode}
+
+\begin{important}
+Deduction Guides часто необходимы, когда тип конструктора отличается от типа хранения. Например, конструктор принимает итераторы \texttt{It, It}, а класс должен быть \texttt{vector<typename iterator\_traits<It>::value\_type>}. Без явного гайда компилятор не сможет совершить этот скачок логики.
+\end{important}
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{class} и \texttt{typename} в параметрах шаблона эквивалентны.
+    \item NTTP позволяют передавать значения. С C++20 можно передавать строки через structural types (например, \texttt{fixed\_string}).
+    \item CTRE использует NTTP строки для compile-time парсинга регулярок.
+    \item Вывод типов функций (Deduction) не делает неявных приведений (\texttt{max(int, unsigned)} — ошибка).
+    \item CTAD позволяет опускать угловые скобки при создании классов: \texttt{pair(1, 2)}.
+    \item Deduction Guides позволяют корректировать логику CTAD, особенно для сложных преобразований (итераторы -> контейнер).
+\end{itemize}
+\end{summary}

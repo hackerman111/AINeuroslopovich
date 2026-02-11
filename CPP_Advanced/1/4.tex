@@ -1,0 +1,180 @@
+\chapter{Низкоуровневая работа с памятью: Placement New и Выравнивание}
+
+До этого момента мы рассматривали стандартные способы создания объектов: на стеке (автоматически) или в куче (через \texttt{new} или \texttt{std::make\_unique}). В обоих случаях компилятор и рантайм берут на себя две задачи одновременно:
+\begin{enumerate}
+    \item Выделение сырой памяти (allocation).
+    \item Конструирование объекта в этой памяти (construction).
+\end{enumerate}
+
+Однако в системном программировании, при написании собственных контейнеров (например, \texttt{std::vector}) или аллокаторов, эти этапы необходимо разделять. Нам нужно уметь создать объект в \textit{уже выделенной} памяти по конкретному адресу. Этот механизм называется \textbf{Placement New}.
+
+Это "черная магия" C++, открывающая ящик Пандоры с неопределенным поведением. Ошибиться здесь легко, а цена ошибки — трудноуловимые баги, связанные с выравниванием (alignment) и временем жизни.
+
+\section{Разделяющий властвуй: Placement New}
+
+Обычный оператор \texttt{new T(...)} делает две вещи: вызывает функцию выделения памяти (\texttt{operator new}), а затем вызывает конструктор.
+Placement New — это перегрузка оператора \texttt{new}, которая принимает дополнительный аргумент (адрес памяти) и \textbf{не выделяет память}, а просто вызывает конструктор по этому адресу.
+
+\subsection{Синтаксис и Жизненный цикл}
+
+Синтаксис выглядит так:
+\begin{cppcode}
+new (адрес) Тип(аргументы);
+\end{cppcode}
+Для использования необходимо подключить заголовок \texttt{<new>}.
+
+Рассмотрим полный цикл жизни объекта, созданного вручную. Поскольку память не выделялась через обычный \texttt{new}, мы не имеем права вызывать \texttt{delete}. Мы обязаны вызвать деструктор вручную.
+
+\begin{cppcode}[label={lst:placement_new_basic}]
+#include <new>
+#include <string>
+#include <iostream>
+
+int main() {
+    // 1. Выделяем сырую память (достаточную для хранения string)
+    // Внимание: здесь есть проблема с выравниванием (см. далее)!
+    char buffer[sizeof(std::string)];
+
+    // 2. Конструируем объект в буфере (Placement New)
+    std::string* s_ptr = new (buffer) std::string("Hello, Placement New!");
+
+    // 3. Используем объект
+    std::cout << *s_ptr << ", length: " << s_ptr->size() << std::endl;
+
+    // 4. ЯВНО вызываем деструктор
+    s_ptr->~basic_string();
+
+    // 5. Память буфера освободится автоматически (так как это стек)
+    // Если бы buffer был выделен malloc-ом, нужно было бы сделать free(buffer).
+}
+\end{cppcode}
+
+\begin{important}
+\textbf{Никогда} не вызывайте \texttt{delete s\_ptr} для объекта, созданного через placement new на стековом буфере или внутри другого объекта. Оператор \texttt{delete} попытается передать адрес буфера системному аллокатору памяти, который понятия не имеет об этом адресе (если это стек) или уже считает его занятым. Это гарантированный крэш или коррупция кучи.
+\end{important}
+
+\section{Выравнивание (Alignment)}
+
+В примере выше (\texttt{char buffer[...]}) мы допустили критическую ошибку, которая на архитектуре x86 может остаться незамеченной, но приведет к падению программы (SIGBUS) на ARM или SPARC, а также к существенному падению производительности.
+
+\subsection{Почему sizeof недостаточно?}
+Процессор работает с памятью не побайтово, а машинными словами (4, 8, 16 байт). Для эффективного (а иногда и корректного) доступа к данным адреса должны быть кратны размеру типа.
+\begin{itemize}
+    \item \texttt{int} (4 байта) обычно должен лежать по адресу, кратному 4.
+    \item Указатели (8 байт на 64-bit) — по адресу, кратному 8.
+    \item Векторные инструкции (SIMD, SSE/AVX) могут требовать выравнивания по 16, 32 или 64 байтам.
+\end{itemize}
+
+Массив \texttt{char buffer[N]} имеет выравнивание 1 (так как \texttt{alignof(char) == 1}). Он может начаться по любому адресу (например, 0x1001).
+Тип \texttt{std::string} внутри себя содержит указатели и счетчики размеров, требующие выравнивания 8 (на 64-битных системах).
+
+Если мы разместим \texttt{std::string} по адресу 0x1001, мы нарушим требования выравнивания (\textbf{Misaligned Access}). Это \textbf{Undefined Behavior}.
+
+\subsection{Решение: alignas и alignof}
+
+Чтобы исправить это, буфер должен быть выровнен так же, как и тип, который мы собираемся в него положить.
+\begin{itemize}
+    \item \texttt{alignof(T)} — возвращает требование к выравниванию для типа \texttt{T}.
+    \item \texttt{alignas(N)} — спецификатор, заставляющий компилятор выровнять переменную по границе \texttt{N}.
+\end{itemize}
+
+Правильная реализация буфера:
+
+\begin{cppcode}[]
+template <typename T>
+struct AlignedStorage {
+    // Выравниваем массив байт так же, как тип T
+    alignas(T) std::byte data[sizeof(T)];
+    
+    // Вспомогательные методы для удобства
+    T* get() { return reinterpret_cast<T*>(data); }
+    const T* get() const { return reinterpret_cast<const T*>(data); }
+};
+
+int main() {
+    AlignedStorage<std::string> storage;
+    
+    // Теперь адрес storage.data гарантированно кратен alignof(string)
+    std::string* s = new (storage.get()) std::string("Safe!");
+    
+    s->~basic_string();
+}
+\end{cppcode}
+
+Также в стандарте C++ (заголовок \texttt{<type\_traits>}) есть \texttt{std::aligned\_storage}, но начиная с C++23 он объявлен устаревшим (deprecated) в пользу использования \texttt{alignas} вручную, как показано выше, из-за сложности правильного использования API.
+
+\section{Тривиальная разрушаемость (Trivially Destructible)}
+
+Обязательно ли всегда вызывать деструктор при ручном управлении памятью?
+
+\begin{cppcode}[]
+{
+    char buf[sizeof(int)];
+    int* p = new (buf) int(42);
+    // Нужно ли звать p->~int()?
+}
+\end{cppcode}
+
+Для фундаментальных типов (\texttt{int}, \texttt{float}, указатели) и простых C-структур (POD) деструктор ничего не делает (no-op). Вызов \texttt{p->\~int()} корректен синтаксически, но компилятор его просто вырежет.
+
+Существует трейт (свойство типа) \texttt{std::is\_trivially\_destructible\_v<T>}.
+\begin{itemize}
+    \item Если \textbf{true}: Вызов деструктора можно безопасно пропустить. Память можно просто "забыть" или перезаписать.
+    \item Если \textbf{false} (например, \texttt{std::string}, \texttt{std::vector}): Вызов деструктора обязателен. Если его пропустить, утекут ресурсы, которыми владел объект (внутренние буферы в куче).
+\end{itemize}
+
+\begin{important}
+Оптимизация с пропуском деструкторов широко используется в реализации \texttt{std::vector::clear()}. Если элементы тривиально разрушаемы, вектор просто обнуляет свой размер (\texttt{size = 0}), не пробегая циклом по всем элементам. Это дает колоссальный прирост производительности.
+\end{important}
+
+\section{Практический пример: простейший Any}
+
+Чтобы закрепить материал, напишем упрощенный класс, который может хранить либо \texttt{int}, либо \texttt{double} (похоже на \texttt{union}, но с активным переключением).
+
+\begin{cppcode}[]
+#include <iostream>
+#include <new>
+
+struct NumberHolder {
+    // Достаточно места для самого большого типа
+    // Выравнивание по максимуму из двух
+    alignas(double) std::byte storage[sizeof(double)];
+    
+    enum Type { INT, DOUBLE, NONE } currentType = NONE;
+
+    void setInt(int val) {
+        destroyCurrent(); // Сначала очищаем старое
+        new (storage) int(val);
+        currentType = INT;
+    }
+
+    void setDouble(double val) {
+        destroyCurrent();
+        new (storage) double(val);
+        currentType = DOUBLE;
+    }
+
+    void destroyCurrent() {
+        if (currentType == INT) {
+            reinterpret_cast<int*>(storage)->~int(); // Тривиально, но для порядка
+        } else if (currentType == DOUBLE) {
+            reinterpret_cast<double*>(storage)->~double();
+        }
+        currentType = NONE;
+    }
+
+    ~NumberHolder() {
+        destroyCurrent();
+    }
+};
+\end{cppcode}
+
+\begin{summary}
+\begin{enumerate}
+    \item \textbf{Placement New} позволяет конструировать объекты в заранее выделенной памяти. Он не выделяет память сам.
+    \item Объекты, созданные через placement new, требуют явного вызова деструктора: \texttt{ptr->\~T()}. Использование \texttt{delete} запрещено.
+    \item \textbf{Выравнивание} критически важно. Простого массива \texttt{char} недостаточно. Используйте \texttt{alignas(T)}.
+    \item Доступ к невыровненным данным — это Undefined Behavior.
+    \item Для типов с \texttt{is\_trivially\_destructible} вызов деструктора можно опустить (оптимизация).
+\end{enumerate}
+\end{summary}

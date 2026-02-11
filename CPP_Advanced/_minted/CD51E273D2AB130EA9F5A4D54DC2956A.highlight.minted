@@ -1,0 +1,24 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Реализации}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define ENSURE\PYGZus{}1(cond) \PYGZbs{}}
+\PYG{c+cp}{    if (!(cond)) \PYGZob{} std::cerr \PYGZlt{}\PYGZlt{} \PYGZdq{}Check failed: \PYGZdq{} \PYGZlt{}\PYGZlt{} \PYGZsh{}cond \PYGZlt{}\PYGZlt{} std::endl; std::abort(); \PYGZcb{}}
+
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define ENSURE\PYGZus{}2(cond, msg) \PYGZbs{}}
+\PYG{c+cp}{    if (!(cond)) \PYGZob{} std::cerr \PYGZlt{}\PYGZlt{} msg \PYGZlt{}\PYGZlt{} std::endl; std::abort(); \PYGZcb{}}
+
+\PYG{c+c1}{// Магия выбора}
+\PYG{c+c1}{// Этот макрос принимает набор аргументов и возвращает 3\PYGZhy{}й аргумент}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define GET\PYGZus{}3RD\PYGZus{}ARG(arg1, arg2, arg3, ...) arg3}
+
+\PYG{c+c1}{// Макрос\PYGZhy{}диспетчер}
+\PYG{c+c1}{// Если передано 1 аргумент (x):}
+\PYG{c+c1}{//   GET\PYGZus{}3RD\PYGZus{}ARG(x, ENSURE\PYGZus{}2, ENSURE\PYGZus{}1) \PYGZhy{}\PYGZgt{} вернет ENSURE\PYGZus{}1}
+\PYG{c+c1}{// Если передано 2 аргумента (x, y):}
+\PYG{c+c1}{//   GET\PYGZus{}3RD\PYGZus{}ARG(x, y, ENSURE\PYGZus{}2, ENSURE\PYGZus{}1) \PYGZhy{}\PYGZgt{} вернет ENSURE\PYGZus{}2}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define ENSURE\PYGZus{}MACRO\PYGZus{}CHOOSER(...) \PYGZbs{}}
+\PYG{c+cp}{    GET\PYGZus{}3RD\PYGZus{}ARG(\PYGZus{}\PYGZus{}VA\PYGZus{}ARGS\PYGZus{}\PYGZus{}, ENSURE\PYGZus{}2, ENSURE\PYGZus{}1)}
+
+\PYG{c+c1}{// Итоговый макрос}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define ENSURE(...) \PYGZbs{}}
+\PYG{c+cp}{    ENSURE\PYGZus{}MACRO\PYGZus{}CHOOSER(\PYGZus{}\PYGZus{}VA\PYGZus{}ARGS\PYGZus{}\PYGZus{})(\PYGZus{}\PYGZus{}VA\PYGZus{}ARGS\PYGZus{}\PYGZus{})}
+\end{MintedVerbatim}

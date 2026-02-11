@@ -1,0 +1,206 @@
+\chapter{Внутреннее устройство разделяемого владения: std::shared\_ptr}
+
+В отличие от \texttt{std::unique\_ptr}, который обеспечивает эксклюзивное владение, \texttt{std::shared\_ptr} реализует модель совместного (разделяемого) владения ресурсом. Несколько указателей могут ссылаться на один и тот же объект, и этот объект будет уничтожен только тогда, когда исчезнет \textit{последний} указатель.
+
+В этой главе мы погрузимся в архитектуру \texttt{shared\_ptr}, разберем структуру контрольного блока, поймем, почему \texttt{sizeof(shared\_ptr)} равен двум указателям, и научимся использовать "Aliasing Constructor" — одну из самых мощных, но малоизвестных возможностей C++.
+
+\section{Анатомия Shared Ptr: Два указателя}
+
+На первый взгляд может показаться, что \texttt{shared\_ptr} просто хранит указатель на объект и счетчик ссылок. Но где хранится этот счетчик? Он не может быть внутри объекта (это требовало бы изменения класса объекта, что называется интрузивным подходом). Он не может быть статическим полем (тогда счетчик был бы общим для всех объектов типа T).
+
+Решение: \texttt{shared\_ptr} создает вспомогательный объект в куче, который называется \textbf{Control Block} (контрольный блок).
+
+Сам объект \texttt{shared\_ptr} на стеке состоит из двух полей:
+\begin{enumerate}
+    \item \texttt{T* stored\_ptr} — "сырой" указатель на управляемый объект. Используется для операторов разыменования (\texttt{*}, \texttt{->}).
+    \item \texttt{ControlBlock* cb\_ptr} — указатель на контрольный блок.
+\end{enumerate}
+
+Таким образом, на 64-битной архитектуре \texttt{sizeof(std::shared\_ptr<T>) == 16 байт}.
+
+\subsection{Структура Control Block}
+
+Контрольный блок — это сердце механизма shared ownership. Он содержит:
+\begin{itemize}
+    \item \textbf{Strong Ref Count} (счетчик сильных ссылок): количество живых \texttt{shared\_ptr}.
+    \item \textbf{Weak Ref Count} (счетчик слабых ссылок): количество живых \texttt{weak\_ptr}.
+    \item \textbf{Deleter}: функтор для уничтожения объекта (стирание типа через виртуальный вызов).
+    \item \textbf{Allocator}: аллокатор, использованный для выделения памяти под контрольный блок.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{verbatim}
++-------------------+       +-----------------------+
+|   shared_ptr A    |       |     Control Block     |
+| [ stored_ptr ]----------> | [ Strong Refs: 2    ] |
+| [ cb_ptr     ]----------> | [ Weak Refs:   0    ] |
++-------------------+       | [ Deleter (type-erased)] |
+                            | [ Allocator         ] |
++-------------------+       +-----------------------+
+|   shared_ptr B    |                   |
+| [ stored_ptr ]----------> (managed object lives separately)
+| [ cb_ptr     ]----------> 
++-------------------+
+\end{verbatim}
+\caption{Схема памяти обычного shared\_ptr}
+\end{figure}
+
+\section{std::make\_shared vs std::shared\_ptr(new T)}
+
+Существует два способа создать \texttt{shared\_ptr}:
+\begin{cppcode}
+// 1. Через конструктор
+std::shared_ptr<int> p1(new int(42));
+
+// 2. Через make_shared
+auto p2 = std::make_shared<int>(42);
+\end{cppcode}
+
+Разница между ними фундаментальна с точки зрения производительности и размещения памяти.
+
+\subsection{Проблема двойной аллокации}
+При вызове \texttt{shared\_ptr(new T)} происходят две независимые аллокации памяти:
+1. \texttt{new int(42)} выделяет память под объект.
+2. Конструктор \texttt{shared\_ptr} выделяет память под \textbf{Control Block}.
+
+Это плохо по двум причинам:
+\begin{itemize}
+    \item Лишняя нагрузка на аллокатор (медленно).
+    \item Плохая локальность данных (объект и счетчик могут лежать далеко друг от друга, вызывая cache miss при доступе).
+    \item \textbf{Небезопасность исключений:} Если мы пишем \texttt{f(shared\_ptr<int>(new int(42)), g())}, и \texttt{g()} кидает исключение \textit{после} \texttt{new int}, но \textit{до} конструктора \texttt{shared\_ptr}, мы получаем утечку памяти.
+\end{itemize}
+
+\subsection{Оптимизация make\_shared}
+\texttt{std::make\_shared} совершает \textbf{одну большую аллокацию}, в которой размещает и Control Block, и сам объект T "паровозиком" (рядом друг с другом).
+
+\begin{figure}[h]
+\centering
+\begin{verbatim}
++--------------------------------------------------+
+|          Single Allocation (make_shared)         |
+| +-----------------------+ +--------------------+ |
+| | Control Block         | | Managed Object T   | |
+| | [ Strong: 1, Weak: 0 ]| | [ Data...        ] | |
+| +-----------------------+ +--------------------+ |
++--------------------------------------------------+
+\end{verbatim}
+\end{figure}
+
+Это экономит память (меньше оверхеда на заголовки аллокатора) и процессорное время.
+
+\begin{important}
+У \texttt{make\_shared} есть один неочевидный недостаток. Память под объект T не может быть освобождена, пока жив хотя бы один \texttt{weak\_ptr}. Поскольку блок и объект — это единый кусок памяти, они живут и умирают вместе. Если у вас огромный объект и долгоживущие слабые ссылки, лучше использовать раздельные аллокации.
+\end{important}
+
+\section{Aliasing Constructor (Конструктор псевдонимов)}
+
+Это "секретное оружие" \texttt{shared\_ptr}. Сигнатура конструктора выглядит так:
+
+\begin{cppcode}
+template <typename Y>
+shared_ptr(const shared_ptr<Y>& r, T* ptr) noexcept;
+\end{cppcode}
+
+Что он делает:
+\begin{itemize}
+    \item Он берет \textbf{Control Block} (владение) от указателя \texttt{r}. То есть он увеличивает счетчик ссылок того объекта, которым владеет \texttt{r}.
+    \item Но в качестве \texttt{stored\_ptr} (то, что возвращает \texttt{operator*}) он запоминает \texttt{ptr}.
+\end{itemize}
+
+\textbf{Суть:} Мы владеем одним объектом (и продлеваем ему жизнь), но указываем на другой (обычно — на его часть).
+
+\subsection{Пример: Указатель на поле структуры}
+
+Представьте, что у нас есть структура \texttt{Message}, и мы хотим передать в функцию только одну её строку \texttt{payload}, но так, чтобы вся структура \texttt{Message} не была удалена, пока мы работаем со строкой.
+
+\begin{cppcode}[]
+struct Message {
+    Header header;
+    std::string payload; // Хотим указывать сюда
+};
+
+void ProcessPayload(std::shared_ptr<std::string> str_ptr) {
+    std::cout << *str_ptr << "\n";
+}
+
+int main() {
+    // Создаем сообщение (владеем всем объектом)
+    auto msg = std::make_shared<Message>();
+    msg->payload = "Hello World";
+
+    // Создаем алиас-указатель
+    // 1. Владеем msg (увеличиваем refcount для Message)
+    // 2. Указываем на msg->payload
+    std::shared_ptr<std::string> payload_ptr(msg, &msg->payload);
+
+    // Теперь msg можно "забыть" в этой scope
+    msg.reset();
+
+    // Но объект Message НЕ будет удален!
+    // Потому что payload_ptr держит Control Block от Message.
+    ProcessPayload(payload_ptr);
+    
+    // Message удалится только здесь, когда умрет payload_ptr
+}
+\end{cppcode}
+
+Если бы мы просто создали \texttt{shared\_ptr<string>(\&msg->payload)}, это привело бы к катастрофе: новый \texttt{shared\_ptr} попытался бы сделать \texttt{delete} для поля внутри структуры, что является некорректным (freeing stack/middle memory). Aliasing constructor решает эту проблему, разделяя понятия "чем владеем" и "на что указываем".
+
+\section{Жизненный цикл Control Block}
+
+Механизм удаления в \texttt{shared\_ptr} работает в два этапа, и это важно понимать при реализации.
+
+\begin{enumerate}
+    \item **Уничтожение Объекта (Object Destruction):**
+    Когда \texttt{Strong Ref Count} достигает 0:
+    \begin{itemize}
+        \item Вызывается \texttt{Deleter(object\_ptr)}.
+        \item Вызывается деструктор объекта T.
+        \item Память под объект освобождается (если это не \texttt{make\_shared}).
+    \end{itemize}
+    На этом этапе \texttt{weak\_ptr} переходят в состояние \textit{expired}.
+
+    \item **Уничтожение Контрольного блока (Block Deallocation):**
+    Когда \texttt{Strong Ref Count} == 0 \textbf{И} \texttt{Weak Ref Count} == 0:
+    \begin{itemize}
+        \item Удаляется сам Control Block.
+        \item Если использовался \texttt{make\_shared}, только в этот момент освобождается вся память (и блока, и объекта).
+    \end{itemize}
+\end{enumerate}
+
+Именно поэтому \texttt{weak\_ptr} удерживает память контрольного блока (а в случае \texttt{make\_shared} — и память мертвого объекта) от физического освобождения.
+
+\subsection{Реализация логики деструктора}
+
+В упрощенном виде логика декремента счетчика в деструкторе \texttt{shared\_ptr} выглядит так:
+
+\begin{cppcode}
+~shared_ptr() {
+    if (control_block) {
+        // Атомарный декремент
+        if (control_block->strong_refs.fetch_sub(1) == 1) {
+            // Мы были последним владельцем
+            control_block->dispose_object(); // Уничтожить T
+            
+            // Проверяем слабые ссылки
+            if (control_block->weak_refs.load() == 0) {
+                 control_block->destroy_self(); // Уничтожить блок
+            }
+        }
+        // Важно: декремент слабых ссылок происходит в ~weak_ptr
+        // и там тоже есть проверка на удаление блока.
+    }
+}
+\end{cppcode}
+
+На самом деле, логика немного сложнее: сильный счетчик тоже неявно считается "одной слабой ссылкой", чтобы блок жил, пока жив хоть один владелец. Обычно используется схема: "Block живет, пока \texttt{Weak + (Strong > 0 ? 1 : 0) > 0}".
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{shared\_ptr} состоит из двух указателей: на объект и на Control Block.
+    \item \texttt{make\_shared} эффективнее (1 аллокация), но может удерживать память дольше из-за слабых ссылок.
+    \item \textbf{Aliasing Constructor} позволяет создавать \texttt{shared\_ptr}, которые владеют объектом A, но указывают на объект B.
+    \item Контрольный блок живет дольше управляемого объекта, если есть \texttt{weak\_ptr}.
+\end{itemize}
+\end{summary}

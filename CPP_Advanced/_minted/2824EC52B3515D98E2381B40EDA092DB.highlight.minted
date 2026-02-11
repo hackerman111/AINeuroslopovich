@@ -1,0 +1,19 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Stack}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k}{explicit}\PYG{+w}{ }\PYG{n}{Stack}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{)}
+\PYG{+w}{        }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{stack\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{char}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{size}\PYG{p}{)}\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{p}{,}\PYG{+w}{ }\PYG{n}{top\PYGZus{}}\PYG{p}{\PYGZob{}}\PYG{n}{stack\PYGZus{}}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{size}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// Указатель на КОНЕЦ массива (старший адрес)}
+\PYG{+w}{    }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Выравнивание стека по границе 16 байт (требование ABI)}
+\PYG{+w}{        }\PYG{n}{top\PYGZus{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{char}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+\PYG{+w}{            }\PYG{k}{reinterpret\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{uintptr\PYGZus{}t}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{top\PYGZus{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{o}{\PYGZti{}}\PYG{l+m+mh}{0xF}
+\PYG{+w}{        }\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{Top}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{const}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{top\PYGZus{}}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{char}\PYG{p}{[}\PYG{p}{]}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{stack\PYGZus{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{top\PYGZus{}}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

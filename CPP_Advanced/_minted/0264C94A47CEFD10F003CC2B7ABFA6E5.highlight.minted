@@ -1,0 +1,33 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}DatabaseConnection.h\PYGZdq{}}
+\PYG{c+c1}{// Включаем тяжелые зависимости ТОЛЬКО в файле реализации}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}libpq\PYGZhy{}fe.h\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vector\PYGZgt{}}
+
+\PYG{c+c1}{// Полное определение класса реализации}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{DatabaseConnection}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Impl}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{PGconn}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{pgConnection}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{cache}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{internalState}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Можно выносить сюда и приватные методы}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{helperFunction}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Конструктор: выделяем память под реализацию}
+\PYG{n}{DatabaseConnection}\PYG{o}{:}\PYG{o}{:}\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{p}{)}
+\PYG{+w}{    }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{pImpl}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{make\PYGZus{}unique}\PYG{o}{\PYGZlt{}}\PYG{n}{Impl}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}
+
+\PYG{c+c1}{// Деструктор: именно здесь компилятору нужен полный тип Impl}
+\PYG{n}{DatabaseConnection}\PYG{o}{:}\PYG{o}{:}\PYG{o}{\PYGZti{}}\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+
+\PYG{c+c1}{// Реализация перемещения}
+\PYG{n}{DatabaseConnection}\PYG{o}{:}\PYG{o}{:}\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{DatabaseConnection}\PYG{o}{:}\PYG{o}{:}\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{default}\PYG{p}{;}
+
+\PYG{c+c1}{// Проксирование вызовов}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{DatabaseConnection::connect}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{str}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Обращение к полям через стрелку pImpl\PYGZhy{}\PYGZgt{}}
+\PYG{+w}{    }\PYG{n}{pImpl}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{pgConnection}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{PQconnectdb}\PYG{p}{(}\PYG{n}{str}\PYG{p}{.}\PYG{n}{c\PYGZus{}str}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

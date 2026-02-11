@@ -1,0 +1,14 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n+nb}{cmake\PYGZus{}minimum\PYGZus{}required}\PYG{p}{(}\PYG{l+s}{VERSION}\PYG{+w}{ }\PYG{l+s}{3.10}\PYG{p}{)}
+\PYG{n+nb}{project}\PYG{p}{(}\PYG{l+s}{MyProject}\PYG{p}{)}
+
+\PYG{n+nb}{set}\PYG{p}{(}\PYG{l+s}{CMAKE\PYGZus{}CXX\PYGZus{}STANDARD}\PYG{+w}{ }\PYG{l+s}{20}\PYG{p}{)}
+\PYG{n+nb}{set}\PYG{p}{(}\PYG{l+s}{CMAKE\PYGZus{}CXX\PYGZus{}STANDARD\PYGZus{}REQUIRED}\PYG{+w}{ }\PYG{l+s}{ON}\PYG{p}{)}
+
+\PYG{c}{\PYGZsh{} Добавляем цель для сборки исполняемого файла}
+\PYG{n+nb}{add\PYGZus{}executable}\PYG{p}{(}\PYG{l+s}{my\PYGZus{}app}\PYG{+w}{ }\PYG{l+s}{main.cpp}\PYG{+w}{ }\PYG{l+s}{utils.cpp}\PYG{p}{)}
+
+\PYG{c}{\PYGZsh{} Пример подключения санитайзеров (опционально)}
+\PYG{n+nb}{target\PYGZus{}compile\PYGZus{}options}\PYG{p}{(}\PYG{l+s}{my\PYGZus{}app}\PYG{+w}{ }\PYG{l+s}{PRIVATE}\PYG{+w}{ }\PYG{l+s}{\PYGZhy{}fsanitize=address}\PYG{+w}{ }\PYG{l+s}{\PYGZhy{}g}\PYG{p}{)}
+\PYG{n+nb}{target\PYGZus{}link\PYGZus{}options}\PYG{p}{(}\PYG{l+s}{my\PYGZus{}app}\PYG{+w}{ }\PYG{l+s}{PRIVATE}\PYG{+w}{ }\PYG{l+s}{\PYGZhy{}fsanitize=address}\PYG{p}{)}
+\end{MintedVerbatim}

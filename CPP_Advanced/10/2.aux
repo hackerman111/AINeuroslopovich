@@ -1,0 +1,73 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}Building a Production-Grade ThreadPool}{9}{chapter.2}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\@writefile{loa}{\addvspace {10\p@ }}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}Фундамент: Блокирующая очередь (Blocking Queue)}{9}{section.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.1}Реализация UnboundedBlockingQueue}{9}{subsection.2.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1.2}Разбор механики синхронизации}{10}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{1. Lock Guard vs Unique Lock}{10}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{2. Spurious Wakeups (Ложные пробуждения)}{11}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{3. Graceful Shutdown (Закрытие очереди)}{11}{subsection.2.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Архитектура ThreadPool}{11}{section.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.1}Интерфейс задач}{11}{subsection.2.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.2}Полная реализация ThreadPool}{12}{subsection.2.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Анализ Corner Cases и Ошибок}{13}{section.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}1. Исключения в воркерах}{13}{subsection.2.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}2. Порядок остановки (Destruction Order)}{13}{subsection.2.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.3}3. Невозможность принудительного убийства (Thread Cancellation)}{13}{subsection.2.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.4}4. Data Races при проверке состояния}{14}{subsection.2.3.4}\protected@file@percent }
+\@setckpt{10/2}{
+\setcounter{page}{15}
+\setcounter{equation}{0}
+\setcounter{enumi}{2}
+\setcounter{enumii}{0}
+\setcounter{enumiii}{0}
+\setcounter{enumiv}{0}
+\setcounter{footnote}{0}
+\setcounter{mpfootnote}{0}
+\setcounter{part}{1}
+\setcounter{chapter}{2}
+\setcounter{section}{3}
+\setcounter{subsection}{4}
+\setcounter{subsubsection}{0}
+\setcounter{paragraph}{0}
+\setcounter{subparagraph}{0}
+\setcounter{figure}{0}
+\setcounter{table}{0}
+\setcounter{section@level}{0}
+\setcounter{Item}{12}
+\setcounter{Hfootnote}{0}
+\setcounter{Hy@AnnotLevel}{0}
+\setcounter{bookmark@seq@number}{25}
+\setcounter{tcbbreakpart}{1}
+\setcounter{tcblayer}{0}
+\setcounter{tcolorbox@number}{17}
+\setcounter{tcbrastercolumn}{1}
+\setcounter{tcbrasterrow}{1}
+\setcounter{tcbrasternum}{1}
+\setcounter{tcbraster}{0}
+\setcounter{parentequation}{0}
+\setcounter{lstnumber}{1}
+\setcounter{tcblisting}{7}
+\setcounter{FancyVerbLine}{4}
+\setcounter{linenumber}{1}
+\setcounter{LN@truepage}{15}
+\setcounter{FancyVerbWriteLine}{0}
+\setcounter{FancyVerbBufferLine}{0}
+\setcounter{FV@TrueTabGroupLevel}{0}
+\setcounter{FV@TrueTabCounter}{0}
+\setcounter{FV@HighlightLinesStart}{0}
+\setcounter{FV@HighlightLinesStop}{0}
+\setcounter{FancyVerbLineBreakLast}{2}
+\setcounter{FV@BreakBufferDepth}{0}
+\setcounter{float@type}{32}
+\setcounter{minted@FancyVerbLineTemp}{0}
+\setcounter{listing}{0}
+\setcounter{AlgoLine}{0}
+\setcounter{algocfline}{0}
+\setcounter{algocfproc}{0}
+\setcounter{algocf}{0}
+\setcounter{lstlisting}{0}
+}

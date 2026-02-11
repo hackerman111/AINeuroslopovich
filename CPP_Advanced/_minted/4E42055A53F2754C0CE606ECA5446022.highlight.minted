@@ -1,0 +1,4 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string\PYGZus{}view}\PYG{+w}{ }\PYG{n}{sv}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Temporary}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{ string}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{c+c1}{// Временная строка умирает в конце выражения. sv смотрит в мусор.}
+\end{MintedVerbatim}

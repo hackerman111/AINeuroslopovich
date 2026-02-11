@@ -1,0 +1,162 @@
+\chapter{Время жизни объектов (Object Lifetime) и Оптимизации}
+
+Управление временем жизни объектов — одна из самых сложных тем в C++. В отличие от языков с Garbage Collection, в C++ объект живет ровно столько, сколько определено его областью видимости (scope) или временем жизни контейнера. Однако существуют специальные правила, позволяющие продлевать жизнь временным объектам, а также оптимизации компилятора, которые могут эту жизнь "элиминировать" ради производительности.
+
+\section{5.1 Temporary Lifetime Extension}
+
+В C++ временные объекты (prvalue), созданные в выражении, обычно уничтожаются в конце выполнения этого "полного выражения" (full-expression), то есть на ближайшей точке с запятой.
+
+Однако существует исключение: \textbf{Продление времени жизни (Lifetime Extension)}.
+Если временный объект привязывается к ссылке (константной lvalue-ссылке или rvalue-ссылке), то время жизни этого объекта продлевается до времени жизни самой ссылки.
+
+\begin{cppcode}[]
+struct Data { 
+    ~Data() { std::cout << "Dead\n"; } 
+};
+
+Data create() { return Data(); }
+
+void demo() {
+    // 1. Обычное поведение
+    create(); 
+    std::cout << "After statement\n"; 
+    // Output: Dead -> After statement
+
+    // 2. Продление жизни
+    const Data& ref = create(); // Временный объект НЕ умирает здесь!
+    std::cout << "Using ref\n";
+    // Output: Using ref -> Dead (при выходе из scope)
+}
+\end{cppcode}
+
+Это позволяет безопасно работать с временными результатами, не копируя их.
+
+\section{5.2 Опасные паттерны и висячие ссылки (Dangling Refs)}
+
+Правило продления жизни имеет критическое ограничение: оно \textbf{не транзитивно}. Оно работает только при \textit{прямой} привязке результата выражения к ссылке. Если временный объект "спрятан" внутри другого объекта или возвращается через цепочку функций, продление может не сработать или сработать не так, как вы ожидаете.
+
+\section{Ловушка 1: Возврат ссылки на временный объект}
+Это классическое UB, но с нюансом продления.
+
+\begin{cppcode}[]
+const int& get_ref(const int& x) { return x; }
+
+void trap() {
+    // 1. Создается временный int(10).
+    // 2. Он передается в get_ref.
+    // 3. get_ref возвращает ссылку на него.
+    // 4. Ссылка привязывается к val.
+    // ПРОДЛЕНИЯ ЖИЗНИ НЕ ПРОИСХОДИТ!
+    // Правило работает только если ссылка инициализируется САМИМ prvalue,
+    // а здесь она инициализируется результатом функции (lvalue/xvalue).
+    const int& val = get_ref(10); 
+    
+    std::cout << val; // UB: обращение к памяти мертвого объекта
+}
+\end{cppcode}
+
+\section{Ловушка 2: Доступ к полю временного объекта}
+Очень частая ошибка при использовании геттеров.
+
+\begin{cppcode}[]
+struct Wrapper {
+    std::string name;
+    const std::string& get_name() const { return name; }
+};
+
+Wrapper make_wrapper() { return Wrapper{"test"}; }
+
+void disaster() {
+    // make_wrapper() создает временный Wrapper.
+    // Мы берем ссылку на его поле.
+    // В конце строки временный Wrapper уничтожается.
+    // Поле name уничтожается вместе с ним.
+    const std::string& s = make_wrapper().get_name(); 
+    
+    std::cout << s; // UB! Ссылка 's' висит.
+}
+\end{cppcode}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    scale=0.8,
+    every node/.style={draw, rectangle, rounded corners, minimum height=0.8cm, align=center},
+    arrow/.style={->, thick, nordDark}
+]
+    % Timeline
+    \draw[->, thick] (0, 0) -- (10, 0) node[right] {Time};
+    
+    % Object lifetime
+    \draw[|-|, thick, nordBlue, line width=2pt] (1, 1) -- (5, 1);
+    \node[above, nordBlue] at (3, 1) {Wrapper (Temp)};
+    
+    % Reference usage
+    \draw[|-, thick, nordRed, dashed, line width=2pt] (1, 0.5) -- (9, 0.5);
+    \node[below, nordRed] at (7, 0.5) {Reference 's'};
+
+    \node[align=center, font=\small] at (5, 1.5) {Destruction point\\(end of statement)};
+    \draw[->, nordRed] (7, 0.5) -- (7, -0.5) node[below] {UB Access!};
+
+\end{tikzpicture}
+\caption{Диаграмма времени жизни при доступе к полю временного объекта}
+\end{figure}
+
+\section{5.3 RVO и Copy Elision}
+
+Компиляторы C++ обладают правом (а начиная с C++17 — обязанностью в некоторых случаях) полностью исключать создание временных объектов. Это называется \textbf{Return Value Optimization (RVO)}.
+
+\begin{cppcode}[]
+std::vector<int> generate() {
+    return std::vector<int>(1000); // prvalue
+}
+
+void use() {
+    std::vector<int> v = generate();
+}
+\end{cppcode}
+
+Без RVO:
+1. Создается временный вектор внутри \texttt{generate}.
+2. Он перемещается/копируется во временный результат возврата.
+3. Результат перемещается/копируется в \texttt{v}.
+
+С RVO (Copy Elision):
+Компилятор передает адрес переменной \texttt{v} внутрь функции \texttt{generate}. Вектор конструируется \textbf{прямо на месте} \texttt{v}. Никаких копий, никаких перемещений.
+
+\section{5.4 Pessimizing Move}
+
+С появлением \texttt{std::move} программисты начали писать его везде, думая, что помогают компилятору. В случае возврата значения это приводит к обратному эффекту — \textbf{Pessimizing Move}.
+
+\begin{cppcode}[]
+std::vector<int> bad_func() {
+    std::vector<int> local_vec;
+    // ...
+    // ОШИБКА! Мы явно приводим к rvalue-ссылке.
+    // Это ЗАПРЕЩАЕТ RVO, так как типы не совпадают (Obj vs Obj&&).
+    // Компилятор обязан вызвать Move Constructor.
+    return std::move(local_vec); 
+}
+
+std::vector<int> good_func() {
+    std::vector<int> local_vec;
+    // ...
+    // ПРАВИЛЬНО! Работает NRVO (Named RVO).
+    // Объект будет построен сразу в целевой памяти.
+    return local_vec; 
+}
+\end{cppcode}
+
+\begin{important}
+\textbf{Никогда не делайте \texttt{std::move} для локальной переменной в операторе \texttt{return}.}
+Компилятор и так попробует применить NRVO. Если NRVO невозможно (сложная логика условий), компилятор \textit{автоматически} применит move (как будто вы написали \texttt{std::move}). Ручной \texttt{std::move} здесь только мешает оптимизации.
+\end{important}
+
+\begin{summary}
+\begin{itemize}
+    \item Ссылки могут продлевать жизнь временным объектам, но только "на один шаг".
+    \item Остерегайтесь ссылок на части временных объектов.
+    \item RVO/NRVO — самая мощная оптимизация в C++.
+    \item \texttt{return std::move(x)} — это вредная привычка (Pessimizing Move).
+\end{itemize}
+\end{summary}

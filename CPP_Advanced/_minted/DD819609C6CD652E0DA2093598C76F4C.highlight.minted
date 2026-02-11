@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}lock}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{lk}\PYG{p}{(}\PYG{n}{m}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{ready}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{cv}\PYG{p}{.}\PYG{n}{wait}\PYG{p}{(}\PYG{n}{lk}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ОШИБКА!}
+\PYG{p}{\PYGZcb{}}
+\PYG{c+c1}{// Если произошло ложное пробуждение, мы попадем сюда,}
+\PYG{c+c1}{// хотя ready все еще false.}
+\PYG{n}{process}\PYG{p}{(}\PYG{n}{data}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Обработка невалидных данных}
+\end{MintedVerbatim}

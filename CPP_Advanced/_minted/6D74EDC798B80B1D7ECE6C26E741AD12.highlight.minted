@@ -1,0 +1,46 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Sequence\PYGZus{}Frame}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Служебные поля (Promise, Resume Point)}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{\PYGZus{}resume\PYGZus{}point}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Индекс точки возобновления}
+\PYG{+w}{    }\PYG{n}{promise\PYGZus{}type}\PYG{+w}{ }\PYG{n}{\PYGZus{}promise}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Сохраненные аргументы}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 3. Сохраненные локальные переменные}
+\PYG{+w}{    }\PYG{c+c1}{// \PYGZsq{}x\PYGZsq{} и \PYGZsq{}y\PYGZsq{} нужны после resume, поэтому они здесь.}
+\PYG{+w}{    }\PYG{c+c1}{// Если бы была переменная \PYGZsq{}z\PYGZsq{}, которая умирает до co\PYGZus{}yield,}
+\PYG{+w}{    }\PYG{c+c1}{// она бы осталась на стеке и не попала в Frame.}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{resume}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{switch}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{\PYGZus{}resume\PYGZus{}point}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{case}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{:}\PYG{+w}{ }\PYG{k}{goto}\PYG{+w}{ }\PYG{n}{STATE\PYGZus{}0}\PYG{p}{;}
+\PYG{+w}{            }\PYG{k}{case}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{:}\PYG{+w}{ }\PYG{k}{goto}\PYG{+w}{ }\PYG{n}{STATE\PYGZus{}1}\PYG{p}{;}
+\PYG{+w}{            }\PYG{k}{case}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{:}\PYG{+w}{ }\PYG{k}{goto}\PYG{+w}{ }\PYG{n}{STATE\PYGZus{}2}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n+nl}{STATE\PYGZus{}0}\PYG{p}{:}
+\PYG{+w}{        }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{start}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{y}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// co\PYGZus{}yield x \PYGZhy{}\PYGZgt{} suspend}
+\PYG{+w}{        }\PYG{n}{\PYGZus{}promise}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{\PYGZus{}resume\PYGZus{}point}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{return}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Возврат управления вызывающему (Caller)}
+
+\PYG{+w}{    }\PYG{n+nl}{STATE\PYGZus{}1}\PYG{p}{:}
+\PYG{+w}{        }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{+}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{y}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Восстановили контекст, выполняем операцию}
+
+\PYG{+w}{        }\PYG{c+c1}{// co\PYGZus{}yield x \PYGZhy{}\PYGZgt{} suspend}
+\PYG{+w}{        }\PYG{n}{\PYGZus{}promise}\PYG{p}{.}\PYG{n}{value}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{\PYGZus{}resume\PYGZus{}point}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{return}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{n+nl}{STATE\PYGZus{}2}\PYG{p}{:}
+\PYG{+w}{        }\PYG{c+c1}{// Завершение корутины}
+\PYG{+w}{        }\PYG{n}{\PYGZus{}promise}\PYG{p}{.}\PYG{n}{return\PYGZus{}void}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

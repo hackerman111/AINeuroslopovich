@@ -1,0 +1,11 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{good\PYGZus{}practice}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Конструктор вызывает mtx.lock()}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{lock\PYGZus{}guard}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{mutex}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{guard}\PYG{p}{(}\PYG{n}{mtx}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// ... безопасная работа ...}
+
+\PYG{+w}{    }\PYG{c+c1}{// При любом выходе (return, exception) вызовется деструктор guard,}
+\PYG{+w}{    }\PYG{c+c1}{// который вызовет mtx.unlock().}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

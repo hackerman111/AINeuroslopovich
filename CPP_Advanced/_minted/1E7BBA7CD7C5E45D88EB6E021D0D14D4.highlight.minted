@@ -1,0 +1,9 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Псевдокод Symmetric Transfer}
+\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{next\PYGZus{}handle}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{current\PYGZus{}awaiter}\PYG{p}{.}\PYG{n}{await\PYGZus{}suspend}\PYG{p}{(}\PYG{n}{me}\PYG{p}{)}\PYG{p}{;}
+\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{next\PYGZus{}handle}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// JUMP вместо CALL!}
+\PYG{+w}{    }\PYG{c+c1}{// Текущий стек очищается, происходит переход на next\PYGZus{}handle}
+\PYG{+w}{    }\PYG{n}{jump\PYGZus{}to}\PYG{p}{(}\PYG{n}{next\PYGZus{}handle}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

@@ -1,0 +1,216 @@
+\chapter{Динамический Полиморфизм: Vtables и RTTI}
+
+Полиморфизм — это способность объектов разных типов реагировать на один и тот же вызов метода специфическим для каждого типа образом. В C++ существуют два вида полиморфизма: статический (шаблоны, перегрузка), разрешаемый на этапе компиляции, и динамический (виртуальные функции), разрешаемый во время выполнения (runtime).
+
+Динамический полиморфизм обеспечивает гибкость архитектуры, позволяя работать с объектами через указатель на базовый класс, не зная их реального типа. За эту гибкость приходится платить накладными расходами на вызов (runtime overhead) и память. В этой главе мы разберем низкоуровневую реализацию этого механизма.
+
+\section{Таблица виртуальных методов (vtable)}
+
+Ключевое слово \texttt{virtual} сообщает компилятору, что связывание вызова функции с ее реализацией должно происходить динамически. Для реализации этого механизма компиляторы (GCC, Clang, MSVC) используют структуру данных, называемую таблицей виртуальных методов (\textbf{vtable}).
+
+\subsection{Модификация раскладки объекта}
+
+Как только в классе появляется хотя бы одна виртуальная функция, компилятор неявно добавляет в него скрытое поле — указатель на таблицу виртуальных методов (\textbf{vptr}). Обычно \texttt{vptr} располагается в самом начале объекта (по смещению 0), чтобы механизм вызова был максимально быстрым.
+
+Рассмотрим иерархию:
+
+\begin{cppcode}
+class Base {
+public:
+    virtual void func1() { /* Base::func1 */ }
+    virtual void func2() { /* Base::func2 */ }
+    int x;
+};
+
+class Derived : public Base {
+public:
+    // Переопределяем func1
+    void func1() override { /* Derived::func1 */ }
+    // func2 наследуется от Base
+    // Добавляем новую виртуальную функцию
+    virtual void func3() { /* Derived::func3 */ }
+    int y;
+};
+\end{cppcode}
+
+\textbf{Memory Layout для Base:}
+\begin{itemize}
+    \item \texttt{vptr} $\to$ указывает на \texttt{Base::vtable}
+    \item \texttt{int x}
+\end{itemize}
+
+\textbf{Содержимое Base::vtable:}
+\begin{itemize}
+    \item index 0: адрес \texttt{Base::func1}
+    \item index 1: адрес \texttt{Base::func2}
+\end{itemize}
+
+\textbf{Memory Layout для Derived:}
+\begin{itemize}
+    \item \texttt{vptr} $\to$ указывает на \texttt{Derived::vtable}
+    \item \texttt{int x} (унаследовано)
+    \item \texttt{int y} (собственное)
+\end{itemize}
+
+\textbf{Содержимое Derived::vtable:}
+\begin{itemize}
+    \item index 0: адрес \texttt{Derived::func1} (переопределена)
+    \item index 1: адрес \texttt{Base::func2} (наследуется оригинальная)
+    \item index 2: адрес \texttt{Derived::func3} (новая)
+\end{itemize}
+
+\subsection{Алгоритм диспетчеризации вызова}
+
+Когда компилятор встречает вызов \texttt{ptr->func1()}, где \texttt{ptr} имеет тип \texttt{Base*}, он генерирует следующий псевдокод на ассемблере:
+
+\begin{enumerate}
+    \item \textbf{Загрузка vptr:} Прочитать значение по адресу, хранящемуся в \texttt{ptr} (получаем адрес начала vtable).
+    \item \textbf{Вычисление смещения:} Добавить к адресу vtable смещение, соответствующее индексу метода \texttt{func1} (в нашем случае index 0).
+    \item \textbf{Получение адреса функции:} Прочитать адрес из ячейки таблицы.
+    \item \textbf{Вызов (Indirect Call):} Перейти по полученному адресу, передав \texttt{ptr} в качестве аргумента \texttt{this}.
+\end{enumerate}
+
+\begin{note}
+Инициализация \texttt{vptr} происходит в конструкторе. Сначала вызывается конструктор \texttt{Base}, который устанавливает \texttt{vptr} на \texttt{Base::vtable}. Затем выполняется тело конструктора \texttt{Base}. После этого управление передается конструктору \texttt{Derived}, который перезаписывает \texttt{vptr} адресом \texttt{Derived::vtable}. Именно поэтому вызов виртуальной функции из конструктора никогда не является полиморфным — он вызывает версию текущего конструируемого класса.
+\end{note}
+
+\section{Множественное наследование и Pointer Adjustment}
+
+Ситуация значительно усложняется при множественном наследовании. Если класс \texttt{Derived} наследуется от \texttt{Base1} и \texttt{Base2}, объект \texttt{Derived} должен содержать части обоих родителей, и каждая часть ожидает, что указатель \texttt{this} будет указывать на её начало.
+
+\begin{cppcode}
+struct Base1 {
+    virtual void method1() {}
+    int b1;
+};
+
+struct Base2 {
+    virtual void method2() {}
+    int b2;
+};
+
+struct Derived : Base1, Base2 {
+    void method1() override {} // override Base1
+    void method2() override {} // override Base2
+    int d;
+};
+\end{cppcode}
+
+В памяти объект \texttt{Derived} будет выглядеть так:
+\begin{enumerate}
+    \item \textbf{Subobject Base1}:
+        \begin{itemize}
+            \item \texttt{vptr1} (для Derived-as-Base1)
+            \item \texttt{int b1}
+        \end{itemize}
+    \item \textbf{Subobject Base2}:
+        \begin{itemize}
+            \item \texttt{vptr2} (для Derived-as-Base2)
+            \item \texttt{int b2}
+        \end{itemize}
+    \item \textbf{Members Derived}:
+        \begin{itemize}
+            \item \texttt{int d}
+        \end{itemize}
+\end{enumerate}
+
+\subsection{Смещение this (Thunks)}
+
+При приведении \texttt{Derived*} к \texttt{Base2*}, адрес должен измениться. Он должен указывать не на начало всего объекта, а на начало подобъекта \texttt{Base2}.
+
+\begin{cppcode}
+Derived* d = new Derived();
+Base1* b1 = d; // Адрес совпадает: (void*)b1 == (void*)d
+Base2* b2 = d; // Адрес СМЕЩЕН: (void*)b2 == (char*)d + sizeof(Base1)
+\end{cppcode}
+
+Самое сложное происходит при вызове виртуального метода через \texttt{Base2*}.
+Если мы вызываем \texttt{b2->method2()}, который переопределен в \texttt{Derived}, функция \texttt{Derived::method2} ожидает, что \texttt{this} указывает на начало \texttt{Derived}, но мы передаем ей указатель на \texttt{Base2} (смещенный).
+
+Для решения этой проблемы компилятор генерирует специальную функцию-переходник, называемую \textbf{Thunk} (или Trampoline). В vtable для \texttt{Base2} лежит не адрес \texttt{Derived::method2}, а адрес thunk-а. Этот thunk вычитает смещение из указателя \texttt{this} и затем прыгает на реальную функцию \texttt{Derived::method2}.
+
+\section{RTTI и dynamic\_cast}
+
+RTTI (Run-Time Type Information) — это механизм, позволяющий определить реальный тип объекта во время выполнения. Данные RTTI (например, имя типа для \texttt{typeid}) обычно хранятся в памяти по указателю, который лежит в специальном слоте vtable (часто по индексу -1).
+
+\subsection{Оператор dynamic\_cast}
+
+\texttt{dynamic\_cast<Target*>(source)} используется для безопасного приведения указателя базового класса к указателю производного класса (Downcast). В отличие от \texttt{static\_cast}, который просто сдвигает указатель на константу времени компиляции, \texttt{dynamic\_cast} выполняет проверку в рантайме.
+
+Алгоритм работы:
+1. Используя \texttt{vptr} объекта \texttt{source}, найти RTTI информацию.
+2. Проверить, является ли \texttt{Target} наследником (или самим типом) реального типа объекта. Это может потребовать обхода дерева наследования.
+3. Если приведение возможно, вернуть скорректированный указатель.
+4. Если невозможно, вернуть \texttt{nullptr} (для указателей) или бросить исключение \texttt{std::bad\_cast} (для ссылок).
+
+\subsection{Практический пример: Система событий}
+
+Рассмотрим типичный паттерн обработки событий, где полиморфизм используется для стирания типа (Type Erasure) при хранении, а RTTI — для восстановления типа при обработке.
+
+\begin{cppcode}[]
+#include <string>
+#include <iostream>
+#include <memory>
+#include <vector>
+
+// Интерфейс события.
+// Наличие виртуального деструктора обязательно для работы dynamic_cast
+// и корректного удаления через базовый указатель.
+struct IEvent {
+    virtual ~IEvent() = default;
+};
+
+struct ErrorEvent : IEvent {
+    std::string message;
+};
+
+struct DataEvent : IEvent {
+    int payload;
+};
+
+// Функция-обработчик не знает конкретных типов на этапе компиляции
+void ProcessEvents(const std::vector<std::unique_ptr<IEvent>>& events) {
+    for (const auto& event : events) {
+        // Попытка интерпретировать событие как ошибку
+        if (auto* err = dynamic_cast<ErrorEvent*>(event.get())) {
+            std::cout << "[ERROR] " << err->message << std::endl;
+            continue;
+        }
+
+        // Попытка интерпретировать событие как данные
+        if (auto* data = dynamic_cast<DataEvent*>(event.get())) {
+            std::cout << "[DATA] Payload: " << data->payload << std::endl;
+            continue;
+        }
+
+        std::cout << "[INFO] Unknown event type" << std::endl;
+    }
+}
+\end{cppcode}
+
+\begin{important}
+\texttt{dynamic\_cast} работает \textbf{только} с полиморфными классами (классами, имеющими хотя бы одну виртуальную функцию). Если в \texttt{IEvent} убрать виртуальный деструктор, код не скомпилируется, так как у объекта не будет vtable, а значит, неоткуда взять RTTI.
+\end{important}
+
+\section{Чистые виртуальные функции}
+
+Если виртуальная функция объявлена с синтаксисом \texttt{= 0}, она называется чистой (pure virtual).
+
+\begin{cppcode}
+class Abstract {
+public:
+    virtual void doWork() = 0;
+};
+\end{cppcode}
+
+Такой класс становится абстрактным: создать его экземпляр невозможно. Однако \texttt{vtable} для него все равно может генерироваться (например, для вызова деструктора). В слоты, соответствующие чистым виртуальным функциям, компилятор обычно записывает указатель на служебную функцию-ловушку (например, \texttt{\_\_cxa\_pure\_virtual} в GCC). Если каким-то образом (через UB в конструкторе) вызвать такую функцию, программа аварийно завершится с соответствующим сообщением.
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Vtable} — механизм реализации динамического полиморфизма. Это массив указателей на функции.
+    \item Каждый объект полиморфного класса несет скрытый указатель \textbf{vptr}, увеличивающий его размер (обычно на 8 байт).
+    \item Вызов виртуальной функции требует разыменования указателя (индирекции), что может замедлить программу из-за промахов кэша процессора (Branch Prediction Miss).
+    \item При \textbf{множественном наследовании} указатель \texttt{this} динамически корректируется при приведении типов и вызове методов.
+    \item \textbf{dynamic\_cast} использует RTTI из vtable для безопасного приведения типов, возвращая \texttt{nullptr} при неудаче. Это дорогая операция.
+\end{itemize}
+\end{summary}

@@ -1,0 +1,14 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Context}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{rip}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Instruction Pointer (адрес возврата)}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{rsp}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Stack Pointer}
+
+\PYG{+w}{    }\PYG{c+c1}{// Callee\PYGZhy{}saved регистры}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{rbp}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Base Pointer}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{rbx}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{r12}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{r13}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{r14}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{r15}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

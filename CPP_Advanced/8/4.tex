@@ -1,0 +1,198 @@
+\chapter{Синхронизация: Мьютексы и Взаимные блокировки}
+
+Рассмотрев опасности гонок данных, мы приходим к необходимости механизмов защиты разделяемых ресурсов. Самым базовым и распространенным примитивом синхронизации в C++ (и в большинстве других языков) является мьютекс (Mutual Exclusion — взаимное исключение). В этой главе мы изучим не только API \texttt{std::mutex}, но и правильные паттерны его использования (RAII), а также разберем одну из самых сложных проблем многопоточности — взаимную блокировку (Deadlock) и способы борьбы с ней.
+
+\section{std::mutex и Критическая секция}
+
+Класс \texttt{std::mutex} (заголовок \texttt{<mutex>}) предоставляет два основных метода:
+\begin{itemize}
+    \item \texttt{lock()}: Поток пытается захватить мьютекс. Если мьютекс свободен, поток захватывает его и продолжает выполнение. Если мьютекс уже захвачен другим потоком, текущий поток \textbf{блокируется} (уходит в состояние ожидания, sleeping/waiting), пока мьютекс не освободится.
+    \item \texttt{unlock()}: Поток освобождает мьютекс, позволяя одному из ожидающих потоков захватить его.
+\end{itemize}
+
+Участок кода между вызовами \texttt{lock()} и \texttt{unlock()} называется \textbf{критической секцией}. В любой момент времени внутри критической секции может находиться только один поток.
+
+\subsection{Почему "сырые" lock() и unlock() опасны}
+
+Использование методов \texttt{lock()} и \texttt{unlock()} напрямую крайне не рекомендуется в современном C++. Рассмотрим пример:
+
+\begin{cppcode}
+std::mutex mtx;
+int shared_data = 0;
+
+void bad_practice() {
+    mtx.lock();
+    // ... работа с shared_data ...
+    
+    if (some_error) {
+        // Забыли unlock()! Мьютекс остался захвачен навсегда.
+        return; 
+    }
+    
+    // Если здесь вылетит исключение, unlock() тоже не вызовется.
+    func_that_may_throw(); 
+    
+    mtx.unlock();
+}
+\end{cppcode}
+
+Если поток завершится (через \texttt{return} или исключение), не вызвав \texttt{unlock()}, мьютекс останется в заблокированном состоянии. Все остальные потоки, пытающиеся его захватить, зависнут навечно (Deadlock).
+
+\section{RAII: lock\_guard и unique\_lock}
+
+Для решения проблемы управления временем жизни блокировки используется идиома RAII (Resource Acquisition Is Initialization). Стандартная библиотека предоставляет обертки, которые захватывают мьютекс в конструкторе и освобождают в деструкторе.
+
+\subsection{std::lock\_guard}
+
+Самая простая и легкая обертка. Захватывает мьютекс при создании, освобождает при выходе из области видимости. Не копируется, не перемещается.
+
+\begin{cppcode}
+void good_practice() {
+    // Конструктор вызывает mtx.lock()
+    std::lock_guard<std::mutex> guard(mtx); 
+    
+    // ... безопасная работа ...
+    
+    // При любом выходе (return, exception) вызовется деструктор guard,
+    // который вызовет mtx.unlock().
+}
+\end{cppcode}
+
+Начиная с C++17, шаблонный тип можно не указывать (CTAD): \texttt{std::lock\_guard guard(mtx);}.
+
+\subsection{std::unique\_lock}
+
+Более мощная и тяжелая обертка. В отличие от \texttt{lock\_guard}, она позволяет:
+\begin{itemize}
+    \item Отложить блокировку (стратегия \texttt{std::defer\_lock}).
+    \item Временно разблокировать мьютекс (\texttt{unlock()}) и снова заблокировать (\texttt{lock()}) внутри одного скоупа.
+    \item Передавать владение блокировкой (перемещаемый тип).
+\end{itemize}
+
+\texttt{std::unique\_lock} необходим при работе с условными переменными (\texttt{std::condition\_variable}), так как они требуют возможности атомарно отпускать мьютекс при ожидании.
+
+\section{Shared Mutex (Reader-Writer Lock)}
+
+Часто возникает ситуация, когда данные редко меняются, но часто читаются (например, конфигурация, кэш DNS). Использование обычного \texttt{std::mutex} заставит читателей выстраиваться в очередь, хотя они могли бы читать данные параллельно, не мешая друг другу.
+
+Для этого сценария в C++17 был добавлен \texttt{std::shared\_mutex} (заголовок \texttt{<shared\_mutex>}). Он поддерживает два режима захвата:
+\begin{enumerate}
+    \item \textbf{Эксклюзивный (Writer):} Аналог обычного \texttt{lock()}. Блокирует всех (и читателей, и писателей). Используется для изменения данных.
+    \item \textbf{Разделяемый (Reader):} Метод \texttt{lock\_shared()}. Позволяет нескольким потокам одновременно владеть мьютексом в режиме чтения. Блокирует только писателей.
+\end{enumerate}
+
+Для удобства использования существуют соответствующие RAII-обертки:
+\begin{itemize}
+    \item \texttt{std::lock\_guard<std::shared\_mutex>} или \texttt{std::unique\_lock} — для эксклюзивного захвата (писатель).
+    \item \textbf{\texttt{std::shared\_lock<std::shared\_mutex>}} — для разделяемого захвата (читатель).
+\end{itemize}
+
+\begin{cppcode}[]
+#include <shared_mutex>
+
+class ThreadSafeConfig {
+    std::map<std::string, std::string> settings;
+    mutable std::shared_mutex mtx; // mutable, чтобы использовать в const методах
+
+public:
+    std::string get(const std::string& key) const {
+        // Множество потоков могут вызывать get() одновременно
+        std::shared_lock lock(mtx); 
+        auto it = settings.find(key);
+        return (it != settings.end()) ? it->second : "";
+    }
+
+    void set(const std::string& key, const std::string& value) {
+        // Только один поток может писать, блокируя всех читателей
+        std::lock_guard lock(mtx); 
+        settings[key] = value;
+    }
+};
+\end{cppcode}
+
+\section{Deadlock (Взаимная блокировка)}
+
+Использование мьютексов вводит новый класс ошибок — взаимные блокировки. Классический пример — транзакция перевода денег между двумя банковскими счетами. Чтобы операция была атомарной, нужно заблокировать оба аккаунта.
+
+\subsection{Проблема порядка блокировки}
+
+Рассмотрим наивную реализацию функции \texttt{transfer}:
+
+\begin{cppcode}
+struct Account {
+    std::mutex m;
+    int balance;
+};
+
+void transfer(Account& from, Account& to, int amount) {
+    std::lock_guard<std::mutex> lock1(from.m);
+    // Имитация задержки, увеличивающая вероятность Deadlock
+    std::this_thread::sleep_for(std::chrono::milliseconds(1)); 
+    std::lock_guard<std::mutex> lock2(to.m);
+    
+    from.balance -= amount;
+    to.balance += amount;
+}
+\end{cppcode}
+
+Представим, что два потока одновременно выполняют встречные переводы:
+\begin{itemize}
+    \item \textbf{Поток 1:} \texttt{transfer(AccA, AccB, 100)}
+    \item \textbf{Поток 2:} \texttt{transfer(AccB, AccA, 50)}
+\end{itemize}
+
+Сценарий катастрофы:
+\begin{enumerate}
+    \item Поток 1 захватывает мьютекс \texttt{AccA}.
+    \item Поток 2 захватывает мьютекс \texttt{AccB}.
+    \item Поток 1 пытается захватить \texttt{AccB} и засыпает, так как он занят Потоком 2.
+    \item Поток 2 пытается захватить \texttt{AccA} и засыпает, так как он занят Потоком 1.
+\end{enumerate}
+
+Оба потока ждут друг друга. Программа зависает.
+
+\subsection{Решение 1: Иерархия блокировок}
+
+Можно установить правило: всегда захватывать мьютексы в определенном глобальном порядке. Например, по адресу памяти объекта \texttt{Account} (от меньшего к большему) или по уникальному ID аккаунта.
+
+\begin{cppcode}
+void safe_transfer_manual(Account& from, Account& to, int amount) {
+    if (&from < &to) {
+        std::lock_guard<std::mutex> lock1(from.m);
+        std::lock_guard<std::mutex> lock2(to.m);
+    } else {
+        std::lock_guard<std::mutex> lock1(to.m); // Сначала меньший адрес
+        std::lock_guard<std::mutex> lock2(from.m);
+    }
+    // ...
+}
+\end{cppcode}
+
+Это работает, но сложно поддерживать в больших системах.
+
+\subsection{Решение 2: std::lock и std::scoped\_lock}
+
+Стандартная библиотека C++ предоставляет алгоритмы для безопасного захвата нескольких мьютексов без риска дедлока (обычно внутри используется тот же алгоритм try-and-backoff или сортировка по адресам).
+
+В C++11 есть функция \texttt{std::lock(m1, m2, ...)}, которая блокирует мьютексы, но не управляет их освобождением (нужно передавать их в \texttt{lock\_guard} с флагом \texttt{std::adopt\_lock}).
+
+В C++17 появился идеальный инструмент — \textbf{\texttt{std::scoped\_lock}}. Это вариадик шаблон, который принимает произвольное количество мьютексов, захватывает их безопасным алгоритмом в конструкторе и освобождает в деструкторе.
+
+\begin{cppcode}
+void safe_transfer_cpp17(Account& from, Account& to, int amount) {
+    // Блокирует оба мьютекса безопасно. Порядок аргументов не важен.
+    std::scoped_lock lock(from.m, to.m);
+    
+    from.balance -= amount;
+    to.balance += amount;
+}
+\end{cppcode}
+
+\begin{summary}
+\begin{itemize}
+    \item Никогда не вызывайте \texttt{lock()} и \texttt{unlock()} вручную. Используйте RAII: \texttt{std::lock\_guard} или \texttt{std::unique\_lock}.
+    \item Используйте \texttt{std::shared\_mutex} и \texttt{std::shared\_lock} для сценариев "много читателей, один писатель".
+    \item Захват нескольких мьютексов одновременно — риск Deadlock.
+    \item Для захвата нескольких мьютексов всегда используйте \texttt{std::scoped\_lock} (C++17).
+\end{itemize}
+\end{summary}

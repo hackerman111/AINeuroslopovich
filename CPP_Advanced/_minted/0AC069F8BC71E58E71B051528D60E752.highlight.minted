@@ -1,0 +1,32 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{pragma once}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}string\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}memory\PYGZgt{}}\PYG{c+c1}{ // для std::unique\PYGZus{}ptr}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{DatabaseConnection}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{o}{\PYGZti{}}\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Важно: объявляем, но не определяем здесь}
+
+\PYG{+w}{    }\PYG{c+c1}{// Перемещающие операции (Move Semantics) необходимы,}
+\PYG{+w}{    }\PYG{c+c1}{// так как unique\PYGZus{}ptr нельзя копировать.}
+\PYG{+w}{    }\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{noexcept}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Копирование запрещаем (или реализуем через глубокое копирование Impl)}
+\PYG{+w}{    }\PYG{n}{DatabaseConnection}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{=}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{DatabaseConnection}\PYG{o}{\PYGZam{}}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{delete}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{connect}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{connectionString}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{executeQuery}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{query}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{k}{private}\PYG{o}{:}
+\PYG{+w}{    }\PYG{c+c1}{// Предварительное объявление.}
+\PYG{+w}{    }\PYG{c+c1}{// Класс Impl определен где\PYGZhy{}то в другом месте.}
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{Impl}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// Указатель на реализацию.}
+\PYG{+w}{    }\PYG{c+c1}{// std::unique\PYGZus{}ptr требует полного типа T только в момент вызова delete}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{unique\PYGZus{}ptr}\PYG{o}{\PYGZlt{}}\PYG{n}{Impl}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{pImpl}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

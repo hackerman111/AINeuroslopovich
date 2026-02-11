@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Service}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Resource}\PYG{+w}{ }\PYG{n}{res}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Конструктор Resource может бросить}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{Service}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{try}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{n}{res}\PYG{p}{(}\PYG{l+m+mi}{42}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Тело конструктора}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{k}{catch}\PYG{+w}{ }\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exception}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Мы попадем сюда, если res(42) упадет.}
+\PYG{+w}{        }\PYG{c+c1}{// ВАЖНО: Исключение здесь НЕЛЬЗЯ подавить.}
+\PYG{+w}{        }\PYG{c+c1}{// Даже если мы не напишем throw;, оно будет перевыброшено автоматически.}
+\PYG{+w}{        }\PYG{c+c1}{// Смысл блока только в логировании или трансляции исключения.}
+\PYG{+w}{        }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{cerr}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Init failed: }\PYG{l+s}{\PYGZdq{}}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{e}\PYG{p}{.}\PYG{n}{what}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

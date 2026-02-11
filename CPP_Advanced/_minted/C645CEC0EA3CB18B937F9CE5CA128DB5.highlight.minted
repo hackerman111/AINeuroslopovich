@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{Widget}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{w1}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Widget}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{w2}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{problematic\PYGZus{}usage}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ОПАСНО: Порядок вычисления аргументов не определен (до C++17)}
+\PYG{+w}{    }\PYG{c+c1}{// Даже в C++17, если конструктор второго Widget кинет исключение,}
+\PYG{+w}{    }\PYG{c+c1}{// первый Widget уже создан, но указатель на него потерян.}
+\PYG{+w}{    }\PYG{n}{process}\PYG{p}{(}\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Widget}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Widget}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

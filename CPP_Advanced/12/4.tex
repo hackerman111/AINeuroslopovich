@@ -1,0 +1,194 @@
+\chapter{Жизненный цикл и типичные ошибки (Live Coding Analysis)}
+
+Управление памятью в корутинах C++20 кардинально отличается от привычной семантики функций. Если в обычных функциях стековый кадр уничтожается автоматически при возврате (`ret`), то время жизни фрейма корутины управляется сложным конечным автоматом, который программист настраивает через `promise\_type`.
+
+Непонимание работы методов `initial\_suspend` и `final\_suspend` приводит к двум классам критических ошибок: утечкам памяти (Memory Leaks) и использованию памяти после освобождения (Use-After-Free). В этой главе мы разберем классический пример падения программы (SEGFAULT), который часто демонстрируется на собеседованиях и лекциях.
+
+\section{Точки приостановки (Suspend Points)}
+
+Компилятор вставляет вызовы `await\_suspend` в две ключевые точки жизненного цикла корутины: перед началом исполнения тела и после его завершения.
+
+\subsection{1. initial\_suspend: Жадность против Лени}
+Метод `promise.initial\_suspend()` вызывается сразу после создания фрейма, но до входа в пользовательский код.
+
+\begin{itemize}
+    \item \textbf{Lazy Start (`std::suspend\_always`):} Корутина создается в приостановленном состоянии. Это стандарт для генераторов (sequence generators). Вычислительные ресурсы не тратятся, пока пользователь явно не вызовет `resume()`.
+    \item \textbf{Eager Start (`std::suspend\_never`):} Корутина начинает выполнение немедленно. Это стандарт для задач (Tasks), которые запускают фоновую работу (например, сетевой запрос) сразу при создании.
+\end{itemize}
+
+\subsection{2. final\_suspend: Кто убивает фрейм?}
+Это самая опасная точка настройки. Метод вызывается, когда исполнение доходит до закрывающей фигурной скобки `\}` или `co\_return`.
+
+\begin{itemize}
+    \item \textbf{Автоматическое самоуничтожение (`std::suspend\_never`):} Корутина считает, что её работа закончена, и никто снаружи не ждет результатов. Фрейм немедленно деаллоцируется.
+    \item \textbf{Продление жизни (`std::suspend\_always`):} Корутина приостанавливается "на пороге смерти". Фрейм остается в памяти. Это необходимо, если внешний код (Caller) хочет считать результат из `promise` или проверить состояние. Обязанность вызвать `destroy()` ложится на внешний код.
+\end{itemize}
+
+\section{Анатомия краша: Case Study}
+
+Рассмотрим код, который компилируется без предупреждений, но гарантированно падает (или вызывает UB) при запуске.
+
+\textbf{Сценарий:} Мы хотим написать корутину, которая выполняется до конца, а мы снаружи проверяем её статус через `.done()`.
+
+\begin{cppcode}[]
+#include <coroutine>
+#include <iostream>
+
+struct BrokenTask {
+    struct promise_type {
+        BrokenTask get_return_object() {
+            return {std::coroutine_handle<promise_type>::from_promise(*this)};
+        }
+        std::suspend_always initial_suspend() { return {}; } // Lazy start
+        
+        // ОШИБКА ЗДЕСЬ: Мы разрешаем фрейму умереть сразу
+        std::suspend_never final_suspend() noexcept { return {}; }
+        
+        void unhandled_exception() {}
+        void return_void() {}
+    };
+
+    std::coroutine_handle<promise_type> h;
+    
+    // В деструкторе ничего не делаем, надеясь на автоматику?
+    ~BrokenTask() {} 
+};
+
+BrokenTask my_coro() {
+    std::cout << "Coro: working..." << std::endl;
+    co_return; // Точка завершения
+}
+
+int main() {
+    BrokenTask task = my_coro();
+    
+    task.h.resume(); // Запускаем. Выводит "Coro: working..."
+    
+    // КРИТИЧЕСКАЯ ОШИБКА: Use-After-Free
+    if (task.h.done()) { 
+        std::cout << "Done!" << std::endl;
+    }
+    
+    return 0;
+}
+\end{cppcode}
+
+\subsection{Разбор механики падения}
+
+Почему строка `task.h.done()` вызывает неопределенное поведение? Проследим хронологию событий в памяти:
+
+\begin{enumerate}
+    \item `main` вызывает `task.h.resume()`.
+    \item Управление переходит в `my\_coro`.
+    \item `my\_coro` выполняет тело и доходит до `co\_return`.
+    \item Вызывается `promise.return\_void()`.
+    \item Вызывается `co\_await promise.final\_suspend()`.
+    \item `final\_suspend` возвращает `suspend\_never` («не останавливайся»).
+    \item Поскольку остановки не произошло, выполняется процедура уничтожения корутины:
+    \begin{itemize}
+        \item Вызывается деструктор `promise\_type`.
+        \item Освобождается память фрейма (Heap Deallocation).
+    \end{itemize}
+    \item Управление возвращается из `resume()` обратно в `main`.
+    \item В `main` выполняется `task.h.done()`. Хендл `h` хранит адрес памяти, которая \textbf{уже освобождена} на шаге 7.
+\end{enumerate}
+
+Это классический \textbf{Dangling Pointer}. Доступ к освобожденной памяти может вернуть мусор, вызвать Segmentation Fault или (что хуже) вернуть `true`/`false` случайным образом, создавая плавающий баг.
+
+\begin{important}
+Если вы используете `std::suspend\_never` в `final\_suspend`, ваш `coroutine\_handle` становится невалидным сразу после возврата управления из последнего `resume()`. Вы не имеете права вызывать на нем никакие методы, включая `done()`.
+\end{important}
+
+\section{Паттерн безопасного завершения}
+
+Чтобы безопасно опрашивать корутину после завершения (например, чтобы забрать результат вычислений), фрейм должен пережить само тело функции.
+
+\subsection{Исправление Promise Type}
+
+Изменим `final\_suspend`:
+
+\begin{cppcode}
+struct promise_type {
+    // ...
+    // ТЕПЕРЬ ПРАВИЛЬНО: Зависаем в конце
+    std::suspend_always final_suspend() noexcept { return {}; }
+};
+\end{cppcode}
+
+Теперь хронология меняется:
+\begin{enumerate}
+    \item 
+ `co\_return` вызывает `final\_suspend`.
+    \item 
+ Возвращается `suspend\_always`.
+    \item 
+ Корутина приостанавливается в состоянии «завершена, но жива». Фрейм в памяти.
+    \item 
+ Управление возвращается в `main`.
+    \item 
+ `task.h.done()` обращается к живому фрейму и корректно возвращает `true`.
+\end{enumerate}
+
+\subsection{Проблема утечки памяти}
+
+Теперь у нас новая проблема. Так как корутина "зависла" в конце, она сама себя не удалила. Если мы просто выйдем из `main`, память фрейма утечет (Memory Leak).
+
+Мы обязаны вызвать `handle.destroy()` вручную. Лучшее место для этого — деструктор RAII-обертки.
+
+\begin{cppcode}
+struct SafeTask {
+    // ... promise_type с final_suspend = suspend_always ...
+
+    std::coroutine_handle<promise_type> h;
+
+    SafeTask(std::coroutine_handle<promise_type> handle) : h(handle) {}
+
+    // Запрещаем копирование (чтобы не удалить дважды)
+    SafeTask(const SafeTask&) = delete;
+    
+    // Разрешаем перемещение
+    SafeTask(SafeTask&& other) noexcept : h(other.h) {
+        other.h = nullptr;
+    }
+
+    ~SafeTask() {
+        // Если хендл валиден, мы обязаны его уничтожить
+        if (h) h.destroy();
+    }
+};
+\end{cppcode}
+
+\section{Fire-and-Forget корутины}
+
+Существует единственный сценарий, где `final\_suspend` должен возвращать `suspend\_never`. Это корутины, которые не возвращают никакого объекта управления (возвращаемый тип `void` или отвязанный тип).
+
+Пример: корутина, которая запускает анимацию или логирование и о которой вызывающий код сразу забывает.
+
+\begin{cppcode}
+struct Detached {
+    struct promise_type {
+        Detached get_return_object() { return {}; }
+        std::suspend_never initial_suspend() { return {}; } // Сразу старт
+        std::suspend_never final_suspend() noexcept { return {}; } // Сама умрет
+        void unhandled_exception() { std::terminate(); }
+        void return_void() {}
+    };
+};
+
+Detached log_async() {
+    // ... какая-то работа ...
+    co_return; // Фрейм уничтожится здесь автоматически
+}
+\end{cppcode}
+
+В таком случае у нас нет `coroutine\_handle` снаружи, поэтому риск Use-After-Free отсутствует. Но теряется возможность контроля и обработки ошибок.
+
+\begin{summary}
+Правила выживания:
+\begin{enumerate}
+    \item Если у вас есть доступ к `coroutine\_handle` снаружи, `final\_suspend` \textbf{обязан} возвращать `std::suspend\_always`.
+    \item В этом случае вы \textbf{обязаны} вызвать `handle.destroy()`, иначе будет утечка.
+    \item Используйте RAII-обертки (как `SafeTask`), чтобы автоматизировать вызов `destroy()`.
+    \item Никогда не копируйте сырые `coroutine\_handle`, используйте семантику перемещения (move semantics).
+\end{enumerate}
+\end{summary}

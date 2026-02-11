@@ -1,0 +1,32 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{Object}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{Read}\PYG{p}{(}\PYG{n}{Tokenizer}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{tokenizer}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Token}\PYG{+w}{ }\PYG{n}{token}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{tokenizer}\PYG{p}{.}\PYG{n}{Next}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{token}\PYG{p}{.}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Token}\PYG{o}{:}\PYG{o}{:}\PYG{n}{NUMBER}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Number}\PYG{p}{(}\PYG{n}{token}\PYG{p}{.}\PYG{n}{int\PYGZus{}val}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{token}\PYG{p}{.}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Token}\PYG{o}{:}\PYG{o}{:}\PYG{n}{OPEN\PYGZus{}PAREN}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ReadList}\PYG{p}{(}\PYG{n}{tokenizer}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{token}\PYG{p}{.}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Token}\PYG{o}{:}\PYG{o}{:}\PYG{n}{SYMBOL}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Symbol}\PYG{p}{(}\PYG{n}{token}\PYG{p}{.}\PYG{n}{str\PYGZus{}val}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{SyntaxError}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Unexpected token}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{Object}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{ReadList}\PYG{p}{(}\PYG{n}{Tokenizer}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{tokenizer}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Token}\PYG{+w}{ }\PYG{n}{peek}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{tokenizer}\PYG{p}{.}\PYG{n}{Peek}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{peek}\PYG{p}{.}\PYG{n}{type}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Token}\PYG{o}{:}\PYG{o}{:}\PYG{n}{CLOSE\PYGZus{}PAREN}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{tokenizer}\PYG{p}{.}\PYG{n}{Next}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Поглощаем \PYGZsq{})\PYGZsq{}}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// Пустой список}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n}{Object}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{head}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{Read}\PYG{p}{(}\PYG{n}{tokenizer}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{Object}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{tail}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{ReadList}\PYG{p}{(}\PYG{n}{tokenizer}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Cell}\PYG{p}{(}\PYG{n}{head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{tail}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

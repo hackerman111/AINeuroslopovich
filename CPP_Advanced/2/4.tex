@@ -1,0 +1,161 @@
+\chapter{Глава 4. Безопасность исключений и Контейнеры}
+
+Взаимодействие семантики перемещения с контейнерами стандартной библиотеки (в частности, \texttt{std::vector}) имеет нюанс, который часто упускают из виду. Этот нюанс касается гарантий безопасности исключений (Exception Safety Guarantees). Оказывается, наличие перемещающего конструктора не гарантирует, что вектор будет его использовать.
+
+\section{4.1 Проблема реалокации вектора}
+
+Вспомним, как работает \texttt{std::vector::push\_back} (или \texttt{emplace\_back}), когда его емкость (\texttt{capacity}) исчерпана:
+\begin{enumerate}
+    \item Выделяется новый блок памяти большего размера (обычно $\times 2$).
+    \item Элементы из старого блока переносятся в новый.
+    \item Старый блок удаляется.
+\end{enumerate}
+
+В C++98 элементы всегда \textbf{копировались}. Если конструктор копирования одного из элементов бросал исключение, вектор просто уничтожал уже созданные копии в новом буфере и освобождал его. Старый буфер оставался нетронутым. Это обеспечивало \textbf{Строгую гарантию исключений (Strong Exception Guarantee)}: операция либо выполняется успешно, либо не меняет состояние программы (транзакционность).
+
+С появлением C++11 возникло желание \textbf{перемещать} элементы вместо копирования. Это намного быстрее. Но что, если перемещающий конструктор бросит исключение на середине процесса?
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    scale=0.8,
+    node distance=0cm,
+    every node/.style={draw, rectangle, minimum width=1.5cm, minimum height=1cm, align=center, fill=nordCodeBg, draw=nordBlue},
+    moved/.style={fill=nordLight, dashed},
+    active/.style={fill=nordOrange!20}
+]
+
+    % Old Buffer
+    \node (o1) [moved] {Item 1\\(moved)};
+    \node (o2) [right=of o1, moved] {Item 2\\(moved)};
+    \node (o3) [right=of o2] {Item 3\\(valid)};
+    \node (o4) [right=of o3] {Item 4\\(valid)};
+    
+    \node [above=0.2cm of o1.north west, anchor=south west, draw=none, fill=none] {\textbf{Old Buffer}};
+
+    % New Buffer
+    \node (n1) [below=2cm of o1] {Item 1};
+    \node (n2) [right=of n1] {Item 2};
+    \node (n3) [right=of n2, active] {Item 3\\THROW!};
+    \node (n4) [right=of n3, draw=none, fill=none] {};
+
+    \node [above=0.2cm of n1.north west, anchor=south west, draw=none, fill=none] {\textbf{New Buffer}};
+
+    % Arrows
+    \draw[->, thick, nordBlue] (o1) -- (n1);
+    \draw[->, thick, nordBlue] (o2) -- (n2);
+    \draw[->, thick, nordRed] (o3) -- (n3);
+
+\end{tikzpicture}
+\caption{Катастрофа при исключении во время Move}
+\end{figure}
+
+\textbf{Сценарий сбоя:}
+\begin{enumerate}
+    \item Вектор начал перемещать элементы. Элементы 1 и 2 успешно перемещены в новый буфер. В старом буфере они теперь "пустые" (moved-from).
+    \item При перемещении Элемента 3 возникает исключение.
+    \item Мы должны откатить операцию ("unwind"), чтобы обеспечить Strong Guarantee.
+    \item Мы уничтожаем копии в новом буфере.
+    \item \textbf{Проблема:} Мы не можем "вернуть" Элементы 1 и 2 обратно в старый буфер, потому что операция обратного перемещения \textit{тоже может бросить исключение}!
+\end{enumerate}
+
+В итоге, у нас остались испорченные данные в старом буфере. Транзакционность нарушена.
+
+\section{4.2 Ключевое слово noexcept}
+
+Чтобы решить эту дилемму, \texttt{std::vector} использует стратегию: \textit{"Перемещать только если это безопасно, иначе копировать"}.
+
+Как компилятор узнает, безопасно ли перемещать объект? Для этого используется спецификатор \texttt{noexcept} в объявлении перемещающего конструктора.
+
+\begin{cppcode}[]
+class SafeMover {
+public:
+    // Мы гарантируем, что этот конструктор не бросит исключение
+    SafeMover(SafeMover&&) noexcept { 
+        // ...
+    }
+    
+    // Для копирования гарантий нет (может не хватить памяти)
+    SafeMover(const SafeMover&) { 
+        // ...
+    }
+};
+
+class UnsafeMover {
+public:
+    // noexcept отсутствует!
+    UnsafeMover(UnsafeMover&&) { 
+        // ...
+    }
+    UnsafeMover(const UnsafeMover&) { /*...*/ }
+};
+\end{cppcode}
+
+При реалокации \texttt{std::vector} проверяет свойство типа через type traits (в частности, \texttt{std::is\_nothrow\_move\_constructible}).
+
+\begin{algorithm}[H]
+\caption{Псевдокод логики реалокации вектора}
+\eIf{std::is\_nothrow\_move\_constructible<T>::value}{
+    \textbf{Move}: Используем \texttt{std::move} для переноса элементов.\;
+    Это быстро и безопасно (исключений не будет).\;
+}{
+    \eIf{std::is\_copy\_constructible<T>::value}{
+        \textbf{Copy}: Используем копирование.\;
+        Медленно, но если будет исключение, старый буфер останется цел.\;
+    }{
+        \textbf{Move (Unsafe)}: Если тип нельзя копировать (например, \texttt{unique\_ptr}), у нас нет выбора. Рискуем и перемещаем.\;
+    }
+}
+\end{algorithm}
+
+\section{4.3 std::move\_if\_noexcept}
+
+Стандартная библиотека предоставляет утилиту \texttt{std::move\_if\_noexcept}, которая инкапсулирует эту логику выбора. Она возвращает rvalue-ссылку (разрешая мув) только если мув-конструктор помечен как \texttt{noexcept}, иначе она возвращает const lvalue-ссылку (форсируя копирование).
+
+\begin{cppcode}[]
+template <typename T>
+void vector_realloc_stub(T* old_buf, T* new_buf, size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        // Магия выбора:
+        new (new_buf + i) T(std::move_if_noexcept(old_buf[i]));
+    }
+}
+\end{cppcode}
+
+\section{4.4 Идиома "Move or Copy"}
+
+Из вышесказанного следует важная рекомендация для разработчиков классов:
+
+\begin{important}
+\textbf{Всегда помечайте перемещающий конструктор и оператор присваивания как \texttt{noexcept}, если они не бросают исключений.}
+\end{important}
+
+Обычно перемещение сводится к копированию указателей и скалярных типов, что никогда не бросает исключений. Если вы забудете \texttt{noexcept}, ваш класс будет работать корректно, но \texttt{std::vector<YourClass>} будет молча копировать элементы при расширении, что может катастрофически снизить производительность (с $O(1)$ до $O(N)$ глубоких копий).
+
+Пример правильного объявления (Rule of 5 с noexcept):
+\begin{cppcode}[]
+class Efficient {
+    std::string data;
+public:
+    Efficient(Efficient&& other) noexcept 
+        : data(std::move(other.data)) {} // std::string move is noexcept
+
+    Efficient& operator=(Efficient&& other) noexcept {
+        data = std::move(other.data);
+        return *this;
+    }
+    
+    // Copy operations (can throw std::bad_alloc)
+    Efficient(const Efficient&) = default;
+    Efficient& operator=(const Efficient&) = default;
+};
+\end{cppcode}
+
+\begin{summary}
+\begin{itemize}
+    \item \texttt{std::vector} гарантирует Strong Exception Safety.
+    \item При реалокации вектор выбирает между Move и Copy.
+    \item Выбор Move происходит \textbf{только} если Move Constructor помечен как \texttt{noexcept}.
+    \item Если \texttt{noexcept} нет, происходит "молчаливое" копирование (Silent Pessimization).
+\end{itemize}
+\end{summary}

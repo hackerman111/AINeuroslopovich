@@ -1,0 +1,258 @@
+\chapter{Генераторы данных: Трансформация co\_yield}
+
+До сих пор мы рассматривали корутины как механизм управления потоком исполнения (Control Flow). Однако в большинстве прикладных задач (Python generators, C\# `yield return`) корутины используются как источники данных.
+
+Оператор \texttt{co\_yield} превращает корутину в генератор — функцию, которая производит последовательность значений лениво (lazy evaluation), возвращая управление вызывающей стороне после генерации каждого элемента. В этой главе мы реализуем полноценный класс \texttt{Generator<T>}, совместимый с range-based for циклами C++.
+
+\section{Семантика co\_yield}
+
+Ключевое слово \texttt{co\_yield} — это синтаксический сахар. Компилятор C++20 преобразует выражение \texttt{co\_yield expr} в цепочку вызовов, проходящую через \texttt{promise\_type}.
+
+Выражение:
+\begin{cppcode}
+co_yield some_value;
+\end{cppcode}
+
+Трансформируется в:
+\begin{cppcode}
+co_await promise.yield_value(some_value);
+\end{cppcode}
+
+Это означает, что механизм передачи данных полностью контролируется методом \texttt{yield\_value} внутри промиса.
+
+\section{Архитектура Генератора}
+
+Чтобы корутина работала как генератор, нам нужно решить две задачи:
+\begin{enumerate}
+    \item \textbf{Exfiltration (Экфильтрация данных):} Как передать значение из локальной переменной корутины во внешний мир?
+    \item \textbf{Iteration (Итерация):} Как интегрировать низкоуровневые методы \texttt{resume()} и \texttt{done()} в стандартный интерфейс итераторов C++ (`begin`, `end`, `operator++`).
+\end{enumerate}
+
+\subsection{1. Promise как буфер обмена}
+
+Поскольку \texttt{promise\_type} живет внутри фрейма корутины, он является идеальным местом для временного хранения "выброшенного" значения.
+
+\begin{cppcode}
+template<typename T>
+struct Generator {
+    struct promise_type {
+        // Буфер для значения. Используем указатель для эффективности 
+        // (избегаем лишних копирований) и возможности вернуть nullptr.
+        T* current_value = nullptr;
+
+        // Точка расширения для co_yield
+        std::suspend_always yield_value(T& value) noexcept {
+            current_value = std::addressof(value); // Сохраняем адрес
+            return {}; // Приостанавливаем корутину!
+        }
+
+        // Стандартный boilerplate
+        Generator get_return_object() {
+            return Generator{std::coroutine_handle<promise_type>::from_promise(*this)};
+        }
+        std::suspend_always initial_suspend() { return {}; } // Ленивый старт
+        std::suspend_always final_suspend() noexcept { return {}; }
+        void unhandled_exception() { std::terminate(); }
+        void return_void() {} 
+    };
+    // ...
+};
+\end{cppcode}
+
+\begin{important}
+Обратите внимание на возвращаемый тип \texttt{yield\_value}. Мы возвращаем \texttt{std::suspend\_always}. Это критически важно.
+\begin{itemize}
+    \item Если бы мы вернули \texttt{suspend\_never}, корутина записала бы значение в \texttt{current\_value} и \textbf{немедленно} продолжила бы выполнение.
+    \item В цикле генерации это привело бы к перезаписи значения следующим элементом до того, как потребитель (Consumer) успел бы его прочитать.
+\end{itemize}
+Остановка (\texttt{suspend}) гарантирует, что управление перейдет к потребителю, который прочитает значение и только потом запросит следующее.
+\end{important}
+
+\subsection{2. Итераторный интерфейс}
+
+Чтобы использовать генератор в диапазонах (`for (auto v : gen)`), класс \texttt{Generator} должен предоставлять методы \texttt{begin()} и \texttt{end()}. Итератор будет оберткой над \texttt{coroutine\_handle}.
+
+\begin{cppcode}
+    // Внутри класса Generator<T>
+    
+    struct Iterator {
+        std::coroutine_handle<promise_type> handle;
+
+        // operator++: Продвижение вперед = resume()
+        Iterator& operator++() {
+            handle.resume();
+            if (handle.done()) {
+                // Если корутина завершилась, разыменовывать больше нельзя
+                handle = nullptr; 
+            }
+            return *this;
+        }
+
+        // operator*: Доступ к данным = чтение из promise
+        T& operator*() const {
+            return *handle.promise().current_value;
+        }
+
+        // Сравнение с sentinel (end iterator)
+        bool operator!=(std::default_sentinel_t) const {
+            return handle != nullptr && !handle.done();
+        }
+    };
+
+    Iterator begin() {
+        if (handle_) {
+            handle_.resume(); // Первый шаг, чтобы дойти до первого yield
+            if (handle_.done()) return end();
+        }
+        return Iterator{handle_};
+    }
+
+    std::default_sentinel_t end() { return {}; }
+\end{cppcode}
+
+\section{Полная реализация и пример использования}
+
+Соберем всё вместе в законченный класс. Мы используем \texttt{std::default\_sentinel\_t} для упрощения логики завершения итерации (C++20 feature).
+
+\begin{cppcode}[]
+#include <coroutine>
+#include <iostream>
+#include <memory>
+
+template<typename T>
+struct Generator {
+    struct promise_type {
+        const T* current_value = nullptr;
+
+        Generator get_return_object() {
+            return Generator{std::coroutine_handle<promise_type>::from_promise(*this)};
+        }
+        
+        std::suspend_always initial_suspend() { return {}; }
+        std::suspend_always final_suspend() noexcept { return {}; }
+        
+        // Поддержка co_yield val;
+        std::suspend_always yield_value(const T& value) noexcept {
+            current_value = std::addressof(value);
+            return {};
+        }
+        
+        void unhandled_exception() { std::terminate(); }
+        void return_void() {}
+    };
+
+    using Handle = std::coroutine_handle<promise_type>;
+    Handle handle_;
+
+    explicit Generator(Handle h) : handle_(h) {}
+    
+    ~Generator() { 
+        if (handle_) handle_.destroy(); 
+    }
+
+    // Запрет копирования (Generator владеет ресурсом)
+    Generator(const Generator&) = delete;
+    Generator& operator=(const Generator&) = delete;
+    
+    // Перемещение
+    Generator(Generator&& other) noexcept : handle_(other.handle_) {
+        other.handle_ = nullptr;
+    }
+
+    // Итераторная часть
+    struct Iterator {
+        Handle handle;
+        
+        void operator++() { 
+            handle.resume(); 
+            if (handle.done()) handle = nullptr; 
+        }
+        
+        const T& operator*() const { 
+            return *handle.promise().current_value; 
+        }
+        
+        bool operator!=(std::default_sentinel_t) const { 
+            return handle != nullptr && !handle.done(); 
+        }
+    };
+
+    Iterator begin() { 
+        if (handle_) {
+            handle_.resume(); 
+            if (handle_.done()) return end();
+        }
+        return Iterator{handle_}; 
+    }
+    
+    std::default_sentinel_t end() { return {}; }
+};
+
+// --- Пользовательский код ---
+
+Generator<int> fibonacci(int limit) {
+    int a = 0, b = 1;
+    while (a < limit) {
+        co_yield a; // Здесь происходит магия
+        
+        int t = a;
+        a = b;
+        b = t + b;
+    }
+}
+
+int main() {
+    std::cout << "Fibonacci sequence: ";
+    
+    // Range-based for loop работает прозрачно
+    for (int num : fibonacci(100)) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+    
+    return 0;
+}
+\end{cppcode}
+
+\section{Анализ потока управления (Control Flow)}
+
+Разберем пошагово, что происходит в строке `for (int num : fibonacci(100))`.
+
+\begin{enumerate}
+    \item \textbf{Инициализация:} Вызывается `fibonacci(100)`. Создается фрейм, promise, возвращается объект `Generator`. Корутина стоит на `initial\_suspend`.
+    \item \textbf{begin():} Цикл вызывает `gen.begin()`. Внутри вызывается `handle.resume()`.
+    \item \textbf{Вход в корутину:} Исполнение переходит внутрь `fibonacci`. Инициализируются `a=0`, `b=1`.
+    \item \textbf{Первый yield:} Доходим до `co\_yield a`.
+    \begin{itemize}
+        \item Вызывается `promise.yield\_value(0)`.
+        \item Поле `promise.current\_value` указывает на локальную переменную `a` (во фрейме).
+        \item Возвращается `suspend\_always`. Корутина приостанавливается.
+    \end{itemize}
+    \item \textbf{Возврат в begin():} `resume()` возвращает управление. `begin()` возвращает итератор.
+    \item \textbf{Тело цикла:} Разыменование итератора `*it` читает значение `0` из промиса. `std::cout` печатает `0`.
+    \item \textbf{Инкремент:} Цикл вызывает `operator++`. Он вызывает `handle.resume()`.
+    \item \textbf{Продолжение корутины:} Исполнение продолжается сразу после `co\_yield`.
+        \item Вычисляются новые `a` и `b`.
+        \item Цикл `while` переходит на новую итерацию.
+    \item \textbf{Второй yield:} Снова `co\_yield a` (теперь `1`). Процесс повторяется.
+\end{enumerate}
+
+\section{Сравнение сложности}
+
+Вспомним, как приходилось писать итераторы до C++20 (пример из первой главы). Нам нужно было вручную создавать класс, хранить состояние (`current\_a`, `current\_b`), реализовывать операторы. Логика генерации была "размазана" по методам класса.
+
+С использованием корутин:
+\begin{itemize}
+    \item \textbf{Логика:} Написана линейно, как обычный алгоритм (функция `fibonacci`).
+    \item \textbf{Состояние:} Автоматически сохраняется компилятором во фрейме.
+    \item \textbf{Инфраструктура:} Код класса `Generator<T>` пишется \textbf{один раз} в библиотеке. Прикладной программист пишет только бизнес-логику.
+\end{itemize}
+
+\begin{summary}
+\begin{itemize}
+    \item Оператор \texttt{co\_yield} — это способ коммуникации корутины с её промисом.
+    \item Метод \texttt{yield\_value} должен возвращать \texttt{awaitable} (обычно \texttt{suspend\_always}), чтобы дать потребителю время обработать данные.
+    \item Превращение корутины в \texttt{InputRange} требует реализации стандартного паттерна итератора, который внутри себя дергает \texttt{resume()} и читает данные из промиса.
+    \item Этот подход позволяет писать сложные алгоритмы генерации последовательностей (обход графов, бесконечные потоки) в линейном стиле, сохраняя производительность конечного автомата.
+\end{itemize}
+\end{summary}

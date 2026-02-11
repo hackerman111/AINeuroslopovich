@@ -1,0 +1,21 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 1. Обычная Rvalue\PYGZhy{}ссылка}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{n}{Widget}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{w}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Тип Widget конкретен, вывода типов нет.}
+\PYG{+w}{                       }\PYG{c+c1}{// Принимает ТОЛЬКО rvalue.}
+
+\PYG{c+c1}{// 2. Универсальная ссылка}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{wrapper}\PYG{p}{(}\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// T выводится компилятором.}
+\PYG{+w}{                       }\PYG{c+c1}{// Принимает И lvalue, И rvalue.}
+
+\PYG{c+c1}{// 3. Подвох: это НЕ универсальная ссылка}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{vector\PYGZus{}push}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// T выводится, но вид ссылки}
+\PYG{+w}{                                      }\PYG{c+c1}{// искажен (vector\PYGZlt{}T\PYGZgt{}\PYGZam{}\PYGZam{}).}
+\PYG{+w}{                                      }\PYG{c+c1}{// Это rvalue\PYGZhy{}ссылка на вектор.}
+
+\PYG{c+c1}{// 4. Еще подвох: const убивает универсальность}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{const\PYGZus{}wrapper}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{arg}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// const T\PYGZam{}\PYGZam{} — это всегда rvalue\PYGZhy{}ссылка,}
+\PYG{+w}{                                   }\PYG{c+c1}{// но только на const объекты.}
+\end{MintedVerbatim}

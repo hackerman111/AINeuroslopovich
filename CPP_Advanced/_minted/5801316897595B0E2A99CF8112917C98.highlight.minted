@@ -1,0 +1,45 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Глобальный массив Hazard Pointers (по одному слоту на поток)}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{n}{Node}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{HP}\PYG{p}{[}\PYG{n}{MAX\PYGZus{}THREADS}\PYG{p}{]}\PYG{p}{;}
+
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{optional}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{Pop}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{thread\PYGZus{}id}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{Node}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{old\PYGZus{}head}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n}{Node}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{next\PYGZus{}node}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n+nb}{true}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// 1. Читаем текущую голову}
+\PYG{+w}{        }\PYG{n}{old\PYGZus{}head}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{head}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}acquire}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{old\PYGZus{}head}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{nullopt}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// 2. Объявляем указатель \PYGZdq{}опасным\PYGZdq{} (защищаем его)}
+\PYG{+w}{        }\PYG{n}{HP}\PYG{p}{[}\PYG{n}{thread\PYGZus{}id}\PYG{p}{]}\PYG{p}{.}\PYG{n}{store}\PYG{p}{(}\PYG{n}{old\PYGZus{}head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}seq\PYGZus{}cst}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// 3. КРИТИЧЕСКАЯ ПРОВЕРКА!}
+\PYG{+w}{        }\PYG{c+c1}{// За время между шагом 1 и 2 old\PYGZus{}head мог быть удален.}
+\PYG{+w}{        }\PYG{c+c1}{// Если head изменился, значит, наш HP защищает уже \PYGZdq{}мертвый\PYGZdq{} объект.}
+\PYG{+w}{        }\PYG{c+c1}{// Нужно начать сначала.}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{head}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}acquire}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{n}{old\PYGZus{}head}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n}{HP}\PYG{p}{[}\PYG{n}{thread\PYGZus{}id}\PYG{p}{]}\PYG{p}{.}\PYG{n}{store}\PYG{p}{(}\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Снимаем защиту}
+\PYG{+w}{            }\PYG{k}{continue}\PYG{p}{;}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// 4. Теперь указатель безопасно защищен. Можно читать поля.}
+\PYG{+w}{        }\PYG{n}{next\PYGZus{}node}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{old\PYGZus{}head}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{next}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Безопасно!}
+
+\PYG{+w}{        }\PYG{c+c1}{// 5. Пытаемся удалить из стека}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{head}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}weak}\PYG{p}{(}\PYG{n}{old\PYGZus{}head}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{next\PYGZus{}node}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{break}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Успех! Мы извлекли элемент.}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// Неудача: снимаем защиту и пробуем снова}
+\PYG{+w}{        }\PYG{n}{HP}\PYG{p}{[}\PYG{n}{thread\PYGZus{}id}\PYG{p}{]}\PYG{p}{.}\PYG{n}{store}\PYG{p}{(}\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}relaxed}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{n}{HP}\PYG{p}{[}\PYG{n}{thread\PYGZus{}id}\PYG{p}{]}\PYG{p}{.}\PYG{n}{store}\PYG{p}{(}\PYG{k}{nullptr}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}release}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Мы закончили}
+
+\PYG{+w}{    }\PYG{c+c1}{// 6. Отправляем old\PYGZus{}head на удаление}
+\PYG{+w}{    }\PYG{n}{RetireNode}\PYG{p}{(}\PYG{n}{old\PYGZus{}head}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{old\PYGZus{}head}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{data}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

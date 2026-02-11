@@ -1,0 +1,12 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// header.h}
+\PYG{k}{extern}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{globalVar}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Только объявление}
+
+\PYG{c+c1}{// a.cpp}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}header.h\PYGZdq{}}
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{globalVar}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// Определение (память выделена здесь)}
+
+\PYG{c+c1}{// b.cpp}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZdq{}header.h\PYGZdq{}}
+\PYG{c+c1}{// Использует символ globalVar, который будет найден в a.o}
+\end{MintedVerbatim}

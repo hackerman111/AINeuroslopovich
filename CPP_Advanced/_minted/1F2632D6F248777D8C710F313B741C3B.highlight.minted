@@ -1,0 +1,32 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Политика 1: Без проверок (для максимальной скорости)}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{NoCheck}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{Check}\PYG{p}{(}\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// Пусто}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Политика 2: Строгая проверка}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{EnforceNotNull}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{Check}\PYG{p}{(}\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{throw}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{runtime\PYGZus{}error}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{Null pointer access}\PYG{l+s}{\PYGZdq{}}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Хост\PYGZhy{}класс}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{CheckingPolicy}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{SmartPtr}\PYG{+w}{ }\PYG{o}{:}\PYG{+w}{ }\PYG{k}{private}\PYG{+w}{ }\PYG{n}{CheckingPolicy}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+c1}{// Наследование для EBO}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{k}{operator}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// Вызов метода политики}
+\PYG{+w}{        }\PYG{n}{CheckingPolicy}\PYG{o}{:}\PYG{o}{:}\PYG{n}{Check}\PYG{p}{(}\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{c+c1}{// ... конструкторы ...}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// Использование}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{FastPtr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{SmartPtr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{NoCheck}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\PYG{k}{using}\PYG{+w}{ }\PYG{n}{SafePtr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{SmartPtr}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{EnforceNotNull}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+\end{MintedVerbatim}

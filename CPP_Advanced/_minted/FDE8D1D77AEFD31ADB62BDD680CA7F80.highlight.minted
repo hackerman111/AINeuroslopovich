@@ -1,0 +1,4 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Promise}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k+kt}{void}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{coroutine\PYGZus{}handle}\PYG{p}{;}
+\end{MintedVerbatim}

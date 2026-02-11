@@ -1,0 +1,246 @@
+\chapter{Building a Production-Grade ThreadPool}
+
+Осознав стоимость создания потоков и ограничения операционной системы в предыдущей главе, мы приходим к необходимости архитектурного паттерна \textbf{ThreadPool}. Идея проста: мы создаем фиксированный набор потоков (worker threads) на старте приложения и переиспользуем их для выполнения множества задач.
+
+Однако реализация надежного, готового к продакшену пула потоков — задача нетривиальная. Она требует глубокого понимания примитивов синхронизации, управления жизненным циклом потоков и обработки исключительных ситуаций. В этой главе мы шаг за шагом спроектируем и реализуем ThreadPool на современном C++.
+
+\section{Фундамент: Блокирующая очередь (Blocking Queue)}
+
+Сердцем любого пула потоков является очередь задач. Воркеры (потребители) должны извлекать задачи из очереди, а клиенты (производители) — добавлять их.
+
+Ключевое требование к такой очереди — она должна быть \textbf{блокирующей} для потребителей. Если задач нет, поток-воркер не должен крутиться в цикле (`while(empty) {}`), потребляя 100\% CPU (busy wait). Он должен "уснуть" на уровне ядра ОС, освободив ресурсы процессора, и проснуться только тогда, когда появится новая задача или поступит сигнал остановки.
+
+Для реализации этого механизма нам потребуются три компонента:
+\begin{enumerate}
+    \item \texttt{std::deque<T>} или \texttt{std::queue<T>} — контейнер для хранения данных.
+    \item \texttt{std::mutex} — для обеспечения взаимного исключения (mutual exclusion) при доступе к контейнеру.
+    \item \texttt{std::condition\_variable} — для организации ожидания и уведомления потоков.
+\end{enumerate}
+
+\subsection{Реализация UnboundedBlockingQueue}
+
+Рассмотрим реализацию неограниченной (unbounded) очереди. "Неограниченная" означает, что метод \texttt{Push} никогда не блокируется из-за переполнения (пока есть оперативная память).
+
+\begin{cppcode}[]
+#include <mutex>
+#include <condition_variable>
+#include <deque>
+#include <optional>
+
+template <typename T>
+class UnboundedBlockingQueue {
+public:
+    void Push(T item) {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            buffer_.push_back(std::move(item));
+        }
+        // Уведомляем один спящий поток (если есть)
+        not_empty_.notify_one();
+    }
+
+    std::optional<T> Pop() {
+        std::unique_lock<std::mutex> lock(mutex_);
+        
+        // Ожидаем, пока очередь не станет непустой ИЛИ не будет закрыта
+        not_empty_.wait(lock, [this]() {
+            return !buffer_.empty() || is_closed_;
+        });
+
+        if (buffer_.empty() && is_closed_) {
+            return std::nullopt; // Очередь закрыта и пуста
+        }
+
+        T item = std::move(buffer_.front());
+        buffer_.pop_front();
+        return item;
+    }
+
+    void Close() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            is_closed_ = true;
+        }
+        // Будим ВСЕ потоки, чтобы они увидели флаг is_closed_
+        not_empty_.notify_all();
+    }
+
+private:
+    std::deque<T> buffer_;
+    std::mutex mutex_;
+    std::condition_variable not_empty_;
+    bool is_closed_ = false;
+};
+\end{cppcode}
+
+\subsection{Разбор механики синхронизации}
+
+\subsubsection{1. Lock Guard vs Unique Lock}
+В методе \texttt{Push} используется \texttt{std::lock\_guard}, так как нам нужно просто захватить мьютекс на время скоупа. В методе \texttt{Pop} используется \texttt{std::unique\_lock}. Это критически важно, так как \texttt{std::condition\_variable::wait} требует именно \texttt{unique\_lock}.
+Внутри \texttt{wait} атомарно происходит следующее:
+1. Мьютекс разблокируется.
+2. Поток переводится в режим ожидания (sleep).
+При пробуждении мьютекс снова захватывается.
+
+\subsubsection{2. Spurious Wakeups (Ложные пробуждения)}
+Обратите внимание на конструкцию вызова \texttt{wait}:
+
+\begin{cppcode}
+not_empty_.wait(lock, [this]() {
+    return !buffer_.empty() || is_closed_;
+});
+\end{cppcode}
+
+Это эквивалентно циклу:
+\begin{cppcode}
+while (!(!buffer_.empty() || is_closed_)) {
+    not_empty_.wait(lock);
+}
+\end{cppcode}
+
+\begin{important}
+Никогда не используйте \texttt{if} с \texttt{wait}. POSIX Threads (и стандарт C++) допускают \textbf{Spurious Wakeups} — ситуация, когда поток просыпается без вызова \texttt{notify}. Если не проверить условие (предикат) повторно в цикле, поток может попытаться извлечь элемент из пустой очереди, что приведет к UB или исключению.
+\end{important}
+
+\subsubsection{3. Graceful Shutdown (Закрытие очереди)}
+Метод \texttt{Close} устанавливает флаг \texttt{is\_closed\_} и вызывает \texttt{notify\_all()}. Это необходимо для корректного завершения работы. Представим ситуацию: 5 воркеров спят в методе \texttt{Pop}, ожидая задач. Если мы просто перестанем посылать задачи, воркеры никогда не проснутся и программа зависнет при выходе. Вызов \texttt{notify\_all()} будит их всех, они проверяют предикат \texttt{is\_closed\_}, видят \texttt{true} и корректно выходят, возвращая \texttt{std::nullopt}.
+
+\section{Архитектура ThreadPool}
+
+Теперь, имея надежную очередь, мы можем реализовать сам пул.
+
+\subsection{Интерфейс задач}
+Для простоты будем считать, что задача — это \texttt{std::function<void()>}. Это стирает тип функтора (лямбда, указатель на функцию, объект с \texttt{operator()}), позволяя хранить разнородные задачи в одной очереди.
+
+\begin{note}
+В реальных высокопроизводительных системах \texttt{std::function} может быть заменена на кастомную реализацию delegate без аллокаций памяти (SBO — Small Buffer Optimization), так как \texttt{std::function} может аллоцировать память в куче.
+\end{note}
+
+\subsection{Полная реализация ThreadPool}
+
+\begin{cppcode}[]
+#include <vector>
+#include <thread>
+#include <functional>
+#include <iostream>
+
+// Используем UnboundedBlockingQueue, описанную выше
+using Task = std::function<void()>;
+
+class ThreadPool {
+public:
+    explicit ThreadPool(size_t num_threads) {
+        Start(num_threads);
+    }
+
+    ~ThreadPool() {
+        Stop();
+    }
+
+    // Запрещаем копирование и перемещение для простоты
+    ThreadPool(const ThreadPool&) = delete;
+    ThreadPool& operator=(const ThreadPool&) = delete;
+
+    void Submit(Task task) {
+        queue_.Push(std::move(task));
+    }
+
+private:
+    void Start(size_t num_threads) {
+        for (size_t i = 0; i < num_threads; ++i) {
+            workers_.emplace_back([this]() {
+                WorkerRoutine();
+            });
+        }
+    }
+
+    void Stop() {
+        // 1. Сообщаем очереди, что больше задач не будет
+        // и будим всех спящих воркеров.
+        queue_.Close();
+
+        // 2. Ждем завершения каждого потока.
+        for (auto& worker : workers_) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+    }
+
+    void WorkerRoutine() {
+        while (true) {
+            // Блокируемся в ожидании задачи
+            auto task_opt = queue_.Pop();
+
+            // Если вернулся nullopt, значит очередь закрыта и пуста -> выход
+            if (!task_opt.has_value()) {
+                break;
+            }
+
+            auto& task = task_opt.value();
+            try {
+                task(); // Выполнение задачи
+            } catch (const std::exception& e) {
+                // Критически важно ловить исключения!
+                // Иначе исключение покинет поток и вызовет std::terminate
+                std::cerr << "Worker exception: " << e.what() << std::endl;
+            } catch (...) {
+                std::cerr << "Worker unknown exception" << std::endl;
+            }
+        }
+    }
+
+private:
+    std::vector<std::thread> workers_;
+    UnboundedBlockingQueue<Task> queue_;
+};
+\end{cppcode}
+
+\section{Анализ Corner Cases и Ошибок}
+
+\subsection{1. Исключения в воркерах}
+В методе \texttt{WorkerRoutine} блок \texttt{try-catch} обязателен. Стандарт C++ гласит: если исключение покидает функцию верхнего уровня потока (в данном случае лямбду, переданную в конструктор \texttt{std::thread}), вызывается \texttt{std::terminate()}, который аварийно завершает \textbf{весь процесс}, а не только один поток.
+
+Без \texttt{try-catch}, одна сбойная задача ("poison pill") убила бы всё приложение.
+
+\subsection{2. Порядок остановки (Destruction Order)}
+В деструкторе (или методе \texttt{Stop}) порядок действий критичен:
+\begin{enumerate}
+    \item Сначала \textbf{Queue Close}. Это устанавливает флаг и будит потоки.
+    \item Только потом \textbf{Thread Join}.
+\end{enumerate}
+
+Если поменять местами или забыть \texttt{Queue Close}, вызов \texttt{worker.join()} заблокируется навечно (deadlock), так как главный поток будет ждать завершения воркера, а воркер будет спать внутри \texttt{queue.Pop()}, ожидая задач, которые никогда не придут.
+
+\subsection{3. Невозможность принудительного убийства (Thread Cancellation)}
+Новички часто спрашивают: "Как убить задачу, которая зависла?". В стандартном C++ (да и в большинстве ОС) безопасного способа принудительно остановить поток извне \textbf{не существует}.
+\begin{itemize}
+    \item \texttt{pthread\_cancel} или \texttt{TerminateThread} (WinAPI) существуют, но их использование опасно.
+    \item Если убить поток, пока он держит \texttt{std::mutex}, этот мьютекс останется заблокированным навсегда (abandoned mutex). Любой другой поток, попытавшийся его захватить, зависнет.
+    \item Также не будут вызваны деструкторы стековых объектов (RAII не сработает), что приведет к утечкам ресурсов.
+\end{itemize}
+
+Единственный способ прервать задачу — кооперативная отмена, когда сама задача периодически проверяет флаг \texttt{std::atomic<bool> should\_stop}.
+
+\subsection{4. Data Races при проверке состояния}
+Рассмотрим распространенную ошибку реализации очереди без мьютексов при проверке на пустоту:
+
+\begin{cppcode}
+// ОШИБКА!
+bool IsEmpty() const {
+    return buffer_.empty(); // Чтение без мьютекса!
+}
+\end{cppcode}
+
+\texttt{std::deque::empty()} не является атомарной операцией. Чтение состояния контейнера параллельно с его модификацией (в методе \texttt{Push} из другого потока) — это классическая \textbf{Data Race}, приводящая к Undefined Behavior. Любой доступ к разделяемым данным должен быть защищен тем же мьютексом, что и операции записи.
+
+\begin{summary}
+Мы построили корректный ThreadPool, который:
+\begin{itemize}
+    \item Использует фиксированное число потоков.
+    \item Эффективно ожидает задачи без busy-wait (благодаря \texttt{condition\_variable}).
+    \item Корректно обрабатывает завершение работы (Graceful Shutdown).
+    \item Устойчив к исключениям внутри пользовательских задач.
+\end{itemize}
+Этот код является минимальным базисом. В реальных системах (например, в игровых движках или веб-серверах) его усложняют, добавляя приоритеты задач, work-stealing (кражу задач между очередями разных потоков) и локальные очереди для уменьшения конкуренции за единый мьютекс.
+\end{summary}

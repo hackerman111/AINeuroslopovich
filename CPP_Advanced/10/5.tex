@@ -1,0 +1,206 @@
+\chapter{Lock-Free Programming: Atomic Foundations}
+
+В предыдущих главах мы использовали блокировки (мьютексы, футексы), чтобы защитить общие данные. Это подход \textbf{пессимистичной} синхронизации: "Я предполагаю, что кто-то помешает мне, поэтому я закрою дверь на замок, прежде чем что-то делать".
+
+Lock-Free программирование — это подход \textbf{оптимистичной} синхронизации. Потоки не блокируют друг друга. Вместо этого они пытаются выполнить операцию, и если обнаруживают конфликт (кто-то другой изменил данные быстрее), они повторяют попытку.
+
+\section{Определения и Гарантии}
+
+Часто термин "Lock-Free" используют неправильно, называя так любой код без `std::mutex`. Формальное определение основано на гарантиях прогресса системы.
+
+\begin{definition}{Lock-Free (Свобода от блокировок)}
+Алгоритм называется Lock-Free, если гарантируется, что хотя бы один поток в системе будет продвигаться вперед (делать полезную работу) за конечное число шагов, даже если другие потоки замедлились или остановились.
+\end{definition}
+
+\begin{definition}{Wait-Free (Свобода от ожидания)}
+Более сильная гарантия. Каждый поток гарантированно завершает свою операцию за конечное число шагов, независимо от действий других потоков.
+\end{definition}
+
+\begin{important}
+Lock-Free не означает "быстрее". Lock-Free алгоритмы часто потребляют больше CPU из-за циклов повторных попыток (CAS-loops) и могут быть медленнее качественных мьютексов при высокой конкуренции (contention). Их главная цель — устойчивость к остановке потоков (например, если поток убит или прерван планировщиком, он не держит блокировку, мешая другим).
+\end{important}
+
+\section{Атомики в C++}
+
+Стандарт C++11 ввел модель памяти и тип `std::atomic<T>`.
+
+Операции над атомиками неделимы. Невозможно увидеть атомарную переменную в "частично измененном" состоянии.
+Основные операции:
+\begin{itemize}
+    \item `load()`: Атомарное чтение.
+    \item `store()`: Атомарная запись.
+    \item `exchange(val)`: Записывает новое значение и возвращает старое (RMW — Read-Modify-Write).
+    \item `fetch\_add(val)`: Прибавляет значение и возвращает старое.
+\end{itemize}
+
+\subsection{Compare-And-Swap (CAS)}
+
+Фундаментом всех Lock-Free структур данных является операция \textbf{Compare-And-Swap}.
+В C++ она представлена двумя методами: `compare\_exchange\_weak` и `compare\_exchange\_strong`.
+
+Сигнатура:
+\begin{cppcode}
+bool compare_exchange_strong(T& expected, T desired);
+\end{cppcode}
+
+Логика (псевдокод, выполняемый атомарно):
+\begin{cppcode}
+if (*this == expected) {
+    *this = desired;
+    return true;
+} else {
+    expected = *this; // Обновляем expected актуальным значением!
+    return false;
+}
+\end{cppcode}
+
+\section{Паттерн CAS-Loop}
+
+Рассмотрим простейшую задачу: атомарное изменение переменной по произвольной формуле $X_{new} = f(X_{old})$.
+Почему нельзя просто написать `atomic = f(atomic.load())`?
+Потому что между чтением (`load`) и записью (`store`) может вклиниться другой поток и изменить значение. Наш `store` перезатрет его результат. Это классическая гонка (Lost Update).
+
+Правильный подход — использование цикла CAS:
+
+\begin{cppcode}
+std::atomic<int> value{0};
+
+void atomic_update(int operand) {
+    int old_val = value.load(); // 1. Снэпшот состояния
+    int new_val;
+    do {
+        // 2. Вычисление нового значения на основе локальной копии
+        new_val = old_val + operand; // Здесь может быть любая функция f(old_val)
+        
+        // 3. Попытка публикации
+        // Если value все еще равно old_val, то записать new_val.
+        // Если нет (кто-то успел изменить value), то обновить old_val и вернуть false.
+    } while (!value.compare_exchange_weak(old_val, new_val));
+}
+\end{cppcode}
+
+\subsection{Strong vs Weak CAS}
+\begin{itemize}
+    \item \texttt{compare\_exchange\_strong}: Гарантирует успех, если значение равно ожидаемому. Обычно реализуется инструкцией процессора (например, `LOCK CMPXCHG` на x86).
+    \item \texttt{compare\_exchange\_weak}: Разрешает \textbf{Spurious Failures} (ложные отказы). Может вернуть `false`, даже если значение равно ожидаемому.
+\end{itemize}
+
+Зачем нужен \texttt{weak}? На некоторых архитектурах (ARM, PowerPC) CAS реализуется через пару инструкций `LL/SC` (Load-Linked / Store-Conditional). Если между ними произошло прерывание или обращение к кэш-линии, `SC` может не сработать. `weak` версия позволяет избежать лишних циклов внутри самой инструкции CAS, перекладывая ответственность на внешний цикл пользователя.
+В циклах (`while`) всегда предпочтительнее использовать `weak`, так как цикл все равно перезапустится.
+
+\section{Пример: Lock-Free Stack (Treiber Stack)}
+
+Реализуем классический Lock-Free стек (LIFO). Это одна из простейших структур, так как все изменения происходят только на верхушке (`head`).
+
+Узлы стека:
+\begin{cppcode}
+template <typename T>
+struct Node {
+    T data;
+    Node* next;
+    
+    Node(const T& d) : data(d), next(nullptr) {}
+};
+\end{cppcode}
+
+\subsection{Операция Push}
+
+\begin{cppcode}
+std::atomic<Node<T>*> head{nullptr};
+
+void Push(const T& data) {
+    Node<T>* new_node = new Node<T>(data);
+    
+    // Фаза 1: Читаем текущую голову
+    new_node->next = head.load(std::memory_order_relaxed);
+    
+    // Фаза 2: Пытаемся подменить голову на нашу новую ноду
+    // Если head изменился (кто-то успел сделать push/pop), 
+    // CAS обновит new_node->next актуальным значением head
+    // и мы попробуем снова.
+    while (!head.compare_exchange_weak(new_node->next, new_node,
+                                       std::memory_order_release,
+                                       std::memory_order_relaxed)) {
+        // Тело цикла пустое, вся работа в условии
+    }
+}
+\end{cppcode}
+
+Это идеально работает. Новый узел невидим для других потоков, пока CAS не увенчается успехом. Как только CAS прошел, узел мгновенно становится новой головой.
+
+\subsection{Операция Pop и утечки памяти}
+
+\begin{cppcode}
+std::optional<T> Pop() {
+    Node<T>* old_head = head.load(std::memory_order_acquire);
+    
+    while (old_head && !head.compare_exchange_weak(old_head, old_head->next,
+                                                   std::memory_order_acquire,
+                                                   std::memory_order_relaxed)) {
+        // Если CAS не прошел, old_head обновился. Проверяем, не стал ли он nullptr.
+    }
+    
+    if (!old_head) return std::nullopt; // Стек пуст
+    
+    T res = old_head->data;
+    
+    // ПРОБЛЕМА: Когда удалять old_head?
+    // delete old_head; // <--- ОПАСНО!
+    
+    return res;
+}
+\end{cppcode}
+
+\section{Проблема безопасного удаления памяти}
+
+В коде выше строка `delete old\_head` закомментирована не случайно. Это главная проблема Lock-Free структур в C++.
+
+Представим сценарий:
+1. Поток А читает `head` (адрес 0x100) в локальную переменную `old\_head`.
+2. Поток А засыпает перед CAS.
+3. Поток Б делает `Pop`, успешно меняет `head`, забирает ноду 0x100 и вызывает `delete` (возвращает память ОС).
+4. Поток А просыпается. Он пытается обратиться к `old\_head->next` внутри CAS или просто сравнить значение.
+5. \textbf{Use-After-Free:} Память по адресу 0x100 уже освобождена и, возможно, выделена под другой объект. Чтение `old\_head->next` приводит к Segfault или чтению мусора.
+
+В языках с Garbage Collector (Java, Go, C\#) этой проблемы нет — GC не удалит объект, пока на него есть ссылки (включая локальную ссылку в потоке А). В C++ нам нужно реализовать собственный механизм управления памятью для Lock-Free.
+
+Эта проблема и её решения (Hazard Pointers, RCU) настолько объемны, что им посвящена отдельная глава.
+
+\section{Спинлок (Spinlock) на атомиках}
+
+Для полноты картины реализуем примитивнейший мьютекс (спинлок) на `std::atomic\_flag`. Это единственный тип, который гарантированно является Lock-Free на всех архитектурах (даже самых простых).
+
+\begin{cppcode}
+class Spinlock {
+    // ATOMIC_FLAG_INIT устанавливает флаг в состояние false (clear)
+    std::atomic_flag flag = ATOMIC_FLAG_INIT;
+
+public:
+    void lock() {
+        // test_and_set устанавливает флаг в true и возвращает предыдущее значение.
+        // Мы крутимся, пока предыдущее значение было true (значит, было занято).
+        while (flag.test_and_set(std::memory_order_acquire)) {
+            // Оптимизация для процессора: "я в цикле ожидания"
+            // Снижает энергопотребление и позволяет SMT-потокам работать быстрее.
+#if defined(__x86_64__) || defined(_M_X64)
+            _mm_pause(); 
+#elif defined(__aarch64__)
+            asm volatile("yield");
+#endif
+        }
+    }
+
+    void unlock() {
+        flag.clear(std::memory_order_release);
+    }
+};
+\end{cppcode}
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Атомики} обеспечивают неделимость операций и видимость изменений между потоками (Memory Ordering).
+    \item \textbf{CAS (Compare-And-Swap)} — универсальный примитив для построения Lock-Free алгоритмов.
+    \item \textbf{CAS-Loop} позволяет применять произвольные функции к разделяемым данным оптимистично.
+    \item Основная сложность Lock-Free не в алгоритмах изменения данных, а в \textbf{управлении памятью} (когда безопасно удалить узел?).
+\end{itemize}
+\end{summary}

@@ -1,0 +1,10 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{reset}\PYG{p}{(}\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ptr}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exchange}\PYG{p}{(}\PYG{n}{ptr\PYGZus{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{delete}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ptr}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Удаляем старый ресурс}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{T}\PYG{o}{*}\PYG{+w}{ }\PYG{n+nf}{release}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{exchange}\PYG{p}{(}\PYG{n}{ptr\PYGZus{}}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{nullptr}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Просто отдаем и забываем}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

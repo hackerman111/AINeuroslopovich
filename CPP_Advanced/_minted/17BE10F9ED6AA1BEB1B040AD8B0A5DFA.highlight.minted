@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{shared\PYGZus{}ptr}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k}{template}\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Y}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{n}{shared\PYGZus{}ptr}\PYG{p}{(}\PYG{n}{Y}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{ptr}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// ... создание control block ...}
+
+\PYG{+w}{        }\PYG{c+c1}{// Магия: если Y наследуется от enable\PYGZus{}shared\PYGZus{}from\PYGZus{}this,}
+\PYG{+w}{        }\PYG{c+c1}{// вызвать приватный метод инициализации.}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{k}{constexpr}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{is\PYGZus{}base\PYGZus{}of\PYGZus{}v}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{enable\PYGZus{}shared\PYGZus{}from\PYGZus{}this}\PYG{o}{\PYGZlt{}}\PYG{n}{Y}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{Y}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n}{ptr}\PYG{o}{\PYGZhy{}}\PYG{o}{\PYGZgt{}}\PYG{n}{weak\PYGZus{}this}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{k}{this}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// присваиваем shared\PYGZus{}ptr в weak\PYGZus{}ptr}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

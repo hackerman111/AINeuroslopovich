@@ -1,0 +1,187 @@
+\chapter{Concepts: Новая эра ограничений (C++20)}
+
+До стандарта C++20 шаблоны страдали от фундаментальной проблемы: отсутствие явного интерфейса для типов. Шаблонная функция принимала "что угодно", и проверка совместимости типа с алгоритмом происходила лишь в момент инстанциации тела функции. Это приводило к двум последствиям: чудовищным сообщениям об ошибках и сложным техникам метапрограммирования (SFINAE) для перегрузки функций.
+
+C++20 представил механизм \textbf{Concepts} (Концепты) — способ явно декларировать требования к шаблонным аргументам.
+
+\section{Проблема SFINAE и читаемость ошибок}
+
+Рассмотрим классический пример использования \texttt{std::map}. Ключ карты должен быть упорядочиваемым (иметь оператор \texttt{<}).
+
+\begin{cppcode}[]
+struct Key {
+    int v;
+    // Нет оператора <
+};
+
+void test() {
+    std::map<Key, int> m;
+    m[Key{1}] = 10;
+}
+\end{cppcode}
+
+Без концептов компилятор начнет инстанцировать шаблон \texttt{std::map}, затем внутреннее дерево, затем узлы дерева, и где-то на глубине 15-го вызова внутри STL обнаружит, что выражение \texttt{a < b} невозможно. В результате программист получает сотни строк диагностики, указывающих на внутренности библиотеки, а не на строку \texttt{m[Key\{1\}] = 10}.
+
+Для решения этой проблемы (а также для выбора перегрузок) ранее использовалась техника \textbf{SFINAE} (Substitution Failure Is Not An Error) и метафункция \texttt{std::enable\_if}.
+
+Код "старой школы" выглядел так:
+
+\begin{cppcode}[]
+template <typename T, 
+          typename = std::enable_if_t<std::is_integral_v<T>>>
+void foo(T t) { /*...*/ }
+\end{cppcode}
+
+Это синтаксически тяжело, неочевидно для чтения и увеличивает время компиляции.
+
+\section{Определение Концепта}
+
+Концепт — это именованный набор требований к типу. Технически это шаблонная переменная типа \texttt{bool}, вычисляемая на этапе компиляции, но с особым синтаксисом и семантикой.
+
+\begin{cppcode}[]
+template <typename T>
+concept Integral = std::is_integral_v<T>;
+\end{cppcode}
+
+\subsection{Requires-выражение}
+
+Самым мощным инструментом создания концептов является \texttt{requires-expression}. Оно позволяет проверить валидность произвольного кода без его выполнения. Если код внутри блока \texttt{requires} некорректен (нет метода, несовместимые типы), выражение возвращает \texttt{false}, не вызывая ошибки компиляции.
+
+Синтаксис:
+\begin{verbatim}
+requires (параметры) {
+    требования;
+}
+\end{verbatim}
+
+Рассмотрим создание концепта \texttt{Hashable}. Тип \texttt{T} является хешируемым, если:
+\begin{enumerate}
+    \item Существует специализация \texttt{std::hash<T>}.
+    \item У объекта хешера есть оператор вызова, принимающий \texttt{T}.
+    \item Результат вызова конвертируем в \texttt{std::size\_t}.
+\end{enumerate}
+
+\begin{cppcode}[]
+#include <concepts>
+#include <functional>
+
+template <typename T>
+concept Hashable = requires(T a) {
+    // 1. Простое требование: выражение должно быть валидным
+    std::hash<T>{}(a); 
+    
+    // 2. Составное требование (Compound Requirement)
+    // Проверяет валидность + тип возвращаемого значения
+    { std::hash<T>{}(a) } -> std::convertible_to<std::size_t>;
+};
+\end{cppcode}
+
+Здесь \texttt{std::convertible\_to} — это стандартный концепт из библиотеки \texttt{<concepts>}.
+
+\section{Использование Концептов}
+
+C++20 предоставляет три способа наложить ограничение на шаблон. Все они эквивалентны по смыслу, выбор зависит от стиля и сложности требований.
+
+\subsection{1. Requires clause (Предложение requires)}
+
+Наиболее гибкий способ. Ключевое слово \texttt{requires} ставится после списка шаблонов или после сигнатуры функции.
+
+\begin{cppcode}[]
+template <typename T>
+requires Hashable<T>
+void process(T key) {
+    // ...
+}
+
+// Или trailing requires clause (полезно для методов класса)
+template <typename T>
+void process(T key) requires Hashable<T> {
+    // ...
+}
+\end{cppcode}
+
+\subsection{2. Ad-hoc type constraint}
+
+Имя концепта используется вместо \texttt{typename} или \texttt{class} в списке параметров. Это самый распространенный стиль.
+
+\begin{cppcode}[]
+template <Hashable T>
+class HashSet {
+    // ...
+};
+\end{cppcode}
+
+Если \texttt{T} не удовлетворяет \texttt{Hashable}, компилятор выдаст короткую и ясную ошибку \textbf{в месте инстанциации}: "constraints not satisfied for class template HashSet".
+
+\subsection{3. Terse syntax (Сокращенный синтаксис)}
+
+Позволяет вообще избавиться от слова \texttt{template}. Используется \texttt{auto} в сочетании с именем концепта в списке аргументов функции.
+
+\begin{cppcode}[]
+// Эквивалентно template <Hashable T> void foo(T key);
+void foo(Hashable auto key) {
+    // ...
+}
+\end{cppcode}
+
+Это делает шаблонные функции визуально почти неотличимыми от обычных функций, снижая порог входа.
+
+\section{Концепты и перегрузка функций}
+
+Концепты участвуют в разрешении перегрузок. Компилятор выбирает функцию с \textbf{наиболее строгим} (more constrained) ограничением. Это позволяет элегантно заменять \texttt{std::enable\_if} и Tag Dispatching.
+
+\begin{cppcode}[]
+template <typename T>
+concept RandomAccess = requires(T t, int n) { t + n; t[n]; };
+
+template <typename T>
+concept Bidirectional = requires(T t) { --t; };
+
+// Версия 1: Для любых итераторов
+template <typename Iter>
+void advance(Iter& it, int n) {
+    while(n--) ++it;
+}
+
+// Версия 2: Только для Random Access
+// Эта версия "более ограничена" (subsumes), поэтому компилятор выберет её,
+// если Iter удовлетворяет RandomAccess.
+template <RandomAccess Iter>
+void advance(Iter& it, int n) {
+    it += n;
+}
+\end{cppcode}
+
+В отличие от специализации шаблонов, здесь не нужно наследование или сложная логика частичного упорядочивания. Если концепт A включает в себя требования концепта B, то A считается "более строгим".
+
+\section{Использование в if constexpr}
+
+Поскольку концепт — это \texttt{constexpr bool}, его можно использовать внутри функции для условной компиляции. Это замена SFINAE, когда нам нужно изменить поведение внутри одного тела функции.
+
+\begin{cppcode}[]
+template <typename T>
+void serialize(const T& obj) {
+    if constexpr (requires { obj.to_json(); }) {
+        // Если есть метод to_json(), используем его
+        std::cout << obj.to_json();
+    } else if constexpr (std::is_integral_v<T>) {
+        // Если это число
+        std::cout << std::to_string(obj);
+    } else {
+        // Fallback
+        static_assert(always_false_v<T>, "Cannot serialize type");
+    }
+}
+\end{cppcode}
+
+Это значительно чище, чем написание трех разных перегрузок с \texttt{enable\_if}.
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Concepts} решают проблему читаемости ошибок шаблонов и документирования интерфейсов.
+    \item \texttt{requires-expression} позволяет проверить компилируемость кода (наличие методов, операторов) без его выполнения.
+    \item Синтаксис варьируется от verbose (\texttt{requires clause}) до terse (\texttt{Concept auto}).
+    \item Концепты позволяют перегружать функции по свойствам типов без использования SFINAE хаков.
+    \item Стандартная библиотека C++20 вводит заголовок \texttt{<concepts>} с набором готовых предикатов (\texttt{std::integral}, \texttt{std::copyable}, \texttt{std::predicate} и др.).
+\end{itemize}
+\end{summary}

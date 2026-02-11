@@ -1,0 +1,149 @@
+\chapter{Система типов: Категории значений (Value Categories)}
+
+Понимание категорий значений — это необходимый фундамент для освоения семантики перемещения (Move Semantics) и идеальной передачи (Perfect Forwarding). В C++ каждое выражение (expression) характеризуется двумя независимыми свойствами: \textbf{типом} (например, \texttt{int}, \texttt{std::string}) и \textbf{категорией значения}.
+
+Если тип определяет операции и представление в памяти, то категория значения определяет \textit{время жизни} результата выражения и возможность его использования в качестве операнда для перемещения.
+
+\section{2.1 Таксономия значений (C++17)}
+
+До стандарта C++11 мир был прост: существовали только \texttt{lvalue} (left-hand side) и \texttt{rvalue} (right-hand side). С появлением семантики перемещения этой классификации стало недостаточно. Стандарт C++11 (и уточненный C++17) ввел более гранулярную систему.
+
+В основе классификации лежат два ортогональных свойства выражения:
+\begin{enumerate}
+    \item \textbf{Identity (m):} Обладает ли выражение идентичностью? Иными словами, есть ли у результата выражения стабильный адрес в памяти, по которому можно к нему обратиться?
+    \item \textbf{Movability (m):} Можно ли безопасно переместить ресурсы из объекта, который является результатом выражения? (Допускается ли "кража" состояния?)
+\end{enumerate}
+
+На пересечении этих свойств образуются три фундаментальные (листовые) категории:
+
+\begin{itemize}
+    \item \textbf{lvalue (identity + !movable):} Именованные объекты, функции, поля данных. У них есть адрес, но перемещать из них неявно нельзя (чтобы не сломать логику программы).
+    \item \textbf{prvalue (pure rvalue, !identity + movable):} "Чистые" значения. Временные объекты, литералы (кроме строковых), результаты функций, возвращающих значение. Не имеют имени, существуют эфемерно.
+    \item \textbf{xvalue (eXpiring value, identity + movable):} Объекты, у которых есть адрес ("плоть"), но которые помечены как "умирающие". Программа явно разрешила перемещение из них (например, результат \texttt{std::move}).
+\end{itemize}
+
+Для удобства стандарт вводит две группирующие категории:
+\begin{itemize}
+    \item \textbf{glvalue (generalized lvalue):} Всё, что имеет идентичность (lvalue $\cup$ xvalue).
+    \item \textbf{rvalue:} Всё, из чего можно перемещать (xvalue $\cup$ prvalue).
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    every node/.style={draw, rectangle, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, fill=nordCodeBg, draw=nordBlue},
+    group/.style={fill=nordLight, dashed}
+]
+    % Nodes
+    \node (expression) {\textbf{Expression}};
+    \node (glvalue) [below left=1cm of expression, group] {glvalue\\(has identity)};
+    \node (rvalue) [below right=1cm of expression, group] {rvalue\\(can move)};
+    
+    \node (lvalue) [below left=1cm of glvalue, fill=white] {\textbf{lvalue}\\i, m};
+    \node (xvalue) [below=2.5cm of expression, fill=white] {\textbf{xvalue}\\i, M};
+    \node (prvalue) [below right=1cm of rvalue, fill=white] {\textbf{prvalue}\\I, M};
+
+    % Arrows
+    \draw[->, thick, nordDark] (expression) -- (glvalue);
+    \draw[->, thick, nordDark] (expression) -- (rvalue);
+    \draw[->, thick, nordDark] (glvalue) -- (lvalue);
+    \draw[->, thick, nordDark] (glvalue) -- (xvalue);
+    \draw[->, thick, nordDark] (rvalue) -- (xvalue);
+    \draw[->, thick, nordDark] (rvalue) -- (prvalue);
+
+\end{tikzpicture}
+\caption{Иерархия категорий значений в C++17}
+\end{figure}
+
+\section{2.2 Практический анализ категорий}
+
+Рассмотрим код и определим категории значений для различных выражений. Ключевой маркер \texttt{lvalue} — возможность взять адрес через унарный оператор \texttt{\&}.
+
+\begin{cppcode}[]
+int i = 1;                      
+int* y = &i;                    // OK: i - это lvalue
+// y = &42;                     // ОШИБКА: 42 - это prvalue, адреса нет
+// 1 = i;                       // ОШИБКА: 1 - prvalue, нельзя присвоить В него
+
+const char(*ptr)[5] = &"abcd";  // ВНИМАНИЕ: "abcd" - это lvalue!
+char arr[20];
+arr[10] = 'z';                  // Результат arr[10] - lvalue (ссылка на char)
+
+int a, b;
+(a, b) = 5;                     // Оператор запятая возвращает lvalue (ссылку на b)
+\end{cppcode}
+
+\section{Почему строковый литерал — это lvalue?}
+Это классический вопрос на понимание. Литерал \texttt{42} или \texttt{3.14} является \texttt{prvalue} — это просто битовое представление значения, которое может быть "зашито" прямо в инструкции процессора (immediate operand). У него нет адреса в оперативной памяти с точки зрения абстрактной машины C++.
+
+Строковый литерал \texttt{"abcd"}, напротив, имеет тип \texttt{const char[5]}. Массивы в C++ не могут быть значениями-без-адреса. Компилятор размещает байты строки в сегменте статических данных (обычно \texttt{.rodata}), и выражение \texttt{"abcd"} обозначает именно этот массив в памяти. Следовательно, у него есть идентичность (адрес), и это \textbf{lvalue}.
+
+\section{2.3 Rvalue-ссылки (T\&\&)}
+
+Для захвата и работы с rvalue-категориями (временными объектами и xvalues) в C++11 был введен новый ссылочный тип: \textbf{Rvalue reference}, обозначаемый синтаксисом \texttt{T\&\&}.
+
+\begin{itemize}
+    \item \texttt{T\&} (lvalue reference): вяжется только к lvalue. (Исключение: \texttt{const T\&} может вязаться к rvalue, продлевая ему жизнь, но объект будет неизменяемым).
+    \item \texttt{T\&\&} (rvalue reference): вяжется только к rvalue. Позволяет изменять временный объект (например, "обворовывать" его).
+\end{itemize}
+
+\begin{cppcode}[]
+int GetValue() { return 42; } // Возвращает prvalue
+
+void demo() {
+    int i = 10;
+    
+    int&  ref1 = i;           // OK: i is lvalue
+    // int&& ref2 = i;        // ERROR: cannot bind rvalue ref to lvalue
+    
+    // int&  ref3 = GetValue(); // ERROR: cannot bind lvalue ref to prvalue
+    const int& ref4 = GetValue(); // OK: Lifetime Extension (но read-only)
+    
+    int&& ref5 = GetValue();  // OK: ref5 ссылается на временный int(42)
+    ref5 = 100;               // Мы можем менять временный объект!
+}
+\end{cppcode}
+
+\begin{important}
+\textbf{Имя переменной — это всегда lvalue.}
+Если у вас есть переменная типа rvalue-ссылка:
+\begin{cppcode}
+void foo(int&& x) {
+    // x имеет тип "rvalue reference to int"
+    // Но само выражение 'x' является lvalue!
+}
+\end{cppcode}
+У \texttt{x} есть имя, к нему можно обратиться, взять его адрес. Тот факт, что он ссылается на что-то, что \textit{было} временным, не делает саму переменную \texttt{x} временной. Это критически важно для понимания того, почему внутри move-конструкторов нужно писать \texttt{std::move}.
+\end{important}
+
+\section{2.4 Materialization (C++17)}
+
+До C++17 \texttt{prvalue} часто трактовалось как временный объект. C++17 изменил определение: \texttt{prvalue} — это "инициализатор", рецепт создания объекта. Временный объект (в памяти) создается только тогда, когда это необходимо. Этот процесс называется \textbf{Temporary Materialization}.
+
+Пример:
+\begin{cppcode}[]
+struct Big { int data[100]; };
+
+Big make() { return Big(); } // Возвращает prvalue (инициализатор)
+
+void use() {
+    Big b = make(); 
+    // В C++17 здесь нет ни копирования, ни перемещения. 
+    // prvalue из make() материализуется прямо в память переменной 'b'.
+    // Это гарантированная RVO (Return Value Optimization).
+}
+\end{cppcode}
+
+Материализация происходит, когда prvalue нужно превратить в glvalue (например, чтобы привязать к ссылке или обратиться к полю).
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{lvalue:} Есть имя, есть адрес. Нельзя мувить неявно.
+    \item \textbf{prvalue:} Чистое значение, инициализатор. Нет адреса.
+    \item \textbf{xvalue:} Экс-lvalue, которое разрешили "грабить" (результат \texttt{std::move}).
+    \item \textbf{glvalue:} lvalue + xvalue.
+    \item \textbf{rvalue:} prvalue + xvalue.
+    \item Переменная типа \texttt{T\&\&} сама по себе является \textbf{lvalue} в выражениях.
+\end{itemize}
+\end{summary}

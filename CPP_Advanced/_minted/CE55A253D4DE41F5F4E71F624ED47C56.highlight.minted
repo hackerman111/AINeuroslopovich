@@ -1,0 +1,15 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{T}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{k}{operator}\PYG{p}{[}\PYG{p}{]}\PYG{p}{(}\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Учитываем смещение начала данных}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{start\PYGZus{}}\PYG{p}{.}\PYG{n}{cur\PYGZus{}index}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{n}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Вычисляем индекс блока в карте}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{node\PYGZus{}index}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{/}\PYG{+w}{ }\PYG{n}{CHUNK\PYGZus{}SIZE}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 3. Вычисляем смещение внутри блока}
+\PYG{+w}{    }\PYG{k+kt}{size\PYGZus{}t}\PYG{+w}{ }\PYG{n}{offset}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pos}\PYG{+w}{ }\PYG{o}{\PYGZpc{}}\PYG{+w}{ }\PYG{n}{CHUNK\PYGZus{}SIZE}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 4. Двойное разыменование: сначала карту, потом блок}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{map\PYGZus{}}\PYG{p}{[}\PYG{n}{node\PYGZus{}index}\PYG{p}{]}\PYG{p}{[}\PYG{n}{offset}\PYG{p}{]}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

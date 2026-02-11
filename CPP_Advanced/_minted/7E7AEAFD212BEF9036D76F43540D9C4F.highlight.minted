@@ -1,0 +1,8 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// colors.def (или просто \PYGZsh{}define внутри файла)}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define LIST\PYGZus{}OF\PYGZus{}COLORS(X) \PYGZbs{}}
+\PYG{c+cp}{    X(Red) \PYGZbs{}}
+\PYG{c+cp}{    X(Green) \PYGZbs{}}
+\PYG{c+cp}{    X(Blue) \PYGZbs{}}
+\PYG{c+cp}{    X(Yellow)}
+\end{MintedVerbatim}

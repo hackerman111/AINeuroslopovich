@@ -1,0 +1,35 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// 1. Получение \PYGZdq{}Awaiter\PYGZdq{} \PYGZhy{} объекта, который знает, как ждать}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{awaiter}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{get\PYGZus{}awaiter}\PYG{p}{(}\PYG{o}{\PYGZlt{}}\PYG{n}{expr}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{c+c1}{// 2. Оптимизация горячего пути (Fast Path)}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{awaiter}\PYG{p}{.}\PYG{n}{await\PYGZus{}ready}\PYG{p}{(}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// 3. Сохранение состояния корутины (Suspend)}
+\PYG{+w}{        }\PYG{o}{\PYGZlt{}}\PYG{n}{suspend}\PYG{o}{\PYGZhy{}}\PYG{n}{coroutine}\PYG{o}{\PYGZhy{}}\PYG{n}{state}\PYG{o}{\PYGZgt{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// 4. Интеграция с внешним миром}
+\PYG{+w}{        }\PYG{c+c1}{// handle \PYGZhy{} это дескриптор текущей, уже остановленной корутины}
+\PYG{+w}{        }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{Handle}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{coroutine\PYGZus{}handle}\PYG{o}{\PYGZlt{}}\PYG{n}{P}\PYG{o}{\PYGZgt{}}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// Результат определяет, что делать дальше}
+\PYG{+w}{        }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{suspend\PYGZus{}result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{awaiter}\PYG{p}{.}\PYG{n}{await\PYGZus{}suspend}\PYG{p}{(}\PYG{n}{Handle}\PYG{o}{:}\PYG{o}{:}\PYG{n}{from\PYGZus{}promise}\PYG{p}{(}\PYG{n}{p}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{c+c1}{// Логика обработки результата await\PYGZus{}suspend (см. далее)}
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{suspend\PYGZus{}result}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{false}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{             }\PYG{o}{\PYGZlt{}}\PYG{n}{resume}\PYG{o}{\PYGZhy{}}\PYG{n}{immediately}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{        }\PYG{c+c1}{// Точка, где корутина физически возвращает управление}
+\PYG{+w}{        }\PYG{c+c1}{// своему вызывающему (Caller) или переходит в другую корутину}
+\PYG{+w}{        }\PYG{o}{\PYGZlt{}}\PYG{k}{return}\PYG{o}{\PYGZhy{}}\PYG{n}{to}\PYG{o}{\PYGZhy{}}\PYG{n}{caller}\PYG{o}{\PYGZhy{}}\PYG{k}{or}\PYG{o}{\PYGZhy{}}\PYG{n}{jump}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// 5. Точка возобновления (Resume Point)}
+\PYG{+w}{    }\PYG{c+c1}{// Сюда мы попадаем после handle.resume()}
+
+\PYG{+w}{    }\PYG{c+c1}{// 6. Получение результата}
+\PYG{+w}{    }\PYG{n}{result}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{awaiter}\PYG{p}{.}\PYG{n}{await\PYGZus{}resume}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

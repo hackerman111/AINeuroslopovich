@@ -1,0 +1,6 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{foo}\PYG{p}{(}\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// x имеет тип \PYGZdq{}rvalue reference to int\PYGZdq{}}
+\PYG{+w}{    }\PYG{c+c1}{// Но само выражение \PYGZsq{}x\PYGZsq{} является lvalue!}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

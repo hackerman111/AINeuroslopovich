@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}\PYG{+w}{          }\PYG{c+c1}{// Определение (даже без инициализатора int x;)}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{     }\PYG{c+c1}{// Определение (есть тело)}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{A}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{f}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Определение класса}
+\end{MintedVerbatim}

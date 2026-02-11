@@ -1,0 +1,8 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Iter}\PYG{o}{\PYGZgt{}}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{algorithm}\PYG{p}{(}\PYG{n}{Iter}\PYG{+w}{ }\PYG{n}{it}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Нам нужно создать временную переменную того типа,}
+\PYG{+w}{    }\PYG{c+c1}{// на который указывает итератор.}
+\PYG{+w}{    }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Iter}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{n}{temp}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{it}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// ОШИБКА для int*}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

@@ -1,0 +1,29 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{process\PYGZus{}file}\PYG{p}{(}\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{char}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{path}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{err}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{page}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{alloc\PYGZus{}page}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{page}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{ENOMEM}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{inode}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{node}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{get\PYGZus{}inode}\PYG{p}{(}\PYG{n}{path}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{node}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{err}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{ENOENT}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{goto}\PYG{+w}{ }\PYG{n}{out\PYGZus{}free\PYGZus{}page}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Прыжок к освобождению памяти}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k}{if}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{lock\PYGZus{}inode}\PYG{p}{(}\PYG{n}{node}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{!}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{err}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{n}{EIO}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{goto}\PYG{+w}{ }\PYG{n}{out\PYGZus{}put\PYGZus{}inode}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Прыжок к освобождению иноды}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Основная работа...}
+
+\PYG{+w}{    }\PYG{n}{unlock\PYGZus{}inode}\PYG{p}{(}\PYG{n}{node}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Успешное завершение: освобождаем в прямом порядке}
+\PYG{n+nl}{out\PYGZus{}put\PYGZus{}inode}\PYG{p}{:}
+\PYG{+w}{    }\PYG{n}{put\PYGZus{}inode}\PYG{p}{(}\PYG{n}{node}\PYG{p}{)}\PYG{p}{;}
+\PYG{n+nl}{out\PYGZus{}free\PYGZus{}page}\PYG{p}{:}
+\PYG{+w}{    }\PYG{n}{free\PYGZus{}page}\PYG{p}{(}\PYG{n}{page}\PYG{p}{)}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{err}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

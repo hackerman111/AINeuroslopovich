@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{extern}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{;}\PYG{+w}{       }\PYG{c+c1}{// Объявление переменной}
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{func}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{        }\PYG{c+c1}{// Объявление функции}
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{A}\PYG{p}{;}\PYG{+w}{            }\PYG{c+c1}{// Forward declaration класса}
+\end{MintedVerbatim}

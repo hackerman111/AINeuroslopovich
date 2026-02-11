@@ -1,0 +1,8 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{const}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+s}{\PYGZdq{}}\PYG{l+s}{data}\PYG{l+s}{\PYGZdq{}}\PYG{p}{;}
+\PYG{c+c1}{// std::move(s) кастит к \PYGZsq{}const string\PYGZam{}\PYGZam{}\PYGZsq{}}
+\PYG{c+c1}{// Нет конструктора string(const string\PYGZam{}\PYGZam{})}
+\PYG{c+c1}{// Компилятор ищет ближайшее совпадение... string(const string\PYGZam{})}
+\PYG{c+c1}{// ВЫЗЫВАЕТСЯ КОПИРОВАНИЕ!}
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{string}\PYG{+w}{ }\PYG{n}{s2}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{move}\PYG{p}{(}\PYG{n}{s}\PYG{p}{)}\PYG{p}{;}
+\end{MintedVerbatim}

@@ -1,0 +1,4 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{input\PYGZus{}iterator}\PYG{+w}{ }\PYG{n}{InputIter}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{c+c1}{// Сокращенный синтаксис}
+\PYG{+w}{    }\PYG{n}{Vector}\PYG{p}{(}\PYG{n}{InputIter}\PYG{+w}{ }\PYG{n}{first}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{InputIter}\PYG{+w}{ }\PYG{n}{last}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{c+cm}{/* ... */}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

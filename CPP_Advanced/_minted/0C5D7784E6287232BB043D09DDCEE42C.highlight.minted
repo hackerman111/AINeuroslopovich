@@ -1,0 +1,5 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// Scheme:}
+\PYG{c+c1}{// (define x (list 1 2)) ; x \PYGZhy{}\PYGZgt{} (1 . (2 . null))}
+\PYG{c+c1}{// (set\PYGZhy{}cdr! (cdr x) x)  ; хвост списка теперь указывает на начало}
+\end{MintedVerbatim}

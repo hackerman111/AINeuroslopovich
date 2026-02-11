@@ -1,0 +1,206 @@
+\chapter{Case Study: Разработка Интерпретатора Scheme}
+
+Разработка интерпретатора функционального языка (диалекта Lisp) является классической задачей, объединяющей все ключевые темы данного курса: полиморфизм, работу с динамической памятью, парсинг и алгоритмы обхода графов.
+
+В этой главе мы спроектируем архитектуру интерпретатора языка Scheme, пройдя путь от токенизации до реализации собственного сборщика мусора (Garbage Collector), необходимого для решения проблемы циклических ссылок, с которой не справляются стандартные умные указатели C++.
+
+\section{Архитектура конвейера (Pipeline)}
+
+Процесс интерпретации разделяется на четыре изолированные стадии:
+
+\begin{enumerate}
+    \item \textbf{Tokenizer (Lexer):} Преобразует сырой поток символов (\texttt{std::istream}) в поток атомарных лексем (токенов). На этом этапе отбрасываются комментарии и пробельные символы, а последовательности цифр группируются в числа.
+    \item \textbf{Parser:} Выполняет синтаксический анализ потока токенов и строит абстрактное синтаксическое дерево (AST). Для Lisp-подобных языков AST совпадает со структурой данных языка (S-expressions).
+    \item \textbf{Evaluation:} Рекурсивный обход AST с вычислением результатов. Здесь реализуется арифметика, вызовы функций и специальные формы (\texttt{if}, \texttt{define}, \texttt{lambda}).
+    \item \textbf{Memory Management:} Сквозной слой, отвечающий за время жизни объектов AST.
+\end{enumerate}
+
+\section{Представление данных и AST}
+
+В языке Scheme <<код есть данные>> (homoiconicity). Базовым строительным блоком является \textbf{Cons Cell} (пара) — структура, содержащая два указателя: \texttt{car} (голова) и \texttt{cdr} (хвост). Списки строятся как цепочки вложенных пар.
+
+Для представления динамически типизированных объектов Scheme в статически типизированном C++ мы используем полиморфную иерархию классов.
+
+\begin{cppcode}[]
+#include <memory>
+#include <string>
+#include <vector>
+
+// Базовый класс для всех объектов Scheme
+struct Object {
+    virtual ~Object() = default;
+    
+    // Поддержка сборщика мусора (см. далее)
+    bool marked = false;
+};
+
+// Числовой литерал
+struct Number : Object {
+    int value;
+    Number(int v) : value(v) {}
+};
+
+// Символ (идентификатор переменной)
+struct Symbol : Object {
+    std::string name;
+    Symbol(const std::string& n) : name(n) {}
+};
+
+// Пара (Cons Cell). 
+// Основной структурный элемент списков и деревьев.
+struct Cell : Object {
+    std::shared_ptr<Object> first;
+    std::shared_ptr<Object> second;
+
+    Cell(std::shared_ptr<Object> f, std::shared_ptr<Object> s)
+        : first(f), second(s) {}
+};
+\end{cppcode}
+
+Использование \texttt{std::shared\_ptr<Object>} кажется естественным выбором. Объекты в Lisp передаются по ссылке, могут использоваться в нескольких местах одновременно (structure sharing), и должны удаляться, когда на них больше никто не ссылается. Механизм подсчета ссылок (Reference Counting) идеально подходит... пока не появляются циклы.
+
+\section{Проблема циклических ссылок}
+
+Модель владения \texttt{shared\_ptr} гарантирует удаление объекта только тогда, когда счетчик ссылок (refcount) достигает нуля. В функциональном программировании возможно создание структур, ссылающихся сами на себя.
+
+Рассмотрим классический пример создания цикла через мутацию хвоста списка (функция \texttt{set-cdr!}):
+
+\begin{cppcode}
+// Scheme:
+// (define x (list 1 2)) ; x -> (1 . (2 . null))
+// (set-cdr! (cdr x) x)  ; хвост списка теперь указывает на начало
+\end{cppcode}
+
+На уровне C++ это выглядит так:
+
+\begin{cppcode}
+void CreateCycle() {
+    auto n1 = std::make_shared<Number>(1);
+    auto n2 = std::make_shared<Number>(2);
+    
+    // Создаем список (1 2)
+    auto cell2 = std::make_shared<Cell>(n2, nullptr);
+    auto cell1 = std::make_shared<Cell>(n1, cell2); // cell1 -> cell2
+    
+    // Замыкаем цикл: cell2 -> cell1
+    // Теперь refcount у обоих объектов равен 2 (1 внешний + 1 внутренний)
+    cell2->second = cell1; 
+    
+    // При выходе из функции внешние указатели (cell1, cell2) уничтожаются.
+    // Refcount обоих объектов уменьшается до 1.
+    // Память НЕ освобождается. УТЕЧКА.
+}
+\end{cppcode}
+
+В языках без ручного управления памятью (как Scheme) программист не должен думать о разрыве циклов (в отличие от использования \texttt{weak\_ptr} в C++). Единственным решением является реализация полноценного сборщика мусора.
+
+\section{Реализация Garbage Collector (Mark-and-Sweep)}
+
+Алгоритм Mark-and-Sweep (Пометь и Вымети) является классическим подходом к GC. Он не полагается на счетчики ссылок, а определяет <<живучесть>> объектов на основе их достижимости из корневого набора (Roots).
+
+Архитектура меняется:
+1. Мы отказываемся от \texttt{std::shared\_ptr} в полях \texttt{Cell}. Используем сырые указатели \texttt{Object*}.
+2. Создаем класс \texttt{Heap} (Куча), который владеет всеми созданными объектами (через \texttt{std::vector<std::unique\_ptr<Object>>} или свой аллокатор).
+
+\subsection{Алгоритм}
+
+\textbf{Фаза 1: Mark (Разметка)}
+Обходим граф объектов, начиная с корней (переменные на стеке, глобальное окружение). Помечаем каждый посещенный объект флагом \texttt{marked = true}.
+
+\begin{cppcode}
+void Heap::Mark(Object* obj) {
+    if (!obj || obj->marked) return;
+    
+    obj->marked = true;
+    
+    // Если это пара, рекурсивно помечаем детей
+    if (auto cell = dynamic_cast<Cell*>(obj)) {
+        Mark(cell->first);
+        Mark(cell->second);
+    }
+}
+\end{cppcode}
+
+\textbf{Фаза 2: Sweep (Выметание)}
+Проходим по всем объектам, зарегистрированным в куче.
+\begin{itemize}
+    \item Если \texttt{marked == true}: объект достижим. Сбрасываем флаг в \texttt{false} (для следующего цикла GC).
+    \item Если \texttt{marked == false}: объект недостижим (мусор). Удаляем его.
+\end{itemize}
+
+\begin{cppcode}
+void Heap::Sweep() {
+    auto it = allocated_objects.begin();
+    while (it != allocated_objects.end()) {
+        Object* obj = *it;
+        if (obj->marked) {
+            obj->marked = false; // Сброс для следующего GC
+            ++it;
+        } else {
+            delete obj; // Освобождение памяти
+            // Удаление из списка живых объектов (swap-and-pop для O(1))
+            *it = allocated_objects.back();
+            allocated_objects.pop_back();
+        }
+    }
+}
+\end{cppcode}
+
+Этот подход корректно обрабатывает любые циклы, так как недостижимый циклический граф просто не будет помечен в фазе Mark и будет целиком удален в фазе Sweep.
+
+\section{Синтаксический анализ: Recursive Descent}
+
+Парсинг Lisp-выражений упрощается благодаря их префиксной скобочной структуре. Метод рекурсивного спуска идеально ложится на грамматику.
+
+Грамматика (упрощенно):
+\begin{itemize}
+    \item \textit{Expression} $\to$ \textit{Atom} $|$ \textit{List}
+    \item \textit{List} $\to$ '(' \textit{Elements} ')'
+    \item \textit{Elements} $\to$ \textit{Expression} \textit{Elements} $|$ $\epsilon$
+\end{itemize}
+
+Реализация парсера:
+
+\begin{cppcode}
+Object* Read(Tokenizer& tokenizer) {
+    Token token = tokenizer.Next();
+    
+    if (token.type == Token::NUMBER) {
+        return new Number(token.int_val);
+    }
+    
+    if (token.type == Token::OPEN_PAREN) {
+        return ReadList(tokenizer);
+    }
+    
+    if (token.type == Token::SYMBOL) {
+        return new Symbol(token.str_val);
+    }
+    
+    throw SyntaxError("Unexpected token");
+}
+
+Object* ReadList(Tokenizer& tokenizer) {
+    Token peek = tokenizer.Peek();
+    if (peek.type == Token::CLOSE_PAREN) {
+        tokenizer.Next(); // Поглощаем ')'
+        return nullptr;   // Пустой список
+    }
+    
+    Object* head = Read(tokenizer);
+    Object* tail = ReadList(tokenizer);
+    
+    return new Cell(head, tail);
+}
+\end{cppcode}
+
+Функция \texttt{ReadList} рекурсивно вызывает \texttt{Read} для считывания головы списка, а затем саму себя для считывания хвоста, автоматически формируя цепочку \texttt{Cell}-ов.
+
+\begin{summary}
+\begin{itemize}
+    \item Интерпретатор Scheme демонстрирует необходимость использования полиморфизма для реализации динамической типизации в C++.
+    \item \textbf{std::shared\_ptr} непригоден для графов объектов с циклами без ручного разрыва связей.
+    \item \textbf{Mark-and-Sweep} — фундаментальный алгоритм сборки мусора, решающий проблему циклов через анализ достижимости графа.
+    \item Парсинг S-выражений тривиально реализуется методом рекурсивного спуска, отражая рекурсивную природу самого списка.
+\end{itemize}
+\end{summary}

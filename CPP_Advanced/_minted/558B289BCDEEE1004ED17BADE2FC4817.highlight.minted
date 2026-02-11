@@ -1,0 +1,17 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 1. Общая версия: делегирует запрос самому итератору}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Iter}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{iterator\PYGZus{}traits}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Iter}\PYG{o}{:}\PYG{o}{:}\PYG{n}{value\PYGZus{}type}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{pointer}\PYG{+w}{    }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Iter}\PYG{o}{:}\PYG{o}{:}\PYG{n}{pointer}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// ... другие свойства}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{c+c1}{// 2. Специализация для сырых указателей (T*)}
+\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{T}\PYG{o}{\PYGZgt{}}
+\PYG{k}{struct}\PYG{+w}{ }\PYG{n+nc}{iterator\PYGZus{}traits}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{*}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{value\PYGZus{}type}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{T}\PYG{p}{;}\PYG{+w}{   }\PYG{c+c1}{// Для int* значением является int}
+\PYG{+w}{    }\PYG{k}{using}\PYG{+w}{ }\PYG{n}{pointer}\PYG{+w}{    }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{T}\PYG{o}{*}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// ...}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

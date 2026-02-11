@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{\PYGZob{}}\PYG{l+m+mi}{0}\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{atomic\PYGZus{}update}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{operand}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{old\PYGZus{}val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{value}\PYG{p}{.}\PYG{n}{load}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// 1. Снэпшот состояния}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{new\PYGZus{}val}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{do}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// 2. Вычисление нового значения на основе локальной копии}
+\PYG{+w}{        }\PYG{n}{new\PYGZus{}val}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{old\PYGZus{}val}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{operand}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// Здесь может быть любая функция f(old\PYGZus{}val)}
+
+\PYG{+w}{        }\PYG{c+c1}{// 3. Попытка публикации}
+\PYG{+w}{        }\PYG{c+c1}{// Если value все еще равно old\PYGZus{}val, то записать new\PYGZus{}val.}
+\PYG{+w}{        }\PYG{c+c1}{// Если нет (кто\PYGZhy{}то успел изменить value), то обновить old\PYGZus{}val и вернуть false.}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{o}{!}\PYG{n}{value}\PYG{p}{.}\PYG{n}{compare\PYGZus{}exchange\PYGZus{}weak}\PYG{p}{(}\PYG{n}{old\PYGZus{}val}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{new\PYGZus{}val}\PYG{p}{)}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

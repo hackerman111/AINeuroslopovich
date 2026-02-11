@@ -1,0 +1,27 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}atomic\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}thread\PYGZgt{}}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{Spinlock}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// ATOMIC\PYGZus{}FLAG\PYGZus{}INIT устарело в C++20, конструктор по умолчанию ставит в false (clear)}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{atomic\PYGZus{}flag}\PYG{+w}{ }\PYG{n}{flag}\PYG{p}{;}
+
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{lock}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// test\PYGZus{}and\PYGZus{}set атомарно ставит флаг в true и возвращает ПРЕДЫДУЩЕЕ значение.}
+\PYG{+w}{        }\PYG{c+c1}{// Если вернулось true \PYGZhy{}\PYGZgt{} значит флаг уже был занят \PYGZhy{}\PYGZgt{} продолжаем крутиться.}
+\PYG{+w}{        }\PYG{c+c1}{// Если вернулось false \PYGZhy{}\PYGZgt{} мы успешно захватили спинлок.}
+\PYG{+w}{        }\PYG{k}{while}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{flag}\PYG{p}{.}\PYG{n}{test\PYGZus{}and\PYGZus{}set}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}acquire}\PYG{p}{)}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{c+c1}{// Hint для процессора, что мы в цикле ожидания (снижает энергопотребление)}
+\PYG{+w}{            }\PYG{c+c1}{// В C++20: std::atomic::wait}
+\PYG{+w}{             }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{if defined(\PYGZus{}\PYGZus{}x86\PYGZus{}64\PYGZus{}\PYGZus{}) || defined(\PYGZus{}M\PYGZus{}X64)}
+\PYG{+w}{                 }\PYG{n}{\PYGZus{}mm\PYGZus{}pause}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{             }\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{endif}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{unlock}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{flag}\PYG{p}{.}\PYG{n}{clear}\PYG{p}{(}\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{memory\PYGZus{}order\PYGZus{}release}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

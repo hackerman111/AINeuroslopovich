@@ -1,0 +1,16 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{GetValue}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{k}{return}\PYG{+w}{ }\PYG{l+m+mi}{42}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{c+c1}{// Возвращает prvalue}
+
+\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n+nf}{demo}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{10}\PYG{p}{;}
+
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{  }\PYG{n}{ref1}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{i}\PYG{p}{;}\PYG{+w}{           }\PYG{c+c1}{// OK: i is lvalue}
+\PYG{+w}{    }\PYG{c+c1}{// int\PYGZam{}\PYGZam{} ref2 = i;        // ERROR: cannot bind rvalue ref to lvalue}
+
+\PYG{+w}{    }\PYG{c+c1}{// int\PYGZam{}  ref3 = GetValue(); // ERROR: cannot bind lvalue ref to prvalue}
+\PYG{+w}{    }\PYG{k}{const}\PYG{+w}{ }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{ref4}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GetValue}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{c+c1}{// OK: Lifetime Extension (но read\PYGZhy{}only)}
+
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{ref5}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{GetValue}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{  }\PYG{c+c1}{// OK: ref5 ссылается на временный int(42)}
+\PYG{+w}{    }\PYG{n}{ref5}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{100}\PYG{p}{;}\PYG{+w}{               }\PYG{c+c1}{// Мы можем менять временный объект!}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

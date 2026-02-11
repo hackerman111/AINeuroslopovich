@@ -1,0 +1,219 @@
+\chapter{Паттерны проектирования и Идиомы C++}
+
+В языке C++ паттерны проектирования выходят за рамки классического объектно-ориентированного программирования (GoF). Благодаря мощной системе шаблонов и детерминированному управлению памятью, многие архитектурные решения реализуются через специфические идиомы (Idioms), недоступные в других языках (Java, C\#). В этой главе мы рассмотрим современные реализации порождающих паттернов и статический полиморфизм.
+
+\section{Singleton (Одиночка)}
+
+Паттерн Singleton гарантирует, что класс имеет только один экземпляр, и предоставляет глобальную точку доступа к нему. В C++ реализация этого паттерна прошла долгую эволюцию, связанную с проблемами многопоточной инициализации.
+
+\subsection{Meyers Singleton}
+
+До стандарта C++11 безопасная инициализация синглтона в многопоточной среде требовала сложных механизмов блокировок (Double-Checked Locking Pattern), которые часто реализовывались некорректно из-за перестановок инструкций процессором.
+
+Скотт Мейерс предложил элегантное решение, опирающееся на локальные статические переменные.
+
+\begin{cppcode}
+class Database {
+public:
+    // Удаляем конструкторы копирования и перемещения
+    Database(const Database&) = delete;
+    Database& operator=(const Database&) = delete;
+
+    // Глобальная точка доступа
+    static Database& GetInstance() {
+        // "Magic Static"
+        static Database instance; 
+        return instance;
+    }
+
+    void Query(const char* sql) { /* ... */ }
+
+private:
+    Database() { /* Тяжелая инициализация подключения */ }
+    ~Database() { /* Закрытие соединения */ }
+};
+\end{cppcode}
+
+\textbf{Механика Magic Statics (Thread-Safe Initialization):}
+Начиная с C++11, стандарт гарантирует: если управление входит в объявление блочной статической переменной (\texttt{static} внутри функции), и эта переменная еще не инициализирована, инициализация происходит \textbf{потокобезопасно}.
+Компилятор неявно окружает код инициализации блокировками (обычно через \texttt{std::call\_once} или атомарные флаги). Если другой поток попытается выполнить \texttt{GetInstance()} в момент инициализации, он будет заблокирован до её завершения.
+
+\subsection{Singleton через CRTP}
+
+Чтобы не дублировать код метода \texttt{GetInstance} в каждом классе-одиночке, можно использовать CRTP (см. далее) для создания универсального базового класса.
+
+\begin{cppcode}
+template <typename T>
+class Singleton {
+public:
+    static T& GetInstance() {
+        static T instance;
+        return instance;
+    }
+    // ... delete copy/move ...
+protected:
+    Singleton() = default;
+    ~Singleton() = default;
+};
+
+// Использование:
+class Logger : public Singleton<Logger> {
+    // friend нужен, чтобы Singleton мог вызвать приватный конструктор Logger
+    friend class Singleton<Logger>; 
+private:
+    Logger() { /* ... */ }
+};
+\end{cppcode}
+
+\section{Фабрики в эпоху Smart Pointers}
+
+Классические фабрики возвращают сырые указатели. В современном C++ это считается плохой практикой (Ownership Semantics неясна). Стандартом индустрии является возврат \texttt{std::unique\_ptr}.
+
+\begin{cppcode}
+struct IFruit { virtual ~IFruit() = default; };
+struct Apple : IFruit {};
+struct Orange : IFruit {};
+
+// Абстрактная фабрика
+class FruitFactory {
+public:
+    // Возвращаем unique_ptr - передаем владение вызывающему
+    static std::unique_ptr<IFruit> Create(std::string_view type) {
+        if (type == "apple") return std::make_unique<Apple>();
+        if (type == "orange") return std::make_unique<Orange>();
+        return nullptr;
+    }
+};
+\end{cppcode}
+
+Такой подход гарантирует, что созданный объект будет корректно удален, даже если клиент забудет про него или произойдет исключение.
+
+\section{CRTP: Статический Полиморфизм}
+
+Curiously Recurring Template Pattern (CRTP) — идиома, в которой класс \texttt{Derived} наследуется от шаблона класса \texttt{Base}, параметризованного самим \texttt{Derived}.
+
+\begin{cppcode}
+template <typename Derived>
+class Base {
+    // ...
+};
+
+class MyClass : public Base<MyClass> {
+    // ...
+};
+\end{cppcode}
+
+Главная цель CRTP — достижение полиморфного поведения без использования виртуальных функций (Static Polymorphism). Базовый класс знает тип наследника на этапе компиляции и может приводить указатель \texttt{this} к типу \texttt{Derived*}.
+
+\begin{cppcode}
+template <typename Derived>
+class BaseAPI {
+public:
+    void Interface() {
+        // Статическое приведение к наследнику.
+        // Безопасно, так как мы знаем, что this - это часть объекта Derived.
+        static_cast<Derived*>(this)->Implementation();
+    }
+    
+    // Дефолтная реализация (Compile-time check)
+    void Implementation() {
+        // Если наследник не переопределил метод, вызовется этот код
+    }
+};
+
+class Service : public BaseAPI<Service> {
+public:
+    // "Переопределение" метода (без virtual)
+    void Implementation() {
+        /* Custom Logic */
+    }
+};
+\end{cppcode}
+
+\textbf{Преимущества перед \texttt{virtual}:}
+\begin{itemize}
+    \item \textbf{Отсутствие vtable:} Экономия памяти (нет vptr) и отсутствие лишней индирекции при вызове.
+    \item \textbf{Инлайнинг:} Компилятор видит тело вызываемой функции наследника и может встроить его (Devirtualization), что критично для высоконагруженных циклов.
+\end{itemize}
+
+\subsection{Пример: Полиморфное клонирование}
+
+В классическом ООП для создания копии объекта через базовый указатель требуется виртуальный метод \texttt{clone()}. Это приводит к дублированию шаблонного кода в каждом наследнике.
+
+\begin{cppcode}
+struct Shape {
+    virtual std::unique_ptr<Shape> clone() const = 0;
+    virtual ~Shape() = default;
+};
+
+// CRTP Mixin для автоматической реализации clone
+template <typename Derived>
+struct Cloneable : Shape {
+    std::unique_ptr<Shape> clone() const override {
+        // Копируем конкретный тип Derived
+        return std::make_unique<Derived>(static_cast<const Derived&>(*this));
+    }
+};
+
+struct Circle : Cloneable<Circle> {
+    int radius;
+};
+
+struct Square : Cloneable<Square> {
+    int side;
+};
+// Circle и Square автоматически получили корректную реализацию clone()
+\end{cppcode}
+
+\section{Policy-Based Design}
+
+Policy-Based Design (проектирование на основе стратегий) — это подход, популяризированный Андреем Александреску, позволяющий собирать сложные классы из независимых ортогональных поведений (политик) на этапе компиляции.
+
+Вместо того чтобы жестко прописывать поведение внутри класса или использовать паттерн "Стратегия" с виртуальными функциями, мы передаем классы-повеления (Policies) как параметры шаблона.
+
+\subsection{Реализация умного указателя с политиками}
+
+Рассмотрим класс \texttt{SmartPtr}, поведение которого (проверка на \texttt{nullptr} при доступе) настраивается извне.
+
+\begin{cppcode}
+// Политика 1: Без проверок (для максимальной скорости)
+struct NoCheck {
+    template <typename T>
+    static void Check(T* ptr) {} // Пусто
+};
+
+// Политика 2: Строгая проверка
+struct EnforceNotNull {
+    template <typename T>
+    static void Check(T* ptr) {
+        if (!ptr) throw std::runtime_error("Null pointer access");
+    }
+};
+
+// Хост-класс
+template <typename T, typename CheckingPolicy>
+class SmartPtr : private CheckingPolicy { // Наследование для EBO
+    T* ptr = nullptr;
+public:
+    T* operator->() {
+        // Вызов метода политики
+        CheckingPolicy::Check(ptr);
+        return ptr;
+    }
+    // ... конструкторы ...
+};
+
+// Использование
+using FastPtr = SmartPtr<int, NoCheck>;
+using SafePtr = SmartPtr<int, EnforceNotNull>;
+\end{cppcode}
+
+Этот подход позволяет генерировать код, идеально оптимизированный под конкретную задачу. \texttt{FastPtr::operator->} скомпилируется в одну инструкцию (чтение адреса), так как пустая функция \texttt{NoCheck::Check} будет удалена оптимизатором. \texttt{SafePtr} же будет содержать инструкции проверки.
+
+\begin{summary}
+\begin{itemize}
+    \item \textbf{Singleton} в современном C++ реализуется через локальную статическую переменную (Meyers Singleton), что гарантирует потокобезопасность без мьютексов в пользовательском коде.
+    \item \textbf{CRTP} позволяет реализовать статический полиморфизм, заменяя runtime-оверхед виртуальных функций на compile-time разрешение типов.
+    \item \textbf{Policy-Based Design} дает возможность создавать гибкие, конфигурируемые компоненты, комбинируя небольшие классы-стратегии через шаблоны.
+\end{itemize}
+\end{summary}

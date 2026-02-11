@@ -1,0 +1,23 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}vector\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}utility\PYGZgt{}}\PYG{c+c1}{ // для std::forward}
+
+\PYG{k}{class}\PYG{+w}{ }\PYG{n+nc}{ModernBuilder}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{int}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{;}
+\PYG{k}{public}\PYG{o}{:}
+\PYG{+w}{    }\PYG{k+kt}{void}\PYG{+w}{ }\PYG{n}{add}\PYG{p}{(}\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{data}\PYG{p}{.}\PYG{n}{push\PYGZus{}back}\PYG{p}{(}\PYG{n}{x}\PYG{p}{)}\PYG{p}{;}\PYG{+w}{ }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{c+c1}{// Единый шаблонный метод}
+\PYG{+w}{    }\PYG{c+c1}{// Self выведется как ModernBuilder\PYGZam{} (для lvalue)}
+\PYG{+w}{    }\PYG{c+c1}{// или ModernBuilder (для rvalue)}
+\PYG{+w}{    }\PYG{k}{template}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{k}{typename}\PYG{+w}{ }\PYG{n+nc}{Self}\PYG{o}{\PYGZgt{}}
+\PYG{+w}{    }\PYG{k}{auto}\PYG{+w}{ }\PYG{n}{finish}\PYG{p}{(}\PYG{k}{this}\PYG{+w}{ }\PYG{n}{Self}\PYG{o}{\PYGZam{}}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n}{self}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{c+c1}{// self — это наш *this, но теперь это обычный аргумент.}
+\PYG{+w}{        }\PYG{c+c1}{// Мы можем применить std::forward к самому объекту!}
+
+\PYG{+w}{        }\PYG{c+c1}{// forward\PYGZus{}like \PYGZhy{} новая утилита C++23, аналогичная forward,}
+\PYG{+w}{        }\PYG{c+c1}{// но применяющая категорию self к полю data.}
+\PYG{+w}{        }\PYG{k}{return}\PYG{+w}{ }\PYG{n}{std}\PYG{o}{:}\PYG{o}{:}\PYG{n}{forward}\PYG{o}{\PYGZlt{}}\PYG{n}{Self}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{self}\PYG{p}{)}\PYG{p}{.}\PYG{n}{data}\PYG{p}{;}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}\PYG{p}{;}
+\end{MintedVerbatim}

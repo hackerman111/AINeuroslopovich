@@ -1,0 +1,18 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}iostream\PYGZgt{}}
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{include}\PYG{+w}{ }\PYG{c+cpf}{\PYGZlt{}cstdlib\PYGZgt{}}
+
+\PYG{c+cp}{\PYGZsh{}}\PYG{c+cp}{define MY\PYGZus{}ASSERT(expr) \PYGZbs{}}
+\PYG{c+cp}{    if (!(expr)) \PYGZob{} \PYGZbs{}}
+\PYG{c+cp}{        std::cerr \PYGZlt{}\PYGZlt{} \PYGZdq{}Assertion failed: \PYGZdq{} \PYGZlt{}\PYGZlt{} \PYGZsh{}expr \PYGZbs{}}
+\PYG{c+cp}{                  \PYGZlt{}\PYGZlt{} \PYGZdq{}, file \PYGZdq{} \PYGZlt{}\PYGZlt{} \PYGZus{}\PYGZus{}FILE\PYGZus{}\PYGZus{} \PYGZbs{}}
+\PYG{c+cp}{                  \PYGZlt{}\PYGZlt{} \PYGZdq{}, line \PYGZdq{} \PYGZlt{}\PYGZlt{} \PYGZus{}\PYGZus{}LINE\PYGZus{}\PYGZus{} \PYGZlt{}\PYGZlt{} std::endl; \PYGZbs{}}
+\PYG{c+cp}{        std::abort(); \PYGZbs{}}
+\PYG{c+cp}{    \PYGZcb{}}
+
+\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n+nf}{main}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k+kt}{int}\PYG{+w}{ }\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{5}\PYG{p}{;}
+\PYG{+w}{    }\PYG{c+c1}{// Вывод: Assertion failed: x == 2, file main.cpp, line 15}
+\PYG{+w}{    }\PYG{n}{MY\PYGZus{}ASSERT}\PYG{p}{(}\PYG{n}{x}\PYG{+w}{ }\PYG{o}{=}\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

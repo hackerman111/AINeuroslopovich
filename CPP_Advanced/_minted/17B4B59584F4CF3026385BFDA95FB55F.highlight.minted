@@ -1,0 +1,7 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Logger}\PYG{o}{\PYGZam{}}\PYG{+w}{ }\PYG{n+nf}{getInstance}\PYG{p}{(}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{c+c1}{// Память выделяется в куче и никогда не освобождается.}
+\PYG{+w}{    }\PYG{k}{static}\PYG{+w}{ }\PYG{n}{Logger}\PYG{o}{*}\PYG{+w}{ }\PYG{n}{instance}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{new}\PYG{+w}{ }\PYG{n}{Logger}\PYG{p}{(}\PYG{p}{)}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k}{return}\PYG{+w}{ }\PYG{o}{*}\PYG{n}{instance}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

@@ -1,0 +1,180 @@
+% =========================================================
+% ГЛАВА 2
+% =========================================================
+
+\chapter{Управление зависимостями и идиома PImpl}
+
+Одной из фундаментальных проблем разработки крупных проектов на C++ является время компиляции. Из-за механизма включения заголовочных файлов (\texttt{\#include}), изменение одной приватной переменной в низкоуровневом классе может вызвать каскадную перекомпиляцию сотен единиц трансляции, зависящих от этого заголовка.
+
+Идиома PImpl (Pointer to Implementation), также известная как "Compilation Firewall" или "Opaque Pointer", — это архитектурный паттерн, призванный разорвать эти транзитивные зависимости и скрыть детали реализации от клиентского кода.
+
+\section{Проблема транзитивных зависимостей}
+
+В C++ определение класса в заголовочном файле должно быть полным. Компилятору необходимо знать точный размер объекта (значение \texttt{sizeof}), чтобы выделить память на стеке или внедрить объект в другой класс. Это означает, что все типы, используемые в качестве полей класса (даже приватных), должны быть полностью определены.
+
+Рассмотрим пример класса \texttt{DatabaseConnection}, который использует тяжелую стороннюю библиотеку (например, драйвер PostgreSQL).
+
+\textbf{DatabaseConnection.h (Без PImpl)}
+\begin{cppcode}[]
+#pragma once
+// Мы вынуждены включить тяжелый хедер сторонней библиотеки,
+// так как используем её типы в полях класса.
+#include <libpq-fe.h> 
+#include <vector>
+#include <string>
+
+class DatabaseConnection {
+public:
+    void connect(const std::string& connectionString);
+    void executeQuery(const std::string& query);
+
+private:
+    // Детали реализации "протекают" в интерфейс.
+    // Любой файл, включающий DatabaseConnection.h,
+    // неявно включает <libpq-fe.h> и все его зависимости.
+    PGconn* pgConnection; 
+    std::vector<std::string> cache;
+    int internalState;
+};
+\end{cppcode}
+
+\textbf{Недостатки такого подхода:}
+\begin{enumerate}
+    \item \textbf{Header Bloat (Раздувание заголовков):} Клиентский код, которому нужен только метод \texttt{connect}, вынужден парсить тысячи строк кода из \texttt{<libpq-fe.h>}.
+    \item \textbf{Хрупкость сборки:} Если вы добавите новое приватное поле \texttt{int retryCount}, изменится \texttt{sizeof(DatabaseConnection)}. Все исходные файлы, использующие этот класс, обязаны быть перекомпилированы, иначе нарушится ODR (разные размеры объекта в разных TU).
+    \item \textbf{Загрязнение пространства имен:} Макросы и типы из сторонней библиотеки могут конфликтовать с кодом пользователя.
+\end{enumerate}
+
+\section{Реализация PImpl}
+
+Суть идиомы заключается в вынесении всех приватных полей в отдельную структуру (класс реализации), которая определяется только внутри \texttt{.cpp} файла. В публичном заголовке остается только указатель на эту структуру.
+
+Поскольку размер указателя фиксирован и известен компилятору (обычно 8 байт на 64-битных системах), определение класса реализации в хедере не требуется. Достаточно \textit{предварительного объявления} (forward declaration).
+
+\subsection{Современный PImpl с std::unique\_ptr}
+
+В современном C++ для управления временем жизни реализации используется \texttt{std::unique\_ptr}. Это обеспечивает RAII: реализация будет автоматически удалена вместе с публичным объектом.
+
+\textbf{DatabaseConnection.h (С PImpl)}
+\begin{cppcode}[]
+#pragma once
+#include <string>
+#include <memory> // для std::unique_ptr
+
+class DatabaseConnection {
+public:
+    DatabaseConnection();
+    ~DatabaseConnection(); // Важно: объявляем, но не определяем здесь
+
+    // Перемещающие операции (Move Semantics) необходимы,
+    // так как unique_ptr нельзя копировать.
+    DatabaseConnection(DatabaseConnection&&) noexcept;
+    DatabaseConnection& operator=(DatabaseConnection&&) noexcept;
+
+    // Копирование запрещаем (или реализуем через глубокое копирование Impl)
+    DatabaseConnection(const DatabaseConnection&) = delete;
+    DatabaseConnection& operator=(const DatabaseConnection&) = delete;
+
+    void connect(const std::string& connectionString);
+    void executeQuery(const std::string& query);
+
+private:
+    // Предварительное объявление.
+    // Класс Impl определен где-то в другом месте.
+    struct Impl; 
+    
+    // Указатель на реализацию.
+    // std::unique_ptr требует полного типа T только в момент вызова delete
+    std::unique_ptr<Impl> pImpl;
+};
+\end{cppcode}
+
+Обратите внимание: в этом файле нет \texttt{\#include <libpq-fe.h>}. Зависимость полностью устранена.
+
+\textbf{DatabaseConnection.cpp}
+\begin{cppcode}[]
+#include "DatabaseConnection.h"
+// Включаем тяжелые зависимости ТОЛЬКО в файле реализации
+#include <libpq-fe.h> 
+#include <vector>
+
+// Полное определение класса реализации
+struct DatabaseConnection::Impl {
+    PGconn* pgConnection = nullptr;
+    std::vector<std::string> cache;
+    int internalState = 0;
+
+    // Можно выносить сюда и приватные методы
+    void helperFunction() { /* ... */ }
+};
+
+// Конструктор: выделяем память под реализацию
+DatabaseConnection::DatabaseConnection() 
+    : pImpl(std::make_unique<Impl>()) {}
+
+// Деструктор: именно здесь компилятору нужен полный тип Impl
+DatabaseConnection::~DatabaseConnection() = default;
+
+// Реализация перемещения
+DatabaseConnection::DatabaseConnection(DatabaseConnection&&) noexcept = default;
+DatabaseConnection& DatabaseConnection::operator=(DatabaseConnection&&) noexcept = default;
+
+// Проксирование вызовов
+void DatabaseConnection::connect(const std::string& str) {
+    // Обращение к полям через стрелку pImpl->
+    pImpl->pgConnection = PQconnectdb(str.c_str());
+}
+\end{cppcode}
+
+\section{Проблема неполного типа (Incomplete Type) в деструкторе}
+
+Распространенной ошибкой является попытка определить деструктор в заголовочном файле (или использовать деструктор по умолчанию, сгенерированный компилятором в хедере).
+
+\begin{cppcode}
+// DatabaseConnection.h
+class DatabaseConnection {
+    // ОШИБКА, если Impl объявлен только предварительно (class Impl;)
+    ~DatabaseConnection() = default; 
+    std::unique_ptr<Impl> pImpl;
+};
+\end{cppcode}
+
+Причина ошибки кроется в устройстве \texttt{std::unique\_ptr}. В его деструкторе происходит вызов \texttt{delete ptr}. Оператор \texttt{delete} перед освобождением памяти вызывает деструктор объекта. Чтобы вызвать деструктор объекта \texttt{Impl}, компилятор должен видеть определение класса \texttt{Impl}. В заголовочном файле \texttt{Impl} — это неполный тип (incomplete type).
+
+Использование \texttt{delete} на неполном типе в C++ является либо ошибкой компиляции, либо (в случае старых стандартов и сырых указателей) неопределенным поведением (UB). \texttt{std::unique\_ptr} защищает от UB с помощью \texttt{static\_assert}, проверяющего \texttt{sizeof(T) > 0}.
+
+\begin{important}
+Вы обязаны объявить деструктор в хедере, а реализовать его (даже через \texttt{= default}) в \texttt{.cpp} файле, \textbf{после} того как определена структура \texttt{Impl}.
+\end{important}
+
+\section{ABI Stability (Бинарная совместимость)}
+
+Application Binary Interface (ABI) определяет, как объекты располагаются в памяти. В примере без PImpl размер объекта \texttt{DatabaseConnection} зависит от реализации \texttt{std::vector} и внутренней структуры \texttt{PGconn}.
+
+Если вы обновите версию компилятора (что может изменить \texttt{sizeof(std::vector)}) или добавите приватное поле, размер класса изменится. Если ваше приложение динамически линкуется с библиотекой, предоставляющей этот класс, изменение размера приведет к смещению адресов полей и краху программы, если библиотека обновлена, а приложение — нет.
+
+С PImpl размер класса \texttt{DatabaseConnection} всегда равен размеру одного \texttt{std::unique\_ptr} (обычно размер машинного слова). Вы можете менять содержимое \texttt{Impl} как угодно: добавлять поля, менять контейнеры, удалять зависимости. Бинарный интерфейс публичного класса остается замороженным. Это критически важно для разработки библиотек (DLL/Shared Objects), которые должны обновляться без перекомпиляции клиентов.
+
+\section{Цена абстракции (Performance Trade-offs)}
+
+PImpl не является бесплатным. За изоляцию зависимостей приходится платить производительностью.
+
+\begin{enumerate}
+    \item \textbf{Динамическая аллокация:} При создании каждого объекта \texttt{DatabaseConnection} происходит обращение к куче (\texttt{new Impl}). Это медленнее, чем выделение памяти на стеке, и может вызвать фрагментацию памяти при создании миллионов мелких объектов.
+    \item \textbf{Indirection (Косвенная адресация):} Любой вызов метода требует разыменования указателя \texttt{pImpl->field}. Это дополнительная инструкция процессора и потенциальный промах кэша (Cache Miss), так как данные реализации лежат в куче, далеко от самого объекта.
+    \item \textbf{Размер кода:} Компилятор не может заинлайнить методы, реализация которых скрыта в \texttt{.cpp}.
+\end{enumerate}
+
+Для решения проблемы с аллокацией используется техника \textbf{Fast PImpl}. Вместо указателя используется буфер на стеке (\texttt{std::aligned\_storage}), размер которого подбирается вручную.
+
+\begin{cppcode}
+// Fast PImpl (упрощенно)
+class FastWidget {
+    // Резервируем память внутри объекта (на стеке)
+    // Риск: если Impl станет больше 64 байт, придется менять хедер
+    alignas(8) unsigned char storage[64]; 
+    struct Impl; // Реализация будет placement new в этот буфер
+};
+\end{cppcode}
+
+Этот подход возвращает скорость доступа и убирает аллокацию, но возвращает зависимость от размера реализации (хотя и в меньшей степени — пока мы укладываемся в буфер, перекомпиляция не нужна).
