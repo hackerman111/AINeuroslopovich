@@ -1,0 +1,804 @@
+% ===================== PREAMBLE START (Aesthetic, pdfLaTeX, RU, no shell-escape) =========
+\documentclass[12pt,a4paper]{article}
+
+% Поиск/копирование кириллицы из PDF
+\usepackage{cmap}
+
+% Математика и единицы
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\numberwithin{equation}{section}
+\usepackage{siunitx}
+\sisetup{detect-all=true}
+
+% Язык и кодировки
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+
+% Поля, типографика, абзацы
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{microtype}
+\usepackage{indentfirst}
+\setlength{\parindent}{1.25em}
+\setlength{\parskip}{0.25em}
+\raggedbottom
+
+% Цветовая тема
+\usepackage[table]{xcolor}
+\definecolor{Accent}{HTML}{1F6FEB}     % основной акцент
+\definecolor{AccentDark}{HTML}{0B5394} % тёмный акцент
+\definecolor{AccentLight}{HTML}{E8F0FE}% светлый акцент (фон)
+\definecolor{CodeBg}{HTML}{F6F8FA}     % фон для кода
+\definecolor{Link}{HTML}{1F6FEB}       % ссылки
+
+% Гиперссылки и умные ссылки
+\usepackage[unicode]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=Link, citecolor=Link, urlcolor=Link,
+  pdfauthor={},
+  pdftitle={}
+}
+\usepackage[nameinlink,capitalise]{cleveref}
+\urlstyle{same}
+
+% Заголовки разделов
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\sffamily\color{Accent}}{\thesection}{1em}{}
+\titleformat{\subsection}{\bfseries\sffamily\color{AccentDark}}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}{\bfseries}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.0ex plus 0.5ex}{0.6ex}
+\titlespacing*{\subsection}{0pt}{0.9ex plus 0.4ex}{0.5ex}
+\titlespacing*{\subsubsection}{0pt}{0.8ex plus 0.3ex}{0.4ex}
+
+% Шапки/футеры
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+% Макросы метаданных
+\newcommand{\CourseName}{Архитектура компьютера и ОС}
+\newcommand{\LectureNo}{10}
+\newcommand{\LectureTitle}{Синхронизация в ядре: Futex и системные вызовы}
+\newcommand{\LectureDate}{21.12.2025}
+\newcommand{\Lecturer}{Евгений Соколов}
+\fancyhead[L]{\small\sffamily \CourseName}
+\fancyhead[C]{\small\sffamily \LectureTitle}
+\fancyhead[R]{\small\sffamily Лекция \LectureNo}
+\fancyfoot[C]{\small\sffamily \thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\makeatletter
+\renewcommand{\headrule}{\hbox to\headwidth{\color{Accent}\leaders\hrule height \headrulewidth\hfill}}
+\makeatother
+
+% Подписи к рисункам/таблицам
+\usepackage[font=small,labelfont=bf,labelsep=endash]{caption}
+\usepackage{subcaption}
+
+% Таблицы и списки
+\usepackage{booktabs}
+\usepackage{array,tabularx}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=4pt,leftmargin=*,labelsep=0.5em}
+
+% Графика и TikZ
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,calc,fit}
+\tikzset{
+  box/.style={draw=Accent, rounded corners, fill=AccentLight, minimum width=2.6cm, minimum height=1cm, align=center},
+  arrow/.style={-{Stealth[length=3mm,width=2mm]}, line width=0.5pt, draw=AccentDark}
+}
+
+% Красивые боксы "методички"
+\usepackage[most]{tcolorbox}
+\tcbset{enhanced, breakable, boxrule=0.6pt, fonttitle=\bfseries\sffamily}
+\newtcolorbox{definitionbox}[1]{
+  title={Определение: #1},
+  colback=AccentLight, colframe=Accent, coltitle=black, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt
+}
+\newtcolorbox{notebox}{
+  title={Примечание},
+  colback=yellow!8, colframe=yellow!40!black, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt
+}
+\newtcolorbox{summarybox}{
+  title={Итоги раздела},
+  colback=green!6, colframe=green!50!black, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt
+}
+
+% Листинги (без minted, без shell-escape)
+\usepackage{listings}
+\usepackage{listingsutf8}
+\lstdefinestyle{elegant}{
+  inputencoding=utf8,
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{black!20},
+  backgroundcolor=\color{CodeBg},
+  xleftmargin=0.5em,
+  framexleftmargin=0.5em,
+  tabsize=2,
+  showstringspaces=false,
+  keywordstyle=\bfseries\color{AccentDark},
+  commentstyle=\itshape\color{black!55},
+  stringstyle=\color{orange!60!black},
+  numbers=left,
+  numberstyle=\tiny\color{black!50},
+  numbersep=8pt,
+  captionpos=b,
+  upquote=true,
+  escapechar=§
+}
+\lstset{style=elegant}
+
+% Макросы удобства
+\newcommand{\TODO}[1]{\textcolor{red!70!black}{[TODO: #1]}}
+\newcommand{\figref}[1]{рис.~\ref{#1}}
+\newcommand{\secref}[1]{раздел~\ref{#1}}
+\newcommand{\eqnref}[1]{(\ref{#1})}
+\newcommand{\lstref}[1]{листинг~\ref{#1}}
+
+% Глоссарий и сокращения
+\usepackage[acronym,nonumberlist,toc]{glossaries}
+\makeglossaries
+\setacronymstyle{long-short}
+\renewcommand*{\glossaryname}{Глоссарий}
+\renewcommand*{\acronymname}{Список сокращений}
+\setglossarystyle{altlist}
+
+\newacronym[sort=futex]{futex}{Futex}{Fast Userspace Mutex}
+\newglossaryentry{lostwakeup}{
+  name={Lost Wake-up},
+  sort={lostwakeup},
+  description={состояние гонки, при котором сигнал пробуждения отправляется до того, как поток фактически уснул, что приводит к вечной блокировке}
+}
+
+\title{\sffamily Курс: \textit{\CourseName}\\\large Лекция \LectureNo: \LectureTitle}
+\author{\sffamily Лектор: \Lecturer}
+\date{\sffamily Дата: \LectureDate}
+% ===================== PREAMBLE END =======================================================
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Введение в механизмы системной синхронизации}
+
+Современные многопоточные приложения требуют эффективных способов координации. Традиционные примитивы синхронизации, реализованные полностью внутри ядра операционной системы, обладают значительными накладными расходами на переключение контекста между пространством пользователя и пространством ядра. В данной главе рассматривается \gls{futex} — фундаментальный механизм Linux, позволяющий минимизировать эти расходы, а также системные проблемы, возникающие при ветвлении многопоточных процессов.
+
+\section{Futex: Fast Userspace Mutex}
+
+\begin{definitionbox}{Futex}
+\textbf{Futex} (Fast Userspace Mutex) — это системный механизм Linux, предназначенный для реализации эффективных блокировок. Он позволяет потокам выполнять захват и освобождение ресурсов в пространстве пользователя (userspace) без обращения к ядру, пока нет конкуренции за ресурс.
+\end{definitionbox}
+
+\subsection{Механика работы и системные вызовы}
+
+Интерфейс \gls{futex} представлен системным вызовом \texttt{sys\_futex}. Основная идея заключается в том, что поток сначала пытается изменить атомарную переменную в памяти процесса. Если попытка успешна (конкуренция отсутствует), системный вызов не требуется. Если же переменная указывает на то, что ресурс занят, поток обращается к ядру для перехода в состояние ожидания.
+
+Две основные операции \gls{futex}:
+\begin{enumerate}
+    \item \texttt{FUTEX\_WAIT}: поток засыпает, если значение по указанному адресу равно ожидаемому.
+    \item \texttt{FUTEX\_WAKE}: ядро пробуждает $N$ потоков, ожидающих на данном адресе.
+\end{enumerate}
+
+\begin{lstlisting}[language=C, caption={Упрощенная реализация Mutex на базе Futex}, label={lst:futex-mutex}]
+// Value: 0 - unlocked, 1 - locked
+void lock(int *futex_addr) {
+    while (__atomic_exchange_n(futex_addr, 1, __ATOMIC_ACQUIRE) == 1) {
+        // Atomic check: if value is still 1, then sleep
+        syscall(SYS_futex, futex_addr, FUTEX_WAIT, 1, NULL, NULL, 0);
+    }
+}
+
+void unlock(int *futex_addr) {
+    __atomic_store_n(futex_addr, 0, __ATOMIC_RELEASE);
+    // Wake up one waiting thread
+    syscall(SYS_futex, futex_addr, FUTEX_WAKE, 1, NULL, NULL, 0);
+}
+\end{lstlisting}
+
+\subsection{Проблема Lost Wake-up и атомарность в ядре}
+
+Одной из критических проблем при реализации блокировок является \gls{lostwakeup}. Рассмотрим сценарий без атомарной проверки внутри ядра:
+\begin{enumerate}
+    \item Поток A видит, что \texttt{value == 1}, и готовится вызвать \texttt{FUTEX\_WAIT}.
+    \item Поток B вызывает \texttt{unlock}, устанавливает \texttt{value = 0} и вызывает \texttt{FUTEX\_WAKE}.
+    \item Сигнал \texttt{WAKE} пропадает, так как Поток A еще не уснул.
+    \item Поток A вызывает \texttt{FUTEX\_WAIT} и засыпает навсегда.
+\end{enumerate}
+
+Механизм \texttt{FUTEX\_WAIT} решает эту проблему за счет дополнительного аргумента — ожидаемого значения. Ядро Linux гарантирует, что проверка \texttt{*uaddr == val} и постановка потока в очередь ожидания выполняются атомарно относительно операций записи в эту ячейку.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=10mm]
+    \node[box] (u_check)  {Проверка в Userspace\\(Атомарная операция)};
+    \node[box, below=of u_check] (k_entry) {Переход в ядро\\(Syscall)};
+    \node[box, below=of k_entry] (k_check) {Атомарная проверка\\*addr == val};
+    \node[box, right=of k_check, fill=green!10] (k_sleep) {Сон в очереди\\ожидания};
+    \node[box, left=of k_check, fill=red!10] (k_ret) {Возврат в\\Userspace};
+    
+    \draw[arrow] (u_check) -- node[right, font=\tiny] {Занято} (k_entry);
+    \draw[arrow] (k_entry) -- (k_check);
+    \draw[arrow] (k_check) -- node[above, font=\tiny] {Да} (k_sleep);
+    \draw[arrow] (k_check) -- node[above, font=\tiny] {Нет} (k_ret);
+  \end{tikzpicture}
+  \caption{Алгоритм работы FUTEX\_WAIT}
+  \label{fig:futex-flow}
+\end{figure}
+
+\section{Взаимодействие fork() и многопоточности}
+
+Системный вызов \texttt{fork()} создает копию текущего процесса, однако в контексте многопоточности его поведение обладает специфической особенностью, часто приводящей к трудноуловимым ошибкам.
+
+\begin{notebox}
+При вызове \texttt{fork()} в дочернем процессе продолжает исполнение только тот поток, который инициировал этот вызов. Все остальные потоки родительского процесса в дочернем процессе просто перестают существовать.
+\end{notebox}
+
+\subsection{Проблема "мертвых" блокировок}
+
+Если в момент вызова \texttt{fork()} какой-либо поток (отличный от вызывающего) удерживал \texttt{std::mutex}, то в дочернем процессе этот мьютекс останется в захваченном состоянии навсегда. Поскольку поток-владелец не существует в дочернем процессе, он никогда не вызовет \texttt{unlock()}. Любая попытка дочернего процесса захватить этот мьютекс приведет к \texttt{deadlock}.
+
+Эта проблема особенно актуальна для библиотечных функций:
+\begin{itemize}
+    \item \textbf{Аллокаторы памяти:} \texttt{malloc} и \texttt{free} часто используют внутренние мьютексы для защиты глобальных арен памяти.
+    \item \textbf{Функции ввода-вывода:} \texttt{printf} и \texttt{scanf} также сериализуют доступ к потокам данных через блокировки.
+\end{itemize}
+
+\subsection{Решение через pthread\_atfork}
+
+Для предотвращения подобных ситуаций стандарт POSIX предоставляет функцию \texttt{pthread\_atfork}. Она позволяет зарегистрировать три обработчика:
+\begin{enumerate}
+    \item \texttt{prepare}: вызывается в родительском процессе перед \texttt{fork}. Обычно здесь захватываются все критические мьютексы.
+    \item \texttt{parent}: вызывается в родительском процессе после \texttt{fork}. Мьютексы освобождаются.
+    \item \texttt{child}: вызывается в дочернем процессе после \texttt{fork}. Мьютексы сбрасываются или освобождаются.
+\end{enumerate}
+
+\begin{lstlisting}[language=C, caption={Использование pthread\_atfork для безопасности аллокаторов}]
+void prepare_locks() { pthread_mutex_lock(&global_lock); }
+void parent_unlock() { pthread_mutex_unlock(&global_lock); }
+void child_unlock()  { pthread_mutex_unlock(&global_lock); }
+
+// Registration in library initialization
+pthread_atfork(prepare_locks, parent_unlock, child_unlock);
+\end{lstlisting}
+
+\begin{summarybox}
+\begin{itemize}
+    \item \textbf{Futex} — гибридный механизм синхронизации, объединяющий быструю проверку в userspace и блокировку в ядре.
+    \item Атомарная проверка значения в \texttt{FUTEX\_WAIT} необходима для предотвращения \textbf{Lost Wake-up}.
+    \item Вызов \texttt{fork()} в многопоточной среде копирует только вызывающий поток, что делает блокировки, захваченные другими потоками, недоступными для освобождения в дочернем процессе.
+    \item Использование \texttt{pthread\_atfork} позволяет библиотекам корректно обрабатывать состояние блокировок при ветвлении процесса.
+\end{itemize}
+\end{summarybox}
+
+\section{Основы параллелизма: Планирование ОС и границы ускорения}
+
+Наблюдаемый параллелизм в современных вычислительных системах зачастую является абстракцией, реализуемой операционной системой. В данном разделе рассматриваются механизмы квантования времени, аппаратные ограничения сигналов и математические пределы ускорения многопоточных вычислений.
+
+\subsection{Квантование времени и аппаратная поддержка планирования}
+
+Параллелизм на одноядерных системах реализуется через механизм мультипрограммирования. Исполняемые потоки (threads) или процессы не работают непрерывно; вместо этого они разделяют процессорное время, сменяя друг друга через короткие промежутки.
+
+\begin{definitionbox}{Квант времени (Time Quantum)}
+\textbf{Квант времени} — фиксированный интервал времени (обычно от 1 до 100 мс), в течение которого поток имеет исключительное право на использование вычислительного ресурса ядра процессора до принудительного прерывания планировщиком.
+\end{definitionbox}
+
+Механизм переключения потоков инициируется на аппаратном уровне:
+\begin{enumerate}
+    \item При начале исполнения потока планировщик ОС взводит аппаратный таймер.
+    \item По истечении кванта времени таймер генерирует прерывание.
+    \item Процессор переходит в режим ядра (Kernel Mode) и передает управление обработчику прерываний планировщика.
+    \item Планировщик сохраняет контекст текущего потока (регистры, стек) и выбирает следующий поток из очереди готовых к исполнению (\textit{runqueue}).
+\end{enumerate}
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=5mm]
+    % Timeline
+    \draw[->, thick] (0,0) -- (10,0) node[right] {time};
+    
+    % Slices
+    \node[box, minimum width=1.5cm, anchor=south west] (t1) at (0.5, 0.2) {T1};
+    \node[box, minimum width=1.5cm, right=of t1] (t2) {T2};
+    \node[box, minimum width=1.5cm, right=of t2] (t3) {T3};
+    \node[box, minimum width=1.5cm, right=of t3] (t4) {T4};
+    
+    % Context Switch points
+    \foreach \x in {2, 4.05, 6.1} {
+      \draw[dashed, AccentDark] (\x, -0.2) -- (\x, 1.5);
+    }
+    
+    \node[font=\tiny, AccentDark] at (2, -0.5) {Context Switch};
+  \end{tikzpicture}
+  \caption{Реализация наблюдаемого параллелизма на одном ядре процессора}
+  \label{fig:time_slicing}
+\end{figure}
+
+\subsection{Механизмы обработки сигналов и их ограничения}
+
+Сигналы в Unix-подобных системах являются средством межпроцессного взаимодействия, однако их реализация по умолчанию не гарантирует надежной доставки всех экземпляров.
+
+\begin{notebox}
+В стандартной реализации ОС не существует очереди для сигналов. Информация о поступивших сигналах хранится в виде битовой маски (\textit{pending signals mask}). Если ядру поступает новый сигнал того же типа до того, как старый был обработан, бит в маске просто остается взведенным, а информация о втором сигнале теряется.
+\end{notebox}
+
+Это накладывает ограничения на архитектуру систем: сигналы нельзя использовать как надежный механизм передачи данных. Для таких целей следует применять очереди реального времени (POSIX real-time signals), поддерживающие упорядоченную доставку.
+
+\subsection{Закон Амдала: пределы масштабируемости}
+
+Ускорение вычислений при увеличении числа потоков ограничено наличием последовательных участков кода, которые не могут быть распараллелены (например, инициализация, ввод-вывод или координация потоков).
+
+\begin{definitionbox}{Закон Амдала}
+Пусть $P$ — доля задачи, которую можно распараллелить, а $S = 1 - P$ — последовательная часть. Тогда ускорение $U$ при использовании $T$ потоков вычисляется как:
+\begin{equation}
+U(T) = \frac{1}{S + \frac{P}{T}}
+\end{equation}
+При $T \to \infty$ максимальное ускорение стремится к $1/S$.
+\end{definitionbox}
+
+Если последовательная часть программы составляет 10\%, то даже при бесконечном количестве процессоров невозможно получить ускорение более чем в 10 раз. Это подчеркивает важность минимизации критических секций и накладных расходов на синхронизацию.
+
+\subsection{Управление привязкой к ядрам (CPU Affinity)}
+
+Для оптимизации использования кэша и предсказуемости времени исполнения ОС позволяет закреплять потоки за конкретными логическими ядрами. Это исключает миграцию потока между ядрами и связанные с этим промахи по кэшу (\textit{cache misses}).
+
+\begin{lstlisting}[language=C, caption={Использование sched\_setaffinity для закрепления потока за ядром 0}, label={lst:affinity}]
+#define _GNU_SOURCE
+#include <sched.h>
+#include <stdio.h>
+
+void pin_to_core(int core_id) {
+    cpu_set_t mask;
+    CPU_ZERO(&mask);         // Clear the mask
+    CPU_SET(core_id, &mask); // Add core_id to mask
+
+    if (sched_setaffinity(0, sizeof(mask), &mask) == -1) {
+        perror("sched_setaffinity failed");
+    }
+}
+\end{lstlisting}
+
+Экспериментально доказано: закрепление двух интенсивных вычислительных потоков на одном физическом ядре приводит к падению производительности каждого до 50\% от номинальной, так как они вынуждены делить кванты времени одного исполнительного устройства.
+
+\begin{summarybox}
+\begin{itemize}
+    \item Параллелизм на одном ядре — иллюзия, создаваемая быстрым переключением контекста (квантованием).
+    \item Стандартные сигналы теряются при повторном поступлении из-за использования битовой маски в ядре.
+    \item Максимальное ускорение системы всегда ограничено долей последовательного кода (Закон Амдала).
+    \item CPU Affinity позволяет минимизировать промахи по кэшу, но может привести к деградации при перегрузке конкретных ядер.
+\end{itemize}
+\end{summarybox}
+
+% QC: Использованы definitionbox для ключевых терминов, TikZ схема планировщика готова.
+%     Листинг C кода соответствует стандарту, экранированы символы подчеркивания.
+%     Закон Амдала представлен математически и логически.
+
+\section{Аппаратный уровень: Hyper-threading и когерентность кэшей}
+
+Производительность многопоточных систем определяется не только алгоритмами планирования ОС, но и микроархитектурными особенностями процессора. В данном разделе рассматриваются механизмы аппаратного переиспользования ресурсов ядра и протоколы обеспечения целостности данных в иерархии кэш-памяти.
+
+\subsection{Архитектура Hyper-threading (SMT)}
+
+Технология \textbf{Hyper-threading} (реализация Simultaneous Multithreading, SMT) направлена на повышение коэффициента полезного действия физического ядра процессора за счет утилизации исполнительных устройств во время простоев.
+
+\begin{definitionbox}{Hyper-threading}
+\textbf{Hyper-threading} — это технология, позволяющая одному физическому ядру процессора функционировать как два логических ядра (процессора). Каждое логическое ядро обладает собственным набором регистров и состоянием (Architecture State), но разделяет с соседним логическим ядром общие исполнительные блоки (ALU, FPU), конвейер и кэши.
+\end{definitionbox}
+
+Основная цель SMT — скрытие латентности длинных операций. Когда один поток ожидает завершения промаха в кэш (L3 miss может занимать сотни тактов) или выполнения сложной арифметической операции (например, деления), конвейер простаивает. Hyper-threading позволяет моментально переключиться на исполнение инструкций из другого логического потока без накладных расходов на системный вызов или смену контекста ОС.
+
+\begin{notebox}
+Цена аппаратного параллелизма: логическое ядро всегда медленнее физического при полной загрузке обоих потоков, так как они конкурируют за порты исполнения. В некоторых высоконагруженных или детерминированных системах (HPC, Real-time) Hyper-threading отключают для предотвращения непредсказуемых задержек (\textit{jitter}).
+\end{notebox}
+
+\subsection{Протоколы когерентности кэшей: Модель MESI}
+
+В многоядерных системах каждое ядро имеет локальные кэши (L1, L2). Если ядро 0 модифицирует данные, ядро 1 должно узнать об этом, чтобы не использовать устаревшее (stale) значение. Для этого используется протокол когерентности, работающий через шину (\textit{Bus Snooping}).
+
+Наиболее распространенным является протокол \textbf{MESI}, определяющий четыре состояния кэш-линии:
+
+\begin{enumerate}
+    \item \textbf{Modified (M):} Линия присутствует только в текущем кэше, она была изменена (грязная) и не совпадает с оперативной памятью.
+    \item \textbf{Exclusive (E):} Линия присутствует только в текущем кэше, совпадает с памятью.
+    \item \textbf{Shared (S):} Линия присутствует в нескольких кэшах, совпадает с памятью. Доступна только для чтения.
+    \item \textbf{Invalid (I):} Данные в линии не актуальны.
+\end{enumerate}
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=2.5cm]
+    \node[circle, draw=Accent, fill=AccentLight] (I) {I};
+    \node[circle, draw=Accent, fill=AccentLight, right=of I] (S) {S};
+    \node[circle, draw=Accent, fill=AccentLight, below=of S] (E) {E};
+    \node[circle, draw=Accent, fill=AccentLight, left=of E] (M) {M};
+
+    \draw[arrow] (I) -- node[above, font=\tiny] {Local Read} (S);
+    \draw[arrow] (S) -- node[right, font=\tiny] {Local Write} (M);
+    \draw[arrow] (E) -- node[right, font=\tiny] {Local Write} (M);
+    \draw[arrow] (S) -- node[below, bend left, font=\tiny] {Remote Write} (I);
+    \draw[arrow] (M) -- node[left, font=\tiny] {Eviction/Write-back} (I);
+    \draw[arrow] (I) -- node[left, font=\tiny] {Read + Exclusive Intent} (E);
+  \end{tikzpicture}
+  \caption{Граф переходов состояний протокола MESI}
+  \label{fig:mesi_graph}
+\end{figure}
+
+\subsection{Проблема False Sharing (Ложное разделение)}
+
+Аппаратная единица обмена данными между памятью и кэшем — \textbf{кэш-линия} (обычно 64 байта). Это приводит к возникновению побочного эффекта в многопоточном коде.
+
+\begin{definitionbox}{False Sharing}
+\textbf{False Sharing} — ситуация, когда два потока на разных ядрах модифицируют независимые переменные, которые физически расположены в одной и той же кэш-линии.
+\end{definitionbox}
+
+Механика конфликта:
+\begin{enumerate}
+    \item Ядро 0 пишет в переменную \texttt{A}. Кэш-линия переходит в состояние \textbf{Modified}.
+    \item Ядро 1 хочет записать в переменную \texttt{B}, находящуюся в той же линии. Протокол MESI вынуждает ядро 1 отправить запрос ядру 0 на инвалидацию и получение актуальных данных.
+    \item Кэш-линия начинает "прыгать" между ядрами (\textit{Cache Line Ping-pong}), вызывая огромные задержки из-за коммуникации по шине.
+\end{enumerate}
+
+\begin{lstlisting}[language=C, caption={Пример структуры, подверженной False Sharing}, label={lst:false_sharing}]
+struct CounterStack {
+    uint64_t counter_a; // Thread 1 writes here
+    uint64_t counter_b; // Thread 2 writes here
+    // These 16 bytes sit in the same 64-byte line
+};
+
+// Solution: Alignment and Padding
+struct CounterFixed {
+    alignas(64) uint64_t counter_a;
+    alignas(64) uint64_t counter_b;
+    // Each counter is now in its own cache line
+};
+\end{lstlisting}
+
+При использовании выравнивания \texttt{alignas(64)} или вставки фиктивных полей (\textit{padding}), производительность может возрасти кратно (в 10-20 раз на современных x86 системах), так как ядра перестают конкурировать за одну и ту же единицу памяти.
+
+\begin{summarybox}
+\begin{itemize}
+    \item \textbf{Hyper-threading} повышает пропускную способность ядра за счет параллельной загрузки конвейера, но снижает производительность одиночного потока.
+    \item \textbf{Протокол MESI} гарантирует когерентность через отслеживание состояний кэш-линий (M, E, S, I).
+    \item \textbf{False Sharing} — скрытый враг производительности; возникает из-за гранулярности кэша в 64 байта.
+    \item Решение проблем когерентности в коде требует явного управления расположением данных в памяти (выравнивание).
+\end{itemize}
+\end{summarybox}
+
+
+\section{Потокобезопасность в C++ и модель памяти}
+
+Проектирование многопоточных систем на языке C++ требует строгого соблюдения правил доступа к разделяемым данным. Нарушение этих правил ведет к неопределенному поведению (Undefined Behavior), которое крайне сложно отлаживать из-за недетерминированности проявлений.
+
+\subsection{Определение гонки данных (Data Race)}
+
+Согласно стандарту C++, программа содержит гонку данных, если в ней присутствуют две конфликтующие операции в разных потоках, по крайней мере одна из которых является записью, и между ними нет отношения «происходит раньше» (\textit{happens-before}), установленного средствами синхронизации.
+
+\begin{definitionbox}{Конфликтующие операции}
+Две операции над памятью считаются конфликтующими, если они обращаются к одной и той же ячейке памяти (объекту или скалярному типу) одновременно, и хотя бы одна из них модифицирует эту ячейку.
+\end{definitionbox}
+
+Важные следствия модели памяти C++:
+\begin{itemize}
+    \item Чтения из разных потоков никогда не конфликтуют между собой.
+    \item Конфликтующие операции над неатомарными переменными — это \textbf{Undefined Behavior}. Процессор может прочитать «мусор», частично записанное значение или вызвать исключение.
+    \item Атомарные операции (через \texttt{std::atomic}) упорядочивают доступ к памяти и исключают Data Race на уровне языка.
+\end{itemize}
+
+\subsection{Контракт потокобезопасности стандартной библиотеки (STL)}
+
+Стандартная библиотека C++ (STL) следует общему правилу относительно потокобезопасности контейнеров (\texttt{std::vector}, \texttt{std::map} и др.):
+
+\begin{enumerate}
+    \item \textbf{Константные методы:} Методы, помеченные как \texttt{const}, являются потокобезопасными для одновременного чтения из нескольких потоков. Они не модифицируют внутреннее состояние объекта.
+    \item \textbf{Неконстантные методы:} Любой вызов метода, изменяющего объект (например, \texttt{push\_back}, \texttt{insert}, \texttt{operator[]}), требует эксклюзивного доступа. Нельзя вызывать неконстантный метод одновременно с любым другим методом (даже константным) над тем же объектом без внешней синхронизации (мьютекса).
+\end{enumerate}
+
+\begin{notebox}
+Исключением являются примитивы синхронизации: \texttt{std::mutex::lock} и \texttt{std::atomic::store} не являются константными методами, но их \textbf{можно} вызывать одновременно из разных потоков, так как это их прямое предназначение.
+\end{notebox}
+
+\subsection{Анатомия std::shared\_ptr в многопоточной среде}
+
+Умный указатель \texttt{std::shared\_ptr} часто вводит разработчиков в заблуждение относительно своей безопасности. Его структура состоит из двух указателей: на сам объект и на так называемый \textbf{управляющий блок} (Control Block).
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=12mm]
+    \node[box, minimum width=4cm] (ptr) {std::shared\_ptr\\(Object Ptr, Control Block Ptr)};
+    \node[box, right=of ptr, minimum width=5cm] (cb) {Control Block\\  \small Strong Ref Count (Atomic) \\ \small Weak Ref Count (Atomic) \\ \small Custom Deleter};
+    \node[box, below=of ptr] (obj) {Managed Object};
+
+    \draw[arrow] (ptr.east) -- (cb.west);
+    \draw[arrow] (ptr.south) -- (obj.north);
+  \end{tikzpicture}
+  \caption{Внутренняя структура std::shared\_ptr}
+  \label{fig:shared_ptr_struct}
+\end{figure}
+
+\textbf{Что гарантирует стандарт:}
+Счетчик ссылок в управляющем блоке изменяется атомарно. Если два потока одновременно создают копии \texttt{shared\_ptr} или уничтожают их, счетчик ссылок всегда будет консистентен. Это гарантирует корректное удаление объекта ровно один раз.
+
+\textbf{Что НЕ гарантирует стандарт:}
+Сам объект \texttt{shared\_ptr} (пара указателей) не является атомарным. Если один поток записывает в переменную \texttt{ptr} новый указатель, а другой поток одновременно читает из этой же переменной \texttt{ptr}, возникает Data Race. Аналогично, данные внутри управляемого объекта никак не защищены от гонок.
+
+\subsection{Thread Local Storage (TLS)}
+
+Для устранения конкуренции за глобальные данные используется механизм локального хранилища потока.
+
+\begin{definitionbox}{Thread Local Storage (TLS)}
+\textbf{TLS} — механизм, позволяющий объявлять переменные, копия которых создается индивидуально для каждого потока. Изменение такой переменной в одном потоке никак не влияет на её значение в других потоках.
+\end{definitionbox}
+
+Классический пример — переменная \texttt{errno}. В однопоточных системах это была глобальная целочисленная переменная. В многопоточной среде это привело бы к тому, что системный вызов в потоке A перезаписал бы код ошибки для потока B. Современная реализация \texttt{errno} скрывает за собой вызов функции, возвращающей адрес в TLS-сегменте текущего потока.
+
+\begin{lstlisting}[language=C++, caption={Пример использования thread\_local}, label={lst:tls_example}]
+#include <iostream>
+#include <thread>
+
+// Each thread gets its own instance of 'counter'
+thread_local int counter = 0;
+
+void work() {
+    counter++;
+    std::cout << "Thread ID: " << std::this_thread::get_id() 
+              << ", counter: " << counter << "\n";
+}
+
+int main() {
+    std::thread t1(work);
+    std::thread t2(work);
+    t1.join(); t2.join();
+    // Output: both threads will print 'counter: 1'
+}
+\end{lstlisting}
+
+\subsection{Диагностика через Thread Sanitizer (TSan)}
+
+Для автоматического обнаружения гонок данных используется инструмент \textbf{Thread Sanitizer}. Он инструментирует обращения к памяти и отслеживает порядок доступа в рантайме.
+
+При обнаружении гонки TSan генерирует отчет, содержащий:
+\begin{enumerate}
+    \item \textbf{Write of size N...} — поток, выполнивший запись, и стек его вызовов.
+    \item \textbf{Previous read of size N...} — поток, выполнивший конфликтующее чтение, и его стек.
+    \item \textbf{Location is heap block...} — адрес и происхождение памяти, ставшей причиной конфликта.
+\end{enumerate}
+
+Диагностика TSan является критически важной, так как многие гонки данных не проявляются при обычном тестировании, но приводят к фатальным сбоям под высокой нагрузкой.
+
+\begin{summarybox}
+\begin{itemize}
+    \item Гонка данных — это отсутствие синхронизации при обращении к одной ячейке памяти, где есть хотя бы одна запись.
+    \item STL гарантирует безопасность только для одновременных вызовов \texttt{const}-методов.
+    \item \texttt{std::shared\_ptr} атомарно управляет временем жизни объекта, но не защищает сам указатель и данные внутри.
+    \item \texttt{thread\_local} переменные исключают конкуренцию, создавая изолированные копии данных для каждого потока.
+\end{itemize}
+\end{summarybox}
+
+\section{Потокобезопасность в C++ и модель памяти}
+
+Проектирование многопоточных систем на языке C++ требует строгого соблюдения правил доступа к разделяемым данным. Нарушение этих правил ведет к неопределенному поведению (Undefined Behavior), которое крайне сложно отлаживать из-за недетерминированности проявлений.
+
+\subsection{Определение гонки данных (Data Race)}
+
+Согласно стандарту C++, программа содержит гонку данных, если в ней присутствуют две конфликтующие операции в разных потоках, по крайней мере одна из которых является записью, и между ними нет отношения «происходит раньше» (\textit{happens-before}), установленного средствами синхронизации.
+
+\begin{definitionbox}{Конфликтующие операции}
+Две операции над памятью считаются конфликтующими, если они обращаются к одной и той же ячейке памяти (объекту или скалярному типу) одновременно, и хотя бы одна из них модифицирует эту ячейку.
+\end{definitionbox}
+
+Важные следствия модели памяти C++:
+\begin{itemize}
+    \item Чтения из разных потоков никогда не конфликтуют между собой.
+    \item Конфликтующие операции над неатомарными переменными — это \textbf{Undefined Behavior}. Процессор может прочитать «мусор», частично записанное значение или вызвать исключение.
+    \item Атомарные операции (через \texttt{std::atomic}) упорядочивают доступ к памяти и исключают Data Race на уровне языка.
+\end{itemize}
+
+\subsection{Контракт потокобезопасности стандартной библиотеки (STL)}
+
+Стандартная библиотека C++ (STL) следует общему правилу относительно потокобезопасности контейнеров (\texttt{std::vector}, \texttt{std::map} и др.):
+
+\begin{enumerate}
+    \item \textbf{Константные методы:} Методы, помеченные как \texttt{const}, являются потокобезопасными для одновременного чтения из нескольких потоков. Они не модифицируют внутреннее состояние объекта.
+    \item \textbf{Неконстантные методы:} Любой вызов метода, изменяющего объект (например, \texttt{push\_back}, \texttt{insert}, \texttt{operator[]}), требует эксклюзивного доступа. Нельзя вызывать неконстантный метод одновременно с любым другим методом (даже константным) над тем же объектом без внешней синхронизации (мьютекса).
+\end{enumerate}
+
+\begin{notebox}
+Исключением являются примитивы синхронизации: \texttt{std::mutex::lock} и \texttt{std::atomic::store} не являются константными методами, но их \textbf{можно} вызывать одновременно из разных потоков, так как это их прямое предназначение.
+\end{notebox}
+
+\subsection{Анатомия std::shared\_ptr в многопоточной среде}
+
+Умный указатель \texttt{std::shared\_ptr} часто вводит разработчиков в заблуждение относительно своей безопасности. Его структура состоит из двух указателей: на сам объект и на так называемый \textbf{управляющий блок} (Control Block).
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=12mm]
+    \node[box, minimum width=4cm] (ptr) {std::shared\_ptr\\(Object Ptr, Control Block Ptr)};
+    \node[box, right=of ptr, minimum width=5cm] (cb) {Control Block\\  \small Strong Ref Count (Atomic) \\ \small Weak Ref Count (Atomic) \\ \small Custom Deleter};
+    \node[box, below=of ptr] (obj) {Managed Object};
+
+    \draw[arrow] (ptr.east) -- (cb.west);
+    \draw[arrow] (ptr.south) -- (obj.north);
+  \end{tikzpicture}
+  \caption{Внутренняя структура std::shared\_ptr}
+  \label{fig:shared_ptr_struct}
+\end{figure}
+
+\textbf{Что гарантирует стандарт:}
+Счетчик ссылок в управляющем блоке изменяется атомарно. Если два потока одновременно создают копии \texttt{shared\_ptr} или уничтожают их, счетчик ссылок всегда будет консистентен. Это гарантирует корректное удаление объекта ровно один раз.
+
+\textbf{Что НЕ гарантирует стандарт:}
+Сам объект \texttt{shared\_ptr} (пара указателей) не является атомарным. Если один поток записывает в переменную \texttt{ptr} новый указатель, а другой поток одновременно читает из этой же переменной \texttt{ptr}, возникает Data Race. Аналогично, данные внутри управляемого объекта никак не защищены от гонок.
+
+\subsection{Thread Local Storage (TLS)}
+
+Для устранения конкуренции за глобальные данные используется механизм локального хранилища потока.
+
+\begin{definitionbox}{Thread Local Storage (TLS)}
+\textbf{TLS} — механизм, позволяющий объявлять переменные, копия которых создается индивидуально для каждого потока. Изменение такой переменной в одном потоке никак не влияет на её значение в других потоках.
+\end{definitionbox}
+
+Классический пример — переменная \texttt{errno}. В однопоточных системах это была глобальная целочисленная переменная. В многопоточной среде это привело бы к тому, что системный вызов в потоке A перезаписал бы код ошибки для потока B. Современная реализация \texttt{errno} скрывает за собой вызов функции, возвращающей адрес в TLS-сегменте текущего потока.
+
+\begin{lstlisting}[language=C++, caption={Пример использования thread\_local}, label={lst:tls_example}]
+#include <iostream>
+#include <thread>
+
+// Each thread gets its own instance of 'counter'
+thread_local int counter = 0;
+
+void work() {
+    counter++;
+    std::cout << "Thread ID: " << std::this_thread::get_id() 
+              << ", counter: " << counter << "\n";
+}
+
+int main() {
+    std::thread t1(work);
+    std::thread t2(work);
+    t1.join(); t2.join();
+    // Output: both threads will print 'counter: 1'
+}
+\end{lstlisting}
+
+\subsection{Диагностика через Thread Sanitizer (TSan)}
+
+Для автоматического обнаружения гонок данных используется инструмент \textbf{Thread Sanitizer}. Он инструментирует обращения к памяти и отслеживает порядок доступа в рантайме.
+
+При обнаружении гонки TSan генерирует отчет, содержащий:
+\begin{enumerate}
+    \item \textbf{Write of size N...} — поток, выполнивший запись, и стек его вызовов.
+    \item \textbf{Previous read of size N...} — поток, выполнивший конфликтующее чтение, и его стек.
+    \item \textbf{Location is heap block...} — адрес и происхождение памяти, ставшей причиной конфликта.
+\end{enumerate}
+
+Диагностика TSan является критически важной, так как многие гонки данных не проявляются при обычном тестировании, но приводят к фатальным сбоям под высокой нагрузкой.
+
+\begin{summarybox}
+\begin{itemize}
+    \item Гонка данных — это отсутствие синхронизации при обращении к одной ячейке памяти, где есть хотя бы одна запись.
+    \item STL гарантирует безопасность только для одновременных вызовов \texttt{const}-методов.
+    \item \texttt{std::shared\_ptr} атомарно управляет временем жизни объекта, но не защищает сам указатель и данные внутри.
+    \item \texttt{thread\_local} переменные исключают конкуренцию, создавая изолированные копии данных для каждого потока.
+\end{itemize}
+\end{summarybox}
+
+\section{Примитивы синхронизации и Lock-free механизмы}
+
+В дополнение к базовым мьютексам и условным переменным, системное программирование предлагает специализированные примитивы, оптимизированные под конкретные паттерны доступа и аппаратные возможности процессора. В данном разделе рассматриваются высокоуровневые средства координации и фундамент безблокировочных (lock-free) алгоритмов.
+
+\subsection{Семафоры: управление доступом к ресурсам}
+
+Семафор является одним из старейших примитивов синхронизации, предложенным Эдсгером Дейкстрой. В отличие от мьютекса, семафор не обладает понятием владения.
+
+\begin{definitionbox}{Семафор}
+\textbf{Семафор} — это целочисленный счетчик (permits), поддерживающий две атомарные операции: декремент (\textit{Wait/P}) и инкремент (\textit{Signal/V}). Если при попытке декремента счетчик равен нулю, поток блокируется до тех пор, пока значение не станет положительным.
+\end{definitionbox}
+
+В стандартной библиотеке C++ представлены \texttt{std::counting\_semaphore} (счетный) и \texttt{std::binary\_semaphore} (двоичный, аналогичен мьютексу, но без привязки к потоку-владельцу). Основные сценарии использования:
+\begin{itemize}
+    \item \textbf{Ограничение параллелизма:} Например, лимитирование количества одновременных запросов к базе данных или внешнему API.
+    \item \textbf{Сценарий Producer-Consumer:} Семафор может хранить количество доступных для обработки элементов в буфере.
+\end{itemize}
+
+\begin{notebox}
+Важное различие: \texttt{unlock()} у мьютекса обязан вызывать тот же поток, который вызвал \texttt{lock()}. Для семафора это правило не действует — один поток может «взять» разрешение, а другой — «вернуть». Нарушение правила владения мьютекса в C++ ведет к \textbf{Undefined Behavior}.
+\end{notebox}
+
+\subsection{RW-Lock: оптимизация для сценариев с преобладанием чтения}
+
+Многие структуры данных читаются значительно чаще, чем модифицируются. Обычный мьютекс избыточно сериализует читателей, что снижает производительность на многоядерных системах.
+
+\begin{definitionbox}{RW-Lock (Read-Writer Lock)}
+Примитив, разделяющий блокировку на два режима:
+\begin{enumerate}
+    \item \textbf{Shared (Read):} Позволяет неограниченному числу читателей заходить в критическую секцию одновременно.
+    \item \textbf{Exclusive (Write):} Гарантирует, что только один поток-писатель имеет доступ, блокируя при этом всех читателей и других писателей.
+\end{enumerate}
+\end{definitionbox}
+
+В C++17 это реализовано через \texttt{std::shared\_mutex}. Главный компромисс при реализации RW-Lock — стратегия разрешения конфликтов между новыми читателями и ожидающими писателями.
+
+\begin{notebox}
+\textbf{Проблема Starvation (Голодание):} Если отдавать приоритет читателям, постоянный поток новых \textit{Shared}-захватов может бесконечно откладывать выполнение писателя. Если отдавать приоритет писателям, снижается параллелизм чтения. Большинство реализаций ОС стараются соблюдать баланс, запрещая новым читателям захват, если в очереди уже есть ожидающий писатель.
+\end{notebox}
+
+\subsection{Барьеры: фазовая синхронизация}
+
+Барьеры используются в задачах, разбитых на последовательные этапы, где ни один поток не может начать этап $N+1$, пока все потоки не завершат этап $N$.
+
+Пример: Вычисление слоев в полносвязной нейронной сети. Умножение матрицы на вектор распараллеливается по строкам, но для перехода к следующему слою необходим полный вектор результатов предыдущего.
+
+\begin{lstlisting}[language=C++, caption={Пример использования std::barrier}, label={lst:barrier}]
+void worker(std::barrier<>& sync_point, int layer_count) {
+    for (int i = 0; i < layer_count; ++i) {
+        compute_layer_part(i);
+        // All threads must arrive here before any can continue
+        sync_point.arrive_and_wait();
+    }
+}
+\end{lstlisting}
+
+\subsection{Атомарные операции и Compare-and-Swap (CAS)}
+
+Фундаментом всех эффективных примитивов синхронизации являются атомарные инструкции процессора. Самой мощной из них является \textit{Compare-and-Swap} (CAS).
+
+\begin{definitionbox}{Compare-and-Swap (CAS)}
+Операция над атомарной переменной, принимающая ожидаемое (\textit{expected}) и желаемое (\textit{desired}) значения. Если текущее значение переменной равно \textit{expected}, оно заменяется на \textit{desired}. Операция возвращает \texttt{true} при успехе или обновляет \textit{expected} текущим значением и возвращает \texttt{false} при неудаче.
+\end{definitionbox}
+
+В x86 это транслируется в инструкцию \texttt{lock cmpxchg}. На ней строятся циклы перезапуска (\textit{CAS loops}), заменяющие блокировки.
+
+\begin{lstlisting}[language=C++, caption={Реализация атомарного инкремента через CAS loop}, label={lst:cas_loop}]
+void atomic_increment(std::atomic<int>& var) {
+    int expected = var.load();
+    // Use weak for performance in loops on some architectures
+    while (!var.compare_exchange_weak(expected, expected + 1)) {
+        // 'expected' is updated automatically by compare_exchange on failure
+    }
+}
+\end{lstlisting}
+
+\subsection{Аппаратная специфика: Weak vs Strong CAS}
+
+Стандарт C++ предоставляет две версии: \texttt{compare\_exchange\_strong} и \texttt{compare\_exchange\_weak}.
+
+\begin{enumerate}
+    \item \textbf{Strong:} Гарантирует успех, если значения равны.
+    \item \textbf{Weak:} Может вернуть \texttt{false}, даже если значения равны (ложный провал или \textit{spurious failure}).
+\end{enumerate}
+
+Причины существования \texttt{weak} версии кроются в архитектуре процессоров. Архитектуры RISC (ARM, PowerPC) используют механизм \textit{Load-Link / Store-Conditional} (LL/SC). Любое прерывание, переключение контекста или вытеснение кэш-линии между LL и SC приводит к провалу записи, даже если данные не изменились. На x86 \texttt{strong} и \texttt{weak} обычно идентичны по производительности, но на ARM использование \texttt{weak} внутри цикла эффективнее, так как позволяет избежать вложенных циклов в генерируемом машинном коде.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[node distance=10mm]
+    \node[box] (load) {Загрузка текущего\\значения (Expected)};
+    \node[box, below=of load] (calc) {Вычисление\\нового значения (Desired)};
+    \node[diamond, draw=Accent, fill=AccentLight, aspect=2, below=of calc] (cas) {CAS?};
+    \node[box, right=of cas, xshift=1cm] (success) {Завершение};
+    \node[box, left=of cas, xshift=-1cm] (fail) {Обновление\\Expected};
+
+    \draw[arrow] (load) -- (calc);
+    \draw[arrow] (calc) -- (cas);
+    \draw[arrow] (cas) -- node[above, font=\tiny] {Success} (success);
+    \draw[arrow] (cas) -- node[above, font=\tiny] {Fail} (fail);
+    \draw[arrow] (fail) |- (calc);
+  \end{tikzpicture}
+  \caption{Логика CAS-цикла для обновления значения}
+  \label{fig:cas_logic}
+\end{figure}
+
+\begin{summarybox}
+\begin{itemize}
+    \item \textbf{Семафоры} подходят для ограничения ресурсов и не навязывают владение потоком.
+    \item \textbf{RW-Locks} критичны для систем с высокой частотой чтения, но требуют защиты от голодания писателей.
+    \item \textbf{Барьеры} обеспечивают фазовую синхронизацию в параллельных алгоритмах.
+    \item \textbf{CAS} является базовым блоком для lock-free алгоритмов. Выбор между \textbf{weak} и \textbf{strong} версиями зависит от архитектуры и наличия внешнего цикла.
+\end{itemize}
+\end{summarybox}
+\end{document}
