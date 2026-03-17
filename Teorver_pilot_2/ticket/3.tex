@@ -1,0 +1,142 @@
+Поставим следующий вопрос: предположим, что $\xi_n \to \xi$ (поточечно на $\Omega$), верно ли, что тогда и $\E \xi_n \to \E \xi$? Конечно, в общей ситуации ответ отрицательный. В рамках данного параграфа мы обсудим, когда же подобный переход, все-таки, можно гарантировать. Первый случай — это ситуация монотонной сходимости, о чем говорит следующая теорема.
+
+\mkthm{о монотонной сходимости}{monotone}{
+Пусть $\xi, \eta, \{\xi_n, n \in \mathbb{N}\}$ — случайные величины. Тогда
+\vspace{0.5em}
+
+1. Если $\xi_n \uparrow \xi$ при $n \to \infty$, $\xi_n \geqslant \eta$ для всех $n \in \mathbb{N}$ и $\E \eta$ конечно, то $\E \xi_n \uparrow \E \xi$ при $n \to \infty$.
+\vspace{0.5em}
+
+2. Если $\xi_n \downarrow \xi$ при $n \to \infty$, $\xi_n \leqslant \eta$ для всех $n \in \mathbb{N}$ и $\E \eta$ конечно, то $\E \xi_n \downarrow \E \xi$ при $n \to \infty$.
+}
+
+\mkproof{
+Заметим, что второй пункт сводится к первому домножением всех участвующих случайных величин на $-1$. Так что будем доказывать только первый пункт.
+\vspace{0.5em}
+
+Будем сначала считать, что $\eta = 0$. Тогда все с.в. $\xi_n$ неотрицательны и для каждого $n \in \mathbb{N}$ можно взять такую последовательность простых с.в. $\{\xi_n^{(k)}, k \in \mathbb{N}\}$, что $\xi_n^{(k)} \uparrow \xi_n$ при $k \to \infty$. Обозначим $\zeta_k = \max_{1 \leqslant n \leqslant k} \xi_n^{(k)}$. Тогда в силу монотонности последовательности $\xi_n^{(k)}$ получаем, что
+\[
+\zeta_k = \max_{1 \leqslant n \leqslant k} \xi_n^{(k)} \leqslant \max_{1 \leqslant n \leqslant k} \xi_n^{(k+1)} \leqslant \max_{1 \leqslant n \leqslant k+1} \xi_n^{(k+1)} = \zeta_{k+1}.
+\]
+Значит, последовательность $\{\zeta_k, k \in \mathbb{N}\}$ тоже не убывает. Обозначим $\zeta = \lim_{k\to+\infty} \zeta_k$. Проверим, что $\xi = \zeta$.
+\vspace{0.5em}
+
+С одной стороны, для любых $1 \leqslant n \leqslant k$ выполняются неравенства
+\[
+\xi_n^{(k)} \leqslant \zeta_k.
+\]
+Переходя к пределу по $k$, получаем, что $\xi_n \leqslant \zeta$ для всех $n \in \mathbb{N}$. Переходя к пределу по $n$, получаем, что $\xi \leqslant \zeta$. С другой стороны, в силу монотонности последовательности $\{\xi_n, n \in \mathbb{N}\}$
+\[
+\zeta_k = \max_{1 \leqslant n \leqslant k} \xi_n^{(k)} \leqslant \max_{1 \leqslant n \leqslant k} \xi_n = \xi_k.
+\]
+Переходя к пределу по $k$, получаем, что $\zeta \leqslant \xi$. Значит, $\xi = \zeta$.
+\vspace{0.5em}
+
+Осталось показать, что $\E \xi_n \uparrow \E \xi$. По условию $\E \xi_n$ и $\E \xi$ определены и $\xi_n \uparrow \xi$. Значит, $\lim_{n \to +\infty} \E \xi_n$ существует и $\lim_{n \to +\infty} \E \xi_n \leqslant \E \xi$.
+\vspace{0.5em}
+
+С другой стороны, $\zeta_k \leqslant \xi_k$ для всех $k$. При этом последовательность $\{\zeta_k, k \in \mathbb{N}\}$ не убывает, состоит из простых с.в. и $\zeta_k \uparrow \xi$. Значит,
+\[
+\lim_{k \to +\infty} \E \xi_k \geqslant \lim_{k \to +\infty} \E \zeta_k = \E \xi.
+\]
+В итоге, показали, что $\lim_{n \to +\infty} \E \xi_n = \E \xi$.
+\vspace{0.5em}
+
+Пусть теперь $\eta$ — произвольная с.в. Рассмотрим последовательность $\xi_n - \eta$, $n \in \mathbb{N}$. Тогда $0 \leqslant \xi_n - \eta \uparrow \xi - \eta$ и по уже доказанному $\E(\xi_n - \eta) \uparrow \E(\xi - \eta)$. Значит,
+\[
+\E \eta + \E(\xi_n - \eta) \uparrow \E(\xi - \eta) + \E \eta.
+\]
+Осталось заметить, что в силу конечности $\E \eta$ выполнены равенства:
+\[
+\E \eta + \E(\xi_n - \eta) = \E \xi_n, \quad \E(\xi - \eta) + \E \eta = \E \xi.
+\]
+}
+
+Приведем несколько следствий из теоремы 3.1.
+
+\mkcor{}{monotone_ae}{
+Утверждение теоремы о монотонной сходимости сохраняется, если $\xi_n \uparrow \xi$ п.н.
+}
+
+\mkproof{
+Обозначим $A = \{\xi_n \uparrow \xi\}$. Тогда $\eta \I_A \leqslant \xi_n \I_A \uparrow \xi \I_A$ и, значит, $\E(\xi_n \I_A) \uparrow \E(\xi \I_A)$. Осталось заметить, что $\E(\xi_n \I_A) = \E \xi_n$, $\E(\xi \I_A) = \E \xi$.
+}
+
+\mkcor{}{monotone_series}{
+Пусть $\{\xi_n, n \in \mathbb{N}\}$, $\xi_n \geqslant 0$ — неотрицательные с.в. и ряд $\sum_{n=1}^{+\infty} \xi_n$ сходится п.н. Тогда
+\[
+\E \sum_{n=1}^{+\infty} \xi_n = \sum_{n=1}^{+\infty} \E \xi_n.
+\]
+}
+
+\mkproof{
+Достаточно заметить, что $0 \leqslant \sum_{n=1}^{N} \xi_n \uparrow \sum_{n=1}^{+\infty} \xi_n$ п.н.
+}
+
+Вторая теорема о предельном переходе под знаком $\E$ — это теорема Фату.
+
+\mklem{Фату}{fatou}{
+Пусть $\xi, \eta, \{\xi_n, n \in \mathbb{N}\}$ — случайные величины, причем $\E \eta$ конечно. Тогда
+\vspace{0.5em}
+
+1. Если $\xi_n \geqslant \eta$ для всех $n \in \mathbb{N}$, то
+\[
+\E \varliminf_{n \to \infty} \xi_n \leqslant \varliminf_{n \to \infty} \E \xi_n.
+\]
+2. Если $\xi_n \leqslant \eta$ для всех $n \in \mathbb{N}$, то
+\[
+\varlimsup_{n \to \infty} \E \xi_n \leqslant \E \varlimsup_{n \to \infty} \xi_n.
+\]
+3. Если $|\xi_n| \leqslant \eta$ для всех $n \in \mathbb{N}$, то
+\[
+\E \varliminf_{n \to +\infty} \xi_n \leqslant \varliminf_{n \to +\infty} \E \xi_n \leqslant \varlimsup_{n \to \infty} \E \xi_n \leqslant \E \varlimsup_{n \to \infty} \xi_n.
+\]
+}
+
+\mkproof{
+1. Обозначим $\psi_n = \inf_{k \geqslant n} \xi_k$. Тогда последовательность $\psi_n$ не убывает и при этом
+\[
+\varliminf_{n \to +\infty} \psi_n = \lim_{n \to +\infty} \inf_{k \geqslant n} \xi_k = \varliminf_{n \to +\infty} \xi_n.
+\]
+По условию $\psi_n \geqslant \eta$ для всех $n \in \mathbb{N}$, поэтому по теореме \hyperref[thm:monotone]{3.1} о монотонной сходимости мы получаем, что
+\[
+\E \varliminf_{n \to +\infty} \xi_n = \lim_{n \to +\infty} \E \psi_n = \varliminf_{n \to +\infty} \E \psi_n \leqslant \varliminf_{n \to +\infty} \E \xi_n.
+\]
+\vspace{0.5em}
+
+2. Следует из пункта 1 заменой всех с.в. на противоположные ($\xi_n$ на $-\xi_n$).
+\vspace{0.5em}
+
+3. Следует мгновенно из пунктов 1 и 2.
+}
+
+Весьма удобна в приложениях и следующая теорема Лебега о мажорируемой сходимости.
+
+\mkthm{Лебег, о мажорируемой сходимости}{lebesgue}{
+Пусть $\xi, \eta, \{\xi_n, n \in \mathbb{N}\}$ — случайные величины. Если $|\xi_n| \leqslant \eta$ для всех $n \in \mathbb{N}$, $\E \eta$ конечно и $\xi_n \to \xi$ п.н., то $\E \xi$ тоже конечно и
+\[
+\lim_{n \to \infty} \E \xi_n = \E \xi, \quad \lim_{n \to \infty} \E |\xi_n - \xi| = 0.
+\]
+}
+
+\mkproof{
+Конечность $\E \xi$ вытекает из того, что $|\xi| \leqslant \eta$ п.н. Далее, по условию имеем, что п.н.
+\[
+\varliminf_{n \to +\infty} \xi_n = \varlimsup_{n \to +\infty} \xi_n = \xi.
+\]
+Отсюда, по лемме Фату
+\[
+\E \xi = \E \varliminf_{n \to +\infty} \xi_n \leqslant \varliminf_{n \to +\infty} \E \xi_n \leqslant \varlimsup_{n \to +\infty} \E \xi_n \leqslant \E \varlimsup_{n \to +\infty} \xi_n = \E \xi.
+\]
+Значит, существует предел $\lim_{n \to +\infty} \E \xi_n = \E \xi$.
+\vspace{0.5em}
+
+Для доказательства второго утверждения введем с.в.
+\[
+\widetilde{\xi} = \xi \cdot \I\left\{\lim_{n \to +\infty} \xi_n = \xi\right\}.
+\]
+Тогда $\widetilde{\xi} = \xi$ п.н. и, значит, $\E |\xi_n - \xi| = \E |\xi_n - \widetilde{\xi}|$. С другой стороны, $|\widetilde{\xi}| \leqslant \eta$. Рассмотрим теперь последовательность $\psi_n = |\xi_n - \widetilde{\xi}|$. Заметим, что $\psi_n \to 0$ п.н. и $|\psi_n| \leqslant 2\eta$ для всех $n \in \mathbb{N}$. Значит, в силу уже доказанного
+\[
+\lim_{n \to +\infty} \E |\xi_n - \xi| = \lim_{n \to +\infty} \E \psi_n = 0.
+\]
+}

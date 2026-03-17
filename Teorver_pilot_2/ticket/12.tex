@@ -1,0 +1,119 @@
+\mkthm{Следствие из теоремы Слуцкого (скалярный случай)}{slutsky_cor}{
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ и $\{\eta_n, n \in \mathbb{N}\}$ — две последовательности случайных величин. Если $\xi_n \toD \xi$ и $\eta_n \toD C$, где $C$ — константа. Тогда
+    \begin{align*}
+        \xi_n + \eta_n &\toD \xi + C, \\
+        \xi_n \cdot \eta_n &\toD \xi \cdot C.
+    \end{align*}
+}
+
+\mkproof{
+    Докажем утверждение только для суммы, для произведения все будет аналогично. Пусть $t$ — точка непрерывности функции распределения $F_{\xi+C}$. Выберем такое малое $\varepsilon > 0$, чтобы точки $t \pm \varepsilon$ также являлись точками непрерывности $F_{\xi+C}$. Теперь рассмотрим
+    \begin{align*}
+        F_{\xi_n+\eta_n}(t) &= \P(\xi_n + \eta_n \le t) = \\
+        &= \P(\xi_n + \eta_n \le t, \eta_n \ge C - \varepsilon) + \P(\xi_n + \eta_n \le t, \eta_n < C - \varepsilon) \le \\
+        &\le \P(\xi_n + C - \varepsilon \le t) + \P(\eta_n < C - \varepsilon) \le \\
+        &\le \P(\xi_n + C \le t + \varepsilon) + \P(|\eta_n - C| \ge \varepsilon).
+    \end{align*}
+
+    В силу того, что $\xi_n \toD \xi$, будет выполнена и сходимость $\xi_n + C \toD \xi + C$. Значит, первая вероятность сходится к $F_{\xi+C}(t+\varepsilon)$. Вторая вероятность стремится к нулю, так как $\eta_n$ сходится к $C$ и по вероятности. Следовательно,
+    $$ \varlimsup_{n \to +\infty} F_{\xi_n+\eta_n}(t) \le F_{\xi+C}(t + \varepsilon). $$
+    
+    \vspace{1em}
+    Совершенно аналогично получаем,
+    \begin{align*}
+        1 - F_{\xi_n+\eta_n}(t) &= \P(\xi_n + \eta_n > t) = \\
+        &= \P(\xi_n + \eta_n > t, \eta_n \le C + \varepsilon) + \P(\xi_n + \eta_n > t, \eta_n > C + \varepsilon) \le \\
+        &\le \P(\xi_n + C + \varepsilon > t) + \P(\eta_n > C + \varepsilon) \le \\
+        &\le \P(\xi_n + C > t - \varepsilon) + \P(|\eta_n - C| \ge \varepsilon).
+    \end{align*}
+
+    Отсюда следует, что
+    $$ \varlimsup_{n \to +\infty} (1 - F_{\xi_n+\eta_n}(t)) \le 1 - F_{\xi+C}(t - \varepsilon) $$
+    или
+    $$ \varliminf_{n \to +\infty} F_{\xi_n+\eta_n}(t) \ge F_{\xi+C}(t - \varepsilon). $$
+    
+    \vspace{1em}
+    В итоге, для сколь угодно малого $\varepsilon > 0$
+    $$ F_{\xi+C}(t - \varepsilon) \le \varliminf_{n \to +\infty} F_{\xi_n+\eta_n}(t) \le \varlimsup_{n \to +\infty} F_{\xi_n+\eta_n}(t) \le F_{\xi+C}(t + \varepsilon). $$
+
+    Устремляя $\varepsilon$ к нулю и пользуясь тем, что $t$ — точка непрерывности $F_{\xi+C}$, получаем, что существует предел $\lim_{n \to +\infty} F_{\xi_n+\eta_n}(t) = F_{\xi+C}(t)$.
+}
+
+\mkthm{Теорема Слуцкого (общий случай)}{slutsky_gen}{
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ и $\{\eta_n, n \in \mathbb{N}\}$ — две последовательности случайных векторов (вообще говоря, разной размерности). Если $\xi_n \toD \xi$ и $\eta_n \toD C$, где $C$ — константа. Тогда
+    $$ (\xi_n, \eta_n) \toD (\xi, C). $$
+}
+\textbf{ВНИМАНИЕ ИИШНОЕ ДОКВО}
+\mkproof{
+    Докажем общую теорему Слуцкого. Нам дано, что $\xi_n \toD \xi$ (последовательность векторов в $\mathbb{R}^m$) и $\eta_n \toD C$ (в $\mathbb{R}^k$, где $C$ --- константа). Заметим, что сходимость к константе по распределению эквивалентна сходимости по вероятности, поэтому $\eta_n \toP C$.
+    
+    По определению сходимости по распределению векторов, нам необходимо показать, что для любой ограниченной непрерывной функции $f(x, y) : \mathbb{R}^m \times \mathbb{R}^k \to \mathbb{R}$ выполнено:
+    $$ \E f(\xi_n, \eta_n) \longrightarrow \E f(\xi, C) \quad \text{при } n \to \infty. $$
+    
+    Представим разность математических ожиданий в виде суммы двух слагаемых, применив неравенство треугольника:
+    $$ |\E f(\xi_n, \eta_n) - \E f(\xi, C)| \leqslant \E |f(\xi_n, \eta_n) - f(\xi_n, C)| + |\E f(\xi_n, C) - \E f(\xi, C)|. $$
+    
+    Рассмотрим \textbf{второе слагаемое}. Определим функцию $g(x) = f(x, C)$. Поскольку $f$ ограничена и непрерывна на всем пространстве, функция $g(x)$ также является ограниченной и непрерывной на $\mathbb{R}^m$. Так как $\xi_n \toD \xi$, по определению сходимости по распределению получаем, что $\E g(\xi_n) \to \E g(\xi)$, то есть:
+    $$ |\E f(\xi_n, C) - \E f(\xi, C)| \longrightarrow 0. $$
+    
+    Рассмотрим \textbf{первое слагаемое}. Пусть функция $f$ ограничена константой $M$, то есть $\sup |f| \leqslant M$. 
+    Так как последовательность $\xi_n$ сходится по распределению, по теореме Прохорова она является плотной. Это означает, что для любого $\varepsilon > 0$ найдется такой компакт $K \subset \mathbb{R}^m$, что $\sup_n \P(\xi_n \notin K) < \varepsilon$.
+    
+    Функция $f(x, y)$ равномерно непрерывна на компакте $K \times \{C\}$. Поэтому существует такое $\delta > 0$, что для любого $x \in K$ и любого $y$, удовлетворяющего условию $\|y - C\|_2 < \delta$, выполнено:
+    $$ |f(x, y) - f(x, C)| < \varepsilon. $$
+    
+    Разобьем математическое ожидание первого слагаемого по событиям $A_n = \{\|\eta_n - C\|_2 < \delta\} \cap \{\xi_n \in K\}$ и противоположному событию $\overline{A}_n$:
+    $$ \E |f(\xi_n, \eta_n) - f(\xi_n, C)| = \E \left[ |f(\xi_n, \eta_n) - f(\xi_n, C)| \cdot \mathbb{I}_{A_n} \right] + \E \left[ |f(\xi_n, \eta_n) - f(\xi_n, C)| \cdot \mathbb{I}_{\overline{A}_n} \right]. $$
+    
+    На множестве $A_n$ разность значений функции строго меньше $\varepsilon$. На множестве $\overline{A}_n$ эта разность ограничена величиной $2M$ (так как $|f| \leqslant M$). Оценим вероятность события $\overline{A}_n$:
+    $$ \P(\overline{A}_n) \leqslant \P(\|\eta_n - C\|_2 \geqslant \delta) + \P(\xi_n \notin K) \leqslant \P(\|\eta_n - C\|_2 \geqslant \delta) + \varepsilon. $$
+    
+    Объединяя оценки, получаем:
+    $$ \E |f(\xi_n, \eta_n) - f(\xi_n, C)| \leqslant \varepsilon \cdot \P(A_n) + 2M \cdot \left( \P(\|\eta_n - C\|_2 \geqslant \delta) + \varepsilon \right). $$
+    
+    Поскольку $\eta_n \toP C$, предел вероятности $\P(\|\eta_n - C\|_2 \geqslant \delta)$ при $n \to \infty$ равен нулю. Переходя к верхнему пределу при $n \to \infty$, имеем:
+    $$ \varlimsup_{n \to \infty} \E |f(\xi_n, \eta_n) - f(\xi_n, C)| \leqslant \varepsilon + 2M\varepsilon = \varepsilon(1 + 2M). $$
+    
+    В силу произвольности $\varepsilon > 0$, первое слагаемое также стремится к нулю. 
+    
+    Оба слагаемых стремятся к нулю, следовательно, $\E f(\xi_n, \eta_n) \to \E f(\xi, C)$, что и доказывает совместную сходимость по распределению $(\xi_n, \eta_n) \toD (\xi, C)$.
+}
+
+\mkrem{
+    Покомпонентная сходимость по распределению не влечет векторную сходимость по распределению. Но теорема Слуцкого показывает, что если одна из компонент сходится по распределению к константе, то тогда имеет место и векторная (двумерная) сходимость по распределению. Из нее же с помощью \hyperref[thm:cont_mapping]{теоремы о наследовании сходимости} сразу следует и утверждение для скалярных величин.
+}
+
+\vspace{1em}
+Рассмотрим применение сходимостей и предельных теорем к статистическим задачам на примере построения так называемого асимптотического доверительного интервала в схеме Бернулли.
+
+Пусть $\mathbf{X} = (X_1, \dots, X_n)$ — н.о.р.с.в. из схемы Бернулли $\text{Bin}(1, p)$, $p \in (0, 1)$. Предположим, что $p$ нам неизвестно, а $\mathbf{X}$ известно, и по нему мы хотели бы оценить неизвестный параметр $p$. Формально, мы хотели бы предложить две такие функции $f_1(\mathbf{X})$ и $f_2(\mathbf{X})$, что для любого $p \in (0, 1)$ было бы выполнено
+$$ \P(f_1(\mathbf{X}) < p < f_2(\mathbf{X})) \longrightarrow 0.99 \quad \text{при } n \to \infty. $$
+
+\mkthm{Асимптотический доверительный интервал для параметра p}{ci_bernoulli}{
+    Построить асимптотический доверительный интервал для параметра в схеме Бернулли.
+}
+
+\mkproof{
+    Вспомним, что
+    $$ \E X_1 = p, \quad \D X_1 = p(1 - p). $$
+
+    Обозначим $\overline{X} = \frac{1}{n} \sum_{i=1}^n X_i$. Тогда согласно \hyperref[thm:clt]{центральной предельной теореме}
+    $$ \sqrt{n} \cdot \frac{\overline{X} - p}{\sqrt{p(1 - p)}} \toD \mathcal{N}(0, 1). $$
+
+    Далее, мы хотели бы избавиться от $p$ в знаменателе. Для этого вспомним, что согласно УЗБЧ $\overline{X} \toAS p$. Стало быть, по \hyperref[thm:cont_mapping]{теореме о наследовании сходимости}
+    $$ \sqrt{\overline{X}(1 - \overline{X})} \toAS \sqrt{p(1 - p)}. $$
+
+    Применяя \hyperref[thm:slutsky_cor]{теорему Слуцкого}, получаем:
+    $$ \sqrt{n} \cdot \frac{\overline{X} - p}{\sqrt{\overline{X}(1 - \overline{X})}} \toD \mathcal{N}(0, 1). $$
+
+    Далее, возьмем такое $u > 0$, что $\P(|\xi| < u) = 0.99$, где $\xi \sim \mathcal{N}(0, 1)$. Тогда
+    $$ \P\left( \sqrt{n} \cdot \left| \frac{\overline{X} - p}{\sqrt{\overline{X}(1 - \overline{X})}} \right| < u \right) \longrightarrow 0.99. $$
+
+    Значит, с вероятностью почти $0.99$ выполнено
+    $$ \sqrt{n} \cdot \left| \frac{\overline{X} - p}{\sqrt{\overline{X}(1 - \overline{X})}} \right| < u $$
+    или
+    $$ p \in \left( \overline{X} - \frac{u\sqrt{\overline{X}(1 - \overline{X})}}{\sqrt{n}}, \overline{X} + \frac{u\sqrt{\overline{X}(1 - \overline{X})}}{\sqrt{n}} \right). $$
+
+    Отметим, что длина получившегося интервала стремится к нулю как $\mathcal{O}(n^{-1/2})$.
+}
+

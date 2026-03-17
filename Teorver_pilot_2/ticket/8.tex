@@ -1,0 +1,201 @@
+\subsection{Теорема единственности}
+
+Перейдем к доказательству свойства единственности характеристических функций. Для него нам понадобится классическая теорема Вейерштрасса о приближении непрерывных функций тригонометрическими многочленами.
+
+\begin{theorem}{Теорема Вейерштрасса}{weierstrass}
+    Пусть $f(x)$ --- непрерывная функция на $[-a, a]$ с условием $f(a) = f(-a)$. Тогда для любого $\varepsilon > 0$ существует такая функция $g_{\varepsilon}$ вида
+    \begin{equation*}
+        g_{\varepsilon}(x) = \sum_{k=0}^n \left( a_k \cos \left(\frac{\pi k x}{a}\right) + b_k \sin \left(\frac{\pi k x}{a}\right) \right),
+    \end{equation*}
+    что для любого $x \in [-a, a]$ выполнено $|f(x) - g_{\varepsilon}(x)| \leqslant \varepsilon$.
+\end{theorem}
+
+Доказательство теоремы можно найти в курсе математического анализа.
+
+\vspace{1em}
+
+\begin{theorem}{Теорема единственности}{uniqueness}
+    Пусть $\xi$ и $\eta$ --- случайные величины. Тогда их характеристические функции равны тогда и только тогда, когда $\xi \stackrel{d}{=} \eta$.
+\end{theorem}
+\begin{proofbox}
+    ($\Leftarrow$) В обратную сторону утверждение очевидно, т.к. в этом случае для любого $t \in \mathbb{R}$
+    \begin{equation*}
+        \E e^{it\xi} = \E e^{it\eta}.
+    \end{equation*}
+
+    ($\Rightarrow$) Зафиксируем $a, b \in \mathbb{R}$ и возьмем малое $\varepsilon > 0$. Рассмотрим функцию $f_{\varepsilon}(x)$ :
+    \begin{equation*}
+        f_{\varepsilon}(x) =
+        \begin{cases}
+            0, & x \leqslant a \text{ или } x \geqslant b + \varepsilon; \\
+            \frac{x-a}{\varepsilon}, & x \in [a, a + \varepsilon]; \\
+            1, & x \in [a + \varepsilon, b]; \\
+            \frac{b+\varepsilon-x}{\varepsilon}, & x \in [b, b + \varepsilon].
+        \end{cases}
+    \end{equation*}
+    Покажем, что $\E f_{\varepsilon}(\xi) = \E f_{\varepsilon}(\eta)$. Выберем $n \in \mathbb{N}$ так, чтобы $[a, b + \varepsilon] \subset [-n, n]$. По теореме Вейерштрасса функцию $f_{\varepsilon}(x)$ можно на отрезке $[-n, n]$ приблизить тригонометрическими многочленами, значит, существует функция
+    \begin{equation*}
+        f_{\varepsilon,n}(x) = \sum_{k \in K} a_k e^{i \frac{\pi k}{n} x},
+    \end{equation*}
+    где $K$ --- некоторое конечное подмножество $\mathbb{Z}$, $a_k \in \mathbb{C}$, с условием
+    \begin{equation*}
+        \sup_{x \in [-n,n]} |f_{\varepsilon,n}(x) - f_{\varepsilon}(x)| \leqslant \frac{1}{n}.
+    \end{equation*}
+    Заметим, что функция $f_{\varepsilon,n}(x)$ --- периодическая с периодом $2n$. По построению $|f_{\varepsilon,n}(x)| \leqslant 2$ на $[-n, n]$, значит, и на всей прямой $|f_{\varepsilon,n}(x)| \leqslant 2$. По условию
+    \begin{equation*}
+        \E e^{it\xi} = \E e^{it\eta}
+    \end{equation*}
+    для всех $t \in \mathbb{R}$. Значит, для всех $n$
+    \begin{equation*}
+        \E f_{\varepsilon,n}(\xi) = \E f_{\varepsilon,n}(\eta).
+    \end{equation*}
+    Рассмотрим
+    \begin{align*}
+        |\E f_{\varepsilon}(\xi) - \E f_{\varepsilon}(\eta)| &= |\E f_{\varepsilon}(\xi) - \E f_{\varepsilon,n}(\xi) + \E f_{\varepsilon,n}(\eta) - \E f_{\varepsilon}(\eta)| \leqslant \\
+        &\leqslant |\E f_{\varepsilon}(\xi) - \E f_{\varepsilon,n}(\xi)| + |\E f_{\varepsilon,n}(\eta) - \E f_{\varepsilon}(\eta)|.
+    \end{align*}
+    Оценим разности $|\E f_{\varepsilon}(\xi) - \E f_{\varepsilon,n}(\xi)|$ и $|\E f_{\varepsilon}(\eta) - \E f_{\varepsilon,n}(\eta)|$. Для этого добавим индикаторы того, что случайные величины лежат на отрезке $[-n, n]$. Получаем:
+    \begin{align*}
+        |\E f_{\varepsilon}(\xi) - \E f_{\varepsilon,n}(\xi)| &\leqslant |\E(f_{\varepsilon}(\xi) - f_{\varepsilon,n}(\xi))\I\{|\xi| \leqslant n\}| + \\
+        &+ |\E(f_{\varepsilon}(\xi) - f_{\varepsilon,n}(\xi))\I\{|\xi| > n\}|.
+    \end{align*}
+    В первом слагаемом $|f_{\varepsilon}(\xi) - f_{\varepsilon,n}(\xi)| \leqslant 1/n$, а во втором
+    \begin{equation*}
+        |f_{\varepsilon}(\xi) - f_{\varepsilon,n}(\xi)| = |f_{\varepsilon,n}(\xi)| \leqslant 2.
+    \end{equation*}
+    Следовательно,
+    \begin{equation*}
+        |\E f_{\varepsilon}(\xi) - \E f_{\varepsilon,n}(\xi)| \leqslant \frac{1}{n}\P(|\xi| \leqslant n) + 2 \cdot \P(|\xi| > n).
+    \end{equation*}
+    С ростом $n$ правая часть стремится к нулю, что и дает искомое равенство:
+    \begin{equation*}
+        \E f_{\varepsilon}(\xi) = \E f_{\varepsilon}(\eta).
+    \end{equation*}
+    При $\varepsilon \to 0$ выполнено $f_{\varepsilon}(x) \to \I_{(a,b]}(x)$, а функции $f_{\varepsilon}(x)$ равномерно ограничены. Значит, по теореме Лебега
+    \begin{equation*}
+        \lim_{\varepsilon \to 0} \E f_{\varepsilon}(\xi) = \E \I_{(a,b]}(\xi) = F_{\xi}(b) - F_{\xi}(a).
+    \end{equation*}
+    Следовательно, для всех $a < b$
+    \begin{equation*}
+        F_{\xi}(b) - F_{\xi}(a) = F_{\eta}(b) - F_{\eta}(a).
+    \end{equation*}
+    Устремляя $a \to -\infty$, получаем искомое:
+    \begin{equation*}
+        F_{\xi}(b) = F_{\eta}(b) \quad \forall b \in \mathbb{R}.
+    \end{equation*}
+    Теорема единственности доказана.
+\end{proofbox}
+
+\begin{remark}[Замечание 4.3]
+    Теорема единственности верна и для характеристических функций случайных векторов.
+\end{remark}
+
+\vspace{1em}
+
+\subsection{Применение теоремы единственности}
+
+Рассмотрим несколько применений теоремы единственности. Первое из них позволяет вычислять распределения с помощью характеристических функций. Приведем конкретный пример.
+
+\noindent\hypertarget{ex:sum_normal}{}
+\begin{tcolorbox}[notionstyle=thmblue, title={\textbf{Упражнение 4.1}}]
+    \label{ex:sum_normal}
+    Случайные величины $\xi_1$ и $\xi_2$ --- независимые и нормальные, $\xi_j \sim \mathcal{N}(\mu_j, \sigma_j^2)$, $j = 1, 2$. Найдите распределение $\xi_1 + \xi_2$.
+\end{tcolorbox}
+\begin{proofbox}[Решение]
+    Начнем с вычисления характеристических функций $\xi_1$ и $\xi_2$. Заметим, что если $\xi_j \sim \mathcal{N}(\mu_j, \sigma_j^2)$, то
+    \begin{equation*}
+        \frac{\xi_j - a_j}{\sigma_j} \sim \mathcal{N}(0, 1).
+    \end{equation*}
+    Значит, х.ф. $\xi_j$ равна
+    \begin{equation*}
+        \varphi_{\xi_j}(t) = e^{i\cdot\mu_j t - \frac{\sigma_j^2 t^2}{2}}.
+    \end{equation*}
+    В силу независимости
+    \begin{equation*}
+        \varphi_{\xi_1 + \xi_2}(t) = \varphi_{\xi_1}(t) \cdot \varphi_{\xi_2}(t) = e^{i\cdot(\mu_1 + \mu_2)t - \frac{(\sigma_1^2 + \sigma_2^2)t^2}{2}}.
+    \end{equation*}
+    Это х.ф. распределения $\mathcal{N}(\mu_1 + \mu_2, \sigma_1^2 + \sigma_2^2)$. В силу теоремы единственности получаем, что
+    \begin{equation*}
+        \xi_1 + \xi_2 \sim \mathcal{N}(\mu_1 + \mu_2, \sigma_1^2 + \sigma_2^2).
+    \end{equation*}
+\end{proofbox}
+
+\vspace{1em}
+
+\subsection{Критерий независимости в терминах характеристических функций}
+
+Второй способ применения теоремы единственности --- это обоснование независимости случайных величин с помощью рассмотрения их совместной характеристической функции.
+
+\begin{theorem}{Критерий независимости набора с.в. в терминах х.ф.}{indep_crit}
+    Компоненты случайного вектора $\xi = (\xi_1, \dots, \xi_n)$ независимы в совокупности тогда и только тогда, когда х.ф. $\xi$ есть произведение х.ф. компонент.
+\end{theorem}
+\begin{proofbox}
+    ($\Rightarrow$) Здесь просто пользуемся независимостью:
+    \begin{equation*}
+        \varphi_{\xi}(t_1, \dots, t_n) = \E e^{i \sum_{k=1}^n \xi_k t_k} = \E \prod_{k=1}^n e^{i t_k \xi_k} = \prod_{k=1}^n \E e^{i t_k \xi_k} = \prod_{k=1}^n \varphi_{\xi_k}(t_k).
+    \end{equation*}
+    
+    ($\Leftarrow$) Обозначим через $F_1(x), \dots, F_n(x)$ --- ф.р. случайных величин $\xi_1, \dots, \xi_n$. Введем функцию
+    \begin{equation*}
+        G(x_1, \dots, x_n) = F_1(x_1) \cdot \dots \cdot F_n(x_n).
+    \end{equation*}
+    Как мы помним, это будет многомерная ф.р. Пусть $\eta = (\eta_1, \dots, \eta_n)$ --- случайный вектор с ф.р. $G(x_1, \dots, x_n)$. Тогда компоненты $\eta$ независимы, причем $\eta_j \stackrel{d}{=} \xi_j$ для всех $j = 1, \dots, n$. Отсюда получаем, что
+    \begin{align*}
+        \varphi_{\xi}(t_1, \dots, t_n) &= |\text{условие}| = \prod_{k=1}^n \varphi_{\xi_k}(t_k) = |\text{о.р.}| = \prod_{k=1}^n \varphi_{\eta_k}(t_k) = \\
+        &= |\text{независимость } \eta_1, \dots, \eta_n| = \varphi_{\eta}(t_1, \dots, t_n).
+    \end{align*}
+    В итоге, характеристические функции случайных векторов $\xi$ и $\eta$ совпадают. По теореме единственности получается, что совпадают и их функции распределения:
+    \begin{equation*}
+        F_{\xi}(x_1, \dots, x_n) = G(x_1, \dots, x_n) = F_1(x_1) \cdot \dots \cdot F_n(x_n).
+    \end{equation*}
+    Согласно определению получаем, что $\xi_1, \dots, \xi_n$ независимы в совокупности.
+\end{proofbox}
+
+\vspace{1em}
+
+\subsection{Формула обращения}
+
+Теорема единственности говорит о взаимно-однозначном соответствии распределений случайных величин и их характеристических функций. Но можно ли явным образом восстановить, например, функцию распределения случайной величины по характеристической функции? Оказывается, да, это возможно. Более того, в некоторых случаях можно сразу получить формулу для плотности.
+
+\begin{theorem}{Формула обращения}{inversion}
+    Пусть $\varphi(t)$ --- х.ф. с.в. $\xi$, которая имеет ф.р. $F(x)$. Тогда
+    
+    1) для любых $a < b$ --- точек непрерывности функции $F$, выполнено
+    \begin{equation*}
+        F(b) - F(a) = \lim_{n \to +\infty} \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} \frac{e^{-ita} - e^{-itb}}{it} \varphi(t) e^{-\frac{t^2}{2n}} dt.
+    \end{equation*}
+    
+    2) Если дополнительно $\int\limits_{\mathbb{R}} |\varphi(t)| dt < \infty$, то $\xi$ имеет плотность $f(x)$, причем
+    \begin{equation*}
+        f(x) = \frac{1}{2\pi} \int\limits_{\mathbb{R}} e^{-itx} \varphi(t) dt.
+    \end{equation*}
+\end{theorem}
+\begin{proofbox}
+    Доказательство использует теорию преобразования Фурье на прямой (см., например, [2]). Рассмотрим независимую с $\xi$ случайную величину $\eta \sim \mathcal{N}(0, 1)$ и положим $\xi_n = \xi + \frac{\eta}{n}$, $n \in \mathbb{N}$. Тогда $\xi_n \xrightarrow{\text{п.н.}} \xi$ и, следовательно, $\xi_n \xrightarrow{d} \xi$. Последнее означает, что
+    \begin{equation*}
+        F(b) - F(a) = \lim_{n \to \infty} (F_{\xi_n}(b) - F_{\xi_n}(a)).
+    \end{equation*}
+    
+    1) Случайная величина $\xi_n$ с одной стороны имеет плотность (упражнение для читателя!) $p_{\xi_n}(x)$, а с другой ее характеристическая функция равна
+    \begin{equation*}
+        \varphi_{\xi_n}(t) = \varphi(t) \cdot \varphi_{\eta/n}(t) = \varphi(t) \cdot e^{-\frac{t^2}{2n}}.
+    \end{equation*}
+    Следовательно, $\varphi_{\xi_n}(t)$ интегрируема по прямой, и в силу формулы обращения преобразования Фурье мы получаем, что
+    \begin{equation*}
+        p_{\xi_n}(x) = \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} e^{itx} \varphi(t) e^{-\frac{t^2}{2n}} dt.
+    \end{equation*}
+    Осталось заметить, что
+    \begin{align*}
+        F_{\xi_n}(b) - F_{\xi_n}(a) &= \int\limits_a^b p_{\xi_n}(x) dx = \int\limits_a^b \left( \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} e^{itx} \varphi(t) e^{-\frac{t^2}{2n}} dt \right) dx = \\
+        &= \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} \left( \int\limits_a^b e^{itx} dx \right) \varphi(t) e^{-\frac{t^2}{2n}} dt = \\
+        &= \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} \frac{e^{-ita} - e^{-itb}}{it} \varphi(t) e^{-\frac{t^2}{2n}} dt.
+    \end{align*}
+    Перестановка интегралов обеспечивается теоремой Фубини.
+    
+    2) Интегрируемость $\varphi(t)$ позволяет перейти к пределу по $n$ под знаком интеграла в формуле, полученной в первом пункте:
+    \begin{align*}
+        F(b) - F(a) &= \lim_{n \to \infty} \int\limits_a^b \left( \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} e^{itx} \varphi(t) e^{-\frac{t^2}{2n}} dt \right) dx = \\
+        &= \int\limits_a^b \left( \frac{1}{2\pi} \int\limits_{-\infty}^{\infty} e^{itx} \varphi(t) dt \right) dx.
+    \end{align*}
+    По определению получаем, что внутренний интеграл является плотностью случайной величины $\xi$.
+\end{proofbox}

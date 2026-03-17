@@ -1,0 +1,170 @@
+Задавать многомерные распределения через функции распределения, как правило, очень неудобно, поэтому сформулируем определение нормального или гауссовского случайного вектора с помощью характеристических функций.
+
+\vspace{10pt}
+
+\mkdef{Гауссовский вектор}{gaussian}{
+    Случайный вектор $\xi = (\xi_1, \dots, \xi_n)$ называется гауссовским (или нормальным), если его характеристическая функция имеет вид
+    $$ \varphi_\xi(t) = e^{i\langle t, a\rangle - \frac{1}{2}\langle \Sigma t, t\rangle}, $$
+    где $a \in \mathbb{R}^n$, а $\Sigma$ --- матрица размера $n \times n$, симметрическая и неотрицательно определенная. Обозначение: $\xi \sim \mathcal{N}(a, \Sigma)$.
+}
+
+\vspace{10pt}
+
+Основные свойства гауссовских векторов нам будет удобно вывести с помощью следующей теоремы, дающей эквивалентные определения многомерного нормального распределения. Сразу сделаем замечание, что (многомерные) константы мы тоже считаем вырожденным гауссовскими случайными векторами.
+
+\vspace{10pt}
+
+\mkthm{О трёх эквивалентных определениях}{three_def}{
+    Следующие утверждения эквивалентны:
+    
+    \vspace{5pt}
+    (1) $\xi = (\xi_1, \dots, \xi_n)^\top$ --- гауссовский вектор;
+    
+    \vspace{5pt}
+    (2) $\xi = \mathbf{A}\eta + a$ п.н., где $a \in \mathbb{R}^n$, $\mathbf{A} \in \operatorname{Mat}(n \times m)$, $\eta = (\eta_1, \dots, \eta_m)^\top$, $\eta_j$ --- независимые $\mathcal{N}(0, 1)$ с.в.;
+    
+    \vspace{5pt}
+    (3) для любого $\tau \in \mathbb{R}^n$ случайная величина $\langle \tau, \xi\rangle$ имеет одномерное нормальное распределение.
+}
+
+\vspace{5pt}
+
+\mkproof{
+    $(1) \Rightarrow (2)$ Пусть $\xi \sim \mathcal{N}(a, \Sigma)$. Раз $\Sigma \ge 0$ и симметрическая, то существует такое ортогональное преобразование $\mathbf{C}$, что
+    $$ \mathbf{C}\Sigma\mathbf{C}^\top = \mathbf{D}, $$
+    где $\mathbf{D}$ --- диагональная матрица вида
+    $$
+    \begin{pmatrix}
+    d_1 & & & 0 \\
+    & d_2 & & \\
+    & & \ddots & \\
+    \vdots & & d_m & \vdots \\
+    0 & & & 0 \\
+    0 & \dots & \dots & 0
+    \end{pmatrix},
+    $$
+    а $d_j > 0$, $j = 1, \dots, m$. Рассмотрим $\xi' = \mathbf{C}(\xi - a)$. Тогда
+    \begin{align*}
+    \varphi_{\xi'}(\tau) &= \E e^{i\langle \tau, \xi'\rangle} = \E e^{i\langle \tau, \mathbf{C}\xi\rangle - i\langle \tau, \mathbf{C}a\rangle} = e^{-i\langle \mathbf{C}^\top\tau, a\rangle} \E e^{i\langle \mathbf{C}^\top\tau, \xi\rangle} = \\
+    &= e^{-i\langle \mathbf{C}^\top\tau, a\rangle} \varphi_\xi(\mathbf{C}^\top\tau) = e^{-i\langle \mathbf{C}^\top\tau, a\rangle - \frac{1}{2}\langle \Sigma \mathbf{C}^\top\tau, \mathbf{C}^\top\tau\rangle + i\langle \mathbf{C}^\top\tau, a\rangle} = \\
+    &= e^{-\frac{1}{2}\langle \mathbf{C}\Sigma\mathbf{C}^\top\tau, \tau\rangle} = e^{-\frac{1}{2}\langle \mathbf{D}\tau, \tau\rangle} = \prod_{k=1}^m e^{-\frac{1}{2}d_k\tau_k^2}.
+    \end{align*}
+    
+    Следовательно, вектор $\xi'$ состоит из независимых компонент, причем $\xi'_j \sim \mathcal{N}(0, d_j)$, $j = 1, \dots, m$ и $\xi'_j = 0$ п.н. при $j > m$. Рассмотрим $\eta = (\eta_1, \dots, \eta_m)^\top$, где $\eta_j = \frac{\xi'_j}{\sqrt{d_j}}$. Тогда компоненты $\eta$ будут независимыми $\mathcal{N}(0, 1)$ с.в. и с вероятностью 1 выполняется равенство $\xi' = \mathbf{B}\eta$, где
+    $$
+    \mathbf{B} = 
+    \begin{pmatrix}
+    \sqrt{d_1} & & 0 \\
+    & \ddots & \\
+    0 & & \sqrt{d_m} \\
+    0 & \dots & 0 \\
+    \vdots & & \vdots \\
+    0 & \dots & 0
+    \end{pmatrix}
+    $$
+    есть матрица размера $n \times m$. Отсюда
+    $$ \xi = \mathbf{C}^\top\xi' + a = \mathbf{C}^\top\mathbf{B}\eta + a = \mathbf{A}\eta + a \quad \text{п.н.} $$
+    
+    \vspace{10pt}
+    $(2) \Rightarrow (3)$ Заметим, что величина
+    $$ \langle \tau, \xi \rangle = \langle \tau, \mathbf{A}\eta + a \rangle = \langle \mathbf{A}^\top\tau, \eta \rangle + \langle \tau, a \rangle = \sum_{k=1}^m (\mathbf{A}^\top\tau)_k\eta_k + \langle \tau, a \rangle $$
+    является линейной комбинацией независимых нормальных с.в., а потому сама является нормальной с.в.
+    
+    \vspace{10pt}
+    $(3) \Rightarrow (1)$ Мы знаем, что для любого $\tau \in \mathbb{R}^n$ с.в. $\langle \tau, \xi \rangle$ является нормальной. Значит, все $\xi_1, \dots, \xi_n$ --- это нормальные с.в., имеющие, как следствие, конечные $\E\xi_i$ и $\D\xi_i$. Пусть $\langle \tau, \xi \rangle \sim \mathcal{N}(a_\tau, \sigma_\tau^2)$. Тогда
+    \begin{align*}
+    a_\tau &= \E\langle \tau, \xi \rangle = \langle \tau, \E\xi \rangle = \langle \tau, a \rangle; \\
+    \sigma_\tau^2 &= \D\langle \tau, \xi \rangle = \E(\langle \tau, \xi \rangle - \E\langle \tau, \xi \rangle)^2 = \E(\langle \tau, \xi - \E\xi \rangle)^2 = \\
+    &= \E \sum_{i,j} (\xi_i - \E\xi_i)(\xi_j - \E\xi_j)\tau_i\tau_j = \sum_{i,j=1}^n \cov(\xi_i, \xi_j)\tau_i\tau_j = \langle \D\xi \cdot \tau, \tau \rangle,
+    \end{align*}
+    где $\D\xi = \Sigma$ --- матрица ковариаций вектора $\xi$. Отсюда
+    $$ \varphi_\xi(\tau) = \E e^{i\langle \xi, \tau \rangle} = \varphi_{\langle \xi, \tau \rangle}(1) = e^{ia_\tau - \frac{1}{2}\sigma_\tau^2} = e^{i\langle a, \tau \rangle - \frac{1}{2}\langle \Sigma\tau, \tau \rangle}, $$
+    где $a = \E\xi$, $\Sigma = \D\xi$. Значит, $\xi \sim \mathcal{N}(a, \Sigma)$.
+}
+
+\vspace{10pt}
+
+Выведем основные свойства гауссовских случайных векторов из \hyperref[thm:three_def]{теоремы 5.6}. Первое следствие говорит о корректности определения \hyperref[def:gaussian]{5.2}.
+
+\vspace{10pt}
+
+\mkcor{О существовании}{gauss_props}{
+    Функция $\varphi(t) = e^{i\langle t, a\rangle - \frac{1}{2}\langle \Sigma t, t\rangle}$ действительно является многомерной х.ф.
+}
+
+\vspace{5pt}
+
+\mkproof{
+    Пусть $\eta = (\eta_1, \dots, \eta_m)^\top$ --- независимые $\mathcal{N}(0, 1)$, а матрицы $\mathbf{C}$ и $\mathbf{B}$ взяты из доказательства $(1) \Rightarrow (2)$. Тогда вектор $\xi = \mathbf{C}^\top\mathbf{B}\eta + a$ имеет х.ф. $\varphi(t)$.
+}
+
+\vspace{10pt}
+
+Второе следствие предъявляет смысл параметров многомерного нормального распределения. Как и в одномерном случае, первый параметр --- это математическое ожидание, а второй --- дисперсия.
+
+\vspace{10pt}
+
+\mkcor{Смысл параметров}{gauss_props_2}{
+    Если $\xi \sim \mathcal{N}(a, \Sigma)$, то $a = \E\xi$, а $\Sigma = \D\xi$ --- матрица ковариаций.
+}
+
+\vspace{5pt}
+
+\mkproof{
+    Следует из доказательства $(3) \Rightarrow (1)$.
+}
+
+\vspace{10pt}
+
+Третье следствие показывает, что, беря линейное или аффинное преобразование гауссовского вектора, мы остаемся в классе гауссовских распределений.
+
+\vspace{10pt}
+
+\mkcor{О линейных преобразованиях}{gauss_props_3}{
+    Любое линейное или аффинное преобразование гауссовского вектора является гауссовским вектором.
+}
+
+\vspace{5pt}
+
+\mkproof{
+    Пусть $\xi$ --- гауссовский вектор из $\mathbb{R}^n$, а $\zeta = \mathbf{B}\xi + b$, $b \in \mathbb{R}^k$, $\mathbf{B} \in \operatorname{Mat}(k \times n)$. Тогда по \hyperref[thm:three_def]{теореме 5.6} $\xi = \mathbf{A}\eta + a$ п.н., где компоненты $\eta$ --- независимые $\mathcal{N}(0, 1)$ с.в. Следовательно,
+    $$ \zeta = (\mathbf{B}\mathbf{A})\eta + \mathbf{B}a + b \quad \text{п.н.} $$
+    Значит, по второму определению $\zeta$ тоже является гауссовским вектором.
+}
+
+\vspace{10pt}
+
+Четвертое свойство показывает, что независимость компонент гауссовских векторов сводится к проверке гораздо более простого свойства --- некоррелированности.
+
+\vspace{10pt}
+
+\mkcor{Критерий независимости компонент}{gauss_props_4}{
+    Пусть $\xi = (\xi_1, \dots, \xi_n)^\top$ --- гауссовский вектор. Тогда $\xi_1, \dots, \xi_n$ --- независимы в совокупности тогда и только тогда, когда они попарно некоррелированы.
+}
+
+\vspace{5pt}
+
+\mkproof{
+    $(\Rightarrow)$ Это верно для любых с.в. с конечным вторым моментом.
+    
+    \vspace{5pt}
+    $(\Leftarrow)$ Пусть $\xi \sim \mathcal{N}(a, \Sigma)$. Если $\cov(\xi_i, \xi_j) = 0$ при $i \ne j$, то $\Sigma = \D\xi$ диагональна. Значит,
+    $$ \varphi_\xi(t) = e^{i\langle a, t\rangle - \frac{1}{2}\langle \Sigma t, t\rangle} = \prod_{k=1}^n e^{ia_k t_k - \frac{1}{2}\sigma_k^2 t_k^2} = \prod_{k=1}^n \varphi_{\xi_k}(t_k). $$
+    По критерию независимости для характеристических функций получаем, что $\xi_1, \dots, \xi_n$ --- независимы в совокупности.
+}
+
+\vspace{10pt}
+
+\mkrem{
+    Естественно следующее обобщение \hyperref[cor:gauss_props_4]{следствия 5.4}. Если $\xi \sim \mathcal{N}(a, \Sigma)$ и $\Sigma$ имеет блочный вид
+    $$
+    \begin{pmatrix}
+    C_{1_{k_1 \times k_1}} & & 0 \\
+    & \ddots & \\
+    0 & & C_{r_{k_r \times k_r}}
+    \end{pmatrix},
+    $$
+    где $k_1 + \dots + k_r = n$ --- размеры блоков. Тогда случайные векторы
+    $$ (\xi_1, \dots, \xi_{k_1}),\ (\xi_{k_1+1}, \dots, \xi_{k_1+k_2}),\ \dots,\ (\xi_{k_1+\dots+k_{r-1}+1}, \dots, \xi_n) $$
+    будут независимы в совокупности.
+}

@@ -1,0 +1,65 @@
+\begin{definition}{Событие бесконечного числа исходов}{inf_events}
+    Пусть $\{A_n, n \in \mathbb{N}\}$ --- последовательность событий. Событием $\{A_n \text{ б.ч.}\}$ называется событие, состоящее в том, что произошло бесконечное число событий из $\{A_n\}$. Формально,
+    $$ \{A_n \text{ б.ч.}\} = \bigcap_{n=1}^\infty \bigcup_{k \ge n} A_k. $$
+\end{definition}
+
+\vspace{1.5em}
+
+\begin{lemma}{Бореля-Кантелли}{borel_cantelli}
+    1. Если $\sum_{n=1}^\infty \P(A_n) < \infty$, то $\P(\{A_n \text{ б.ч.}\}) = 0$.
+    
+    2. Если $\sum_{n=1}^\infty \P(A_n) = \infty$ и события $\{A_n, n \in \mathbb{N}\}$ независимы, то $\P(\{A_n \text{ б.ч.}\}) = 1$.
+\end{lemma}
+
+\begin{proofbox}
+    1. Событие $\{A_n \text{ б.ч.}\} = \bigcap_{n=1}^\infty \left( \bigcup_{k \ge n} A_k \right)$, поэтому из непрерывности вероятностной меры следует, что
+    $$ \P(\{A_n \text{ б.ч.}\}) = \lim_{n \to \infty} \P\left( \bigcup_{k \ge n} A_k \right) \le \lim_{n \to \infty} \sum_{k=n}^\infty \P(A_k) = 0, $$
+    т.к. $\sum_{k=n}^\infty \P(A_k) \to 0$ является остатком сходящегося ряда.
+    
+    \vspace{0.75em}
+    2. Заметим, что события $\{A_n, n \in \mathbb{N}\}$ независимы тогда и только тогда, когда $\{\overline{A}_n, n \in \mathbb{N}\}$ независимы. Следовательно, для всех $N \ge n$
+    $$ \P\left( \bigcap_{k=n}^N \overline{A}_k \right) = \prod_{k=n}^N \P(\overline{A}_k). $$
+    Тогда
+    \begin{align*}
+        \P(\{A_n \text{ б.ч.}\}) &= \lim_{n \to \infty} \P\left( \bigcup_{k \ge n} A_k \right) = \lim_{n \to \infty} \P\left( \Omega \setminus \bigcap_{k \ge n} \overline{A}_k \right) = 1 - \lim_{n \to \infty} \P\left( \bigcap_{k=n}^\infty \overline{A}_k \right) = \\
+        &= 1 - \lim_{n \to \infty} \lim_{N \to \infty} \P\left( \bigcap_{k=n}^N \overline{A}_k \right) = 1 - \lim_{n \to \infty} \lim_{N \to \infty} \prod_{k=n}^N \P(\overline{A}_k) = \\
+        &= 1 - \lim_{n \to \infty} \lim_{N \to \infty} \prod_{k=n}^N (1 - \P(A_k)) \ge \\
+        &\ge 1 - \lim_{n \to \infty} \lim_{N \to \infty} \prod_{k=n}^N e^{-\P(A_k)} = 1 - \lim_{n \to \infty} \lim_{N \to \infty} e^{-\sum_{k=n}^N \P(A_k)} = 1,
+    \end{align*}
+    т.к. для всех $n \in \mathbb{N}$ выполнено $\lim_{N \to \infty} e^{-\sum_{k=n}^N \P(A_k)} = e^{-\sum_{k=n}^\infty \P(A_k)} = e^{-\infty} = 0$.
+\end{proofbox}
+
+\vspace{1.5em}
+
+\begin{lemma}{Тёплица}{toeplitz}
+    Пусть $\{a_n, n \in \mathbb{N}\}$ --- такая последовательность неотрицательных чисел, что $b_n \uparrow +\infty$, где $b_n = \sum_{j=1}^n a_j$. Пусть $x_k \to x$ при $k \to \infty$. Тогда
+    $$ \frac{1}{b_n} \sum_{j=1}^n a_j x_j \to x \text{ при } n \to +\infty. $$
+\end{lemma}
+
+\begin{proofbox}
+    Пусть $\varepsilon > 0$ задано. Выберем $n_0 = n_0(\varepsilon) \colon |x_n - x| < \frac{\varepsilon}{2}$ при $n > n_0$.
+    Выберем $n_1 > n_0$ с условием $\frac{1}{b_{n_1}} \sum_{j=1}^{n_0} a_j |x_j - x| < \frac{\varepsilon}{2}$. Тогда для всех $n > n_1$
+    \begin{align*}
+        \left| \frac{1}{b_n} \sum_{j=1}^n a_j x_j - x \right| &\le \frac{1}{b_n} \sum_{j=1}^n a_j |x_j - x| = \frac{1}{b_n} \sum_{j=1}^{n_0} a_j |x_j - x| + \frac{1}{b_n} \sum_{j=n_0+1}^n a_j |x_j - x| \le \\
+        &\le \frac{1}{b_{n_1}} \sum_{j=1}^{n_0} a_j |x_j - x| + \frac{1}{b_n} \sum_{j=n_0+1}^n a_j |x_j - x| \le \frac{\varepsilon}{2} + \frac{\varepsilon}{2} = \varepsilon.
+    \end{align*}
+    Следовательно, $\frac{1}{b_n} \sum_{j=1}^n a_j x_j \to x$ при $n \to +\infty$.
+\end{proofbox}
+
+\vspace{1.5em}
+
+\begin{proposition}{Критерий конечности матожидания}{crit_exp}
+    Если $\xi$ --- неотрицательная с.в., тогда
+    $$ \sum_{n=1}^\infty \P(\xi \ge n) \le \E \xi \le \sum_{n=1}^\infty \P(\xi \ge n) + 1. $$
+\end{proposition}
+
+\begin{proofbox}
+    Пользуясь \hyperref[thm:monotone]{теоремой о монотонной сходимости}, получаем:
+    \begin{align*}
+        \sum_{n=1}^\infty \P(\xi \ge n) &= \sum_{n=1}^\infty \sum_{k=n}^\infty \P(k \le \xi < k + 1) = \sum_{k=1}^\infty k \cdot \P(k \le \xi < k + 1) = \\
+        &= \sum_{k=0}^\infty k \cdot \P(k \le \xi < k + 1) = \sum_{k=0}^\infty \E(k \cdot \I\{k \le \xi < k + 1\}) \le \\
+        &\le \sum_{k=0}^\infty \E(\xi \cdot \I\{k \le \xi < k + 1\}) = \E \xi \le \\
+        &\le \sum_{k=0}^\infty \E((k + 1) \cdot \I\{k \le \xi < k + 1\}) = \sum_{n=1}^\infty \P(\xi \ge n) + 1.
+    \end{align*}
+\end{proofbox}
+

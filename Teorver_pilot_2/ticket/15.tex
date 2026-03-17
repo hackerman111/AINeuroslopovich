@@ -1,0 +1,110 @@
+\textbf{1. Определение условного математического ожидания}
+
+Пусть $(\Omega, \mathcal{F}, \P)$ --- вероятностное пространство, $\xi$ --- случайная величина на нем, а $\mathcal{C} \subset \mathcal{F}$ --- под-$\sigma$-алгебра в $\mathcal{F}$.
+
+\mkdef{Условное математическое ожидание относительно $\sigma$-алгебры}{cme_sigma}{
+    Условным математическим ожиданием случайной величины $\xi$ относительно $\sigma$-алгебры $\mathcal{C}$ называется случайная величина, обозначаемая $\E(\xi|\mathcal{C})$, которая удовлетворяет следующим двум свойствам:
+    \begin{enumerate}
+        \item $\E(\xi|\mathcal{C})$ является $\mathcal{C}$-измеримой (свойство измеримости);
+        \item для любого $A \in \mathcal{C}$ выполняется равенство $\E(\xi \cdot \I_A) = \E(\E(\xi|\mathcal{C})\I_A)$ или
+        $$ \int\limits_A \xi \, d\P = \int\limits_A \E(\xi|\mathcal{C}) \, d\P $$
+        (интегральное свойство).
+    \end{enumerate}
+}
+
+\mkdef{УМО относительно случайной величины}{cme_rv}{
+    Если $\xi$ и $\eta$ --- две случайные величины, то полагаем
+    $$ \E(\xi|\eta) := \E(\xi|\mathcal{F}_\eta), $$
+    где $\mathcal{F}_\eta$ --- $\sigma$-алгебра, порожденная с.в. $\eta$.
+}
+
+Рассмотрим сначала самый понятный случай, когда $\xi$ и $\eta$ являются простыми случайными величинами. Как мы помним, для них обычное математическое ожидание определяется по формуле
+$$ \E\xi = \sum_{i=1}^n x_i\P(\xi = x_i), $$
+где $x_1, \dots, x_n$ --- это все возможные значения случайной величины $\xi$. Тогда очень естественно определить $\E(\xi|\eta = y)$ следующим образом:
+\begin{equation} \label{eq:cme_discrete}
+    \E(\xi|\eta = y) = \sum_{i=1}^n x_i\P(\xi = x_i|\eta = y),
+\end{equation}
+где $\P(\xi = x_i|\eta = y)$ --- это стандартная условная вероятность.
+
+\mkrem{
+    Напомним, что с.в. $\zeta$ является $\mathcal{F}_\eta$-измеримой тогда и только тогда, когда существует такая борелевская функция $\psi(x)$, что $\zeta = \psi(\eta)$.
+}
+
+\textbf{2. Основные свойства УМО}
+
+Поскольку $\E(\xi|\eta)$ является частным случаем $\E(\xi|\mathcal{C})$, мы сформулируем и докажем свойства для общего случая абстрактной $\sigma$-алгебры $\mathcal{C}$. Всюду ниже предполагаем конечность математических ожиданий у рассматриваемых случайных величин.
+
+\mkthm{Основные свойства УМО}{cme_props}{
+    \begin{enumerate}[label=(\arabic*), leftmargin=*]
+        \item Если с.в. $\xi$ является $\mathcal{C}$-измеримой, то $\E(\xi|\mathcal{C}) = \xi$.
+        \item Линейность. Для любых случайных величин $\xi$, $\eta$, $a, b \in \mathbb{R}$ выполнено
+        $$ \E(a\xi + b\eta|\mathcal{C}) = a\E(\xi|\mathcal{C}) + b\E(\eta|\mathcal{C}). $$
+        \item Формула полной вероятности.
+        $$ \E(\E(\xi|\mathcal{C})) = \E\xi. $$
+        \item Если $\xi$ независима с $\mathcal{C}$, то $\E(\xi|\mathcal{C}) = \E\xi$.
+        \item Сохранение отношения порядка. Если $\xi \ge \eta$ п.н., то
+        $$ \E(\xi|\mathcal{C}) \ge \E(\eta|\mathcal{C}) \text{ п.н.} $$
+        \item Оценка модуля.
+        $$ |\E(\xi|\mathcal{C})| \le \E(|\xi| \mid \mathcal{C}). $$
+        \item Телескопическое свойство. Пусть $\mathcal{C}_1 \subset \mathcal{C}_2$ --- две $\sigma$-алгебры. Тогда
+        \begin{enumerate}[label=(\alph*)]
+            \item $\E(\E(\xi|\mathcal{C}_1)|\mathcal{C}_2) = \E(\xi|\mathcal{C}_1)$,
+            \item $\E(\E(\xi|\mathcal{C}_2)|\mathcal{C}_1) = \E(\xi|\mathcal{C}_1)$.
+        \end{enumerate}
+        \item Вынесение известного множителя. Пусть $\eta$ --- это $\mathcal{C}$-измеримая с.в., тогда
+        $$ \E(\xi \cdot \eta|\mathcal{C}) = \eta\E(\xi|\mathcal{C}). $$
+        \item Неравенство Йенсена. Пусть $\varphi$ --- выпуклая книзу функция. Тогда
+        $$ \E(\varphi(\xi)|\mathcal{C}) \ge \varphi(\E(\xi|\mathcal{C})). $$
+        \item Предельный переход под знаком УМО \textbf{(БЕЗ ДОКАЗАТЕЛЬСТВА)}. Пусть $\{\xi_n, n \in \mathbb{N}\}$, $\xi$ --- случайные величины.
+        \begin{enumerate}[label=(\alph*)]
+            \item Теорема о монотонной сходимости: Если $0 \le \xi_n \uparrow \xi$ п.н., то $\E(\xi_n|\mathcal{C}) \uparrow \E(\xi|\mathcal{C})$ п.н.
+            \item Теорема Лебега о мажорируемой сходимости: Пусть $\xi_n \toAS \xi$ и $|\xi_n| \le \delta$ для всех $n$, причем $\E\delta < +\infty$. Тогда 
+            $$ \E(\xi_n|\mathcal{C}) \toAS \E(\xi|\mathcal{C}). $$
+        \end{enumerate}
+    \end{enumerate}
+}
+
+\mkproof{
+    \begin{enumerate}[label=\arabic*., leftmargin=*]
+        \item Очевидно, что для $\xi$ выполняются и свойство измеримости, и интегральное свойство.
+        \item Для начала заметим, что и $\E(\xi|\mathcal{C})$, и $\E(\eta|\mathcal{C})$ являются $\mathcal{C}$-измеримыми случайными величинами. Тогда $a\E(\xi|\mathcal{C}) + b\E(\eta|\mathcal{C})$ --- это тоже $\mathcal{C}$-измеримая случайная величина. Осталось проверить интегральное свойство. В силу линейности математического ожидания для любого $A \in \mathcal{C}$:
+        $$ \E((a\xi + b\eta) \cdot \I_A) = a\E(\xi \cdot \I_A) + b\E(\eta \cdot \I_A). $$
+        Согласно интегральному свойству:
+        $$ a\E(\xi \cdot \I_A) + b\E(\eta \cdot \I_A) = a\E(\E(\xi|\mathcal{C})\I_A) + b\E(\E(\eta|\mathcal{C})\I_A). $$
+        Свернём сумму назад:
+        $$ a\E(\E(\xi|\mathcal{C})\I_A) + b\E(\E(\eta|\mathcal{C})\I_A) = \E\left( (a\E(\xi|\mathcal{C}) + b\E(\eta|\mathcal{C})) \cdot \I_A \right). $$
+        Тем самым, получаем желаемое.
+        \item Воспользуемся интегральным свойством, положив $A = \Omega$:
+        $$ \E\xi = \E(\xi \cdot \I_A) = \E(\E(\xi|\mathcal{C}) \cdot \I_A) = \E(\E(\xi|\mathcal{C})). $$
+        \item Напомним, что $\xi$ независима с $\mathcal{C}$ тогда и только тогда, когда для любого $A \in \mathcal{C}$ с.в. $\xi$ независима с $\I_A$. Заметим, что $\E\xi$ --- это константа, поэтому $\E\xi$ является $\mathcal{C}$-измеримой. Проверим интегральное свойство: для любого $A \in \mathcal{C}$
+        $$ \E(\xi \cdot \I_A) = [\text{независимость}] = \E\xi \cdot \E(\I_A) = \E(\E\xi \cdot \I_A). $$
+        \item Отметим снова, что $\E(\xi|\mathcal{C})$ и $\E(\eta|\mathcal{C})$ являются случайными величинами на вероятностном пространстве $(\Omega, \mathcal{C}, \P)$. Для любого $A \in \mathcal{C}$ имеем:
+        $$ \E(\E(\xi|\mathcal{C})\I_A) = \E(\xi \cdot \I_A) \le \E(\eta \cdot \I_A) = \E(\E(\eta|\mathcal{C})\I_A). $$
+        Согласно свойству 3.9 обычных математических ожиданий получаем, что с вероятностью 1 выполнено искомое неравенство $\E(\xi|\mathcal{C}) \le \E(\eta|\mathcal{C})$.
+        \item Сразу следует из свойств (2) и (5).
+        \item Первый пункт почти очевиден. Заметим, что с.в. $\E(\xi|\mathcal{C}_1)$ является $\mathcal{C}_1$-измеримой, а, значит, и $\mathcal{C}_2$-измеримой. Далее, применяем свойство (1). 
+        Теперь докажем второе утверждение. Заметим, что свойство измеримости у нас уже есть. Проверим интегральное свойство. Для любого $A \in \mathcal{C}_1 \subset \mathcal{C}_2$:
+        \begin{align*}
+            \E(\E(\xi|\mathcal{C}_1)\I_A) &= [\text{инт. свойство для } \mathcal{C}_1] = \E(\xi \cdot \I_A) = \\
+            &= [\text{инт. свойство для } \mathcal{C}_2] = \E(\E(\xi|\mathcal{C}_2)\I_A).
+        \end{align*}
+        \item Заметим, что правая часть есть $\mathcal{C}$-измеримая с.в. Проверим интегральное свойство. Пусть сначала $\eta = \I_B$ для некоторого $B \in \mathcal{C}$. Тогда для любого $A \in \mathcal{C}$
+        \begin{align*}
+            \E(\eta\xi \cdot \I_A) &= \E(\xi \cdot \I_B \cdot \I_A) = \E(\xi \cdot \I_{A \cap B}) = \\
+            &= \E(\E(\xi|\mathcal{C})\I_{A \cap B}) = \E(\E(\xi|\mathcal{C})\I_B \cdot \I_A) = \E(\eta\E(\xi|\mathcal{C})\I_A).
+        \end{align*}
+        Далее, в силу линейности математического ожидания, интегральное свойство будет выполнено и для простых с.в. вида $\eta = \sum_{k=1}^m c_k \cdot \I_{B_k}$, $c_k \in \mathbb{R}$, $B_k \in \mathcal{C}$. Для произвольной $\eta$ возьмем из теоремы 2.9 последовательность простых $\mathcal{C}$-измеримых с.в. $\eta_n$ такую, что $\eta_n \toAS \eta$ и $|\eta_n| \le |\eta|$. Тогда по свойству о предельном переходе получаем, что
+        $$ \E(\eta_n\xi|\mathcal{C}) \toAS \E(\eta\xi|\mathcal{C}). $$
+        Однако
+        $$ \E(\eta_n\xi|\mathcal{C}) = \eta_n\E(\xi|\mathcal{C}) \toAS \eta\E(\xi|\mathcal{C}). $$
+        Следовательно, $\E(\xi\eta|\mathcal{C}) = \eta\E(\xi|\mathcal{C})$.
+        \item В силу выпуклости для любого $x \in \mathbb{R}$ существует $\lambda(x)$ т.,ч. для любого $y \in \mathbb{R}$ выполнено
+        $$ \varphi(y) \ge \varphi(x) + \lambda(x)(y - x). $$
+        Положим $y = \xi$, $x = \E(\xi|\mathcal{C})$ и возьмем УМО относительно $\mathcal{C}$ от обеих частей неравенства. Пользуясь свойствами (1) и (8), получим:
+        \begin{align*}
+            \E(\varphi(\xi)|\mathcal{C}) &\ge \E\Big( \varphi(\E(\xi|\mathcal{C})) \mid \mathcal{C} \Big) + \E\Big( \lambda(\E(\xi|\mathcal{C}))(\xi - \E(\xi|\mathcal{C})) \mid \mathcal{C} \Big) = \\
+            &= [\text{выносим } \lambda(\E(\xi|\mathcal{C})) \text{ как } \mathcal{C}\text{-измеримую с.в.}] = \\
+            &= \varphi(\E(\xi|\mathcal{C})) + \lambda(\E(\xi|\mathcal{C})) \E(\xi - \E(\xi|\mathcal{C}) \mid \mathcal{C}) = \varphi(\E(\xi|\mathcal{C})).
+        \end{align*}
+    \end{enumerate}
+}

@@ -1,0 +1,649 @@
+\documentclass[a4paper, 12pt]{article}
+
+% ==========================================
+% ЭТАП 1: БАЗОВЫЕ БИБЛИОТЕКИ И ТИПОГРАФИКА
+% ==========================================
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+
+\usepackage{graphicx} % Для вставки фото
+\usepackage{tikz}     % Для создания сложного дизайна обложки
+
+\usepackage{microtype} % Улучшенный кернинг и выравнивание
+\usepackage[margin=1.1cm]{geometry} % Современные поля
+\usepackage{parskip} % Пропуски между абзацами вместо красной строки
+\usepackage{enumitem} % Настройка списков
+
+% Математика
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+
+% ==========================================
+% ЭТАП 2: ЦВЕТОВАЯ ПАЛИТРА
+% ==========================================
+\usepackage[dvipsnames, table]{xcolor}
+
+\definecolor{thmblue}{HTML}{2980B9}
+\definecolor{defgreen}{HTML}{27AE60}
+\definecolor{lempurple}{HTML}{8E44AD}
+\definecolor{remgray}{HTML}{7F8C8D}
+\definecolor{ticketdark}{HTML}{2C3E50}
+
+% ==========================================
+% ЭТАП 3: НАСТРОЙКА TCOLORBOX
+% ==========================================
+\usepackage[many]{tcolorbox}
+
+% Базовый стиль в духе Notion (рамка слева, легкий фон)
+\tcbset{
+    notionstyle/.style={
+        enhanced, breakable,
+        frame hidden, boxrule=0pt,
+        colback=#1!5, % Фон: 5% насыщенности от основного цвета
+        borderline west={3pt}{0pt}{#1}, % Полоска слева
+        coltitle=#1, fonttitle=\bfseries\sffamily,
+        description font=\mdseries,
+        attach title to upper={\par\vspace{0.4em}}, % Отступ после заголовка
+        left=12pt, right=12pt, top=10pt, bottom=10pt,
+    }
+}
+
+% Создаем математические окружения
+% Создаем математические окружения (с добавлением в оглавление)
+\newtcbtheorem[auto counter, number within=section]{theorem}{Теорема}{notionstyle=thmblue, add to list={toc}{subsection}}{thm}
+\newtcbtheorem[auto counter, number within=section]{definition}{Определение}{notionstyle=defgreen, add to list={toc}{subsection}}{def}
+\newtcbtheorem[auto counter, number within=section]{lemma}{Лемма}{notionstyle=lempurple, add to list={toc}{subsection}}{lem}
+\newtcbtheorem[auto counter, number within=section]{proposition}{Утверждение}{notionstyle=lempurple, add to list={toc}{subsection}}{prop}
+\newtcbtheorem[auto counter, number within=section]{corollary}{Следствие}{notionstyle=thmblue}{cor}
+
+
+% Окружение для замечаний (без нумерации)
+\newtcolorbox{remark}[1][]{
+    notionstyle=remgray,
+    title={Замечание\ifstrempty{#1}{}{: #1}}
+}
+
+\newtcolorbox{proofbox}[1][]{
+    notionstyle=remgray, % [cite: 2]
+    title={Доказательство\ifstrempty{#1}{}{: #1}}
+}
+
+\usepackage{tocloft}
+
+% ==========================================
+% ЭТАП 4: КОСТЯК БИЛЕТА
+% ==========================================
+\newtcolorbox{ticketskeleton}[1]{
+    enhanced, breakable,
+    colback=ticketdark!3, 
+    colframe=ticketdark,
+    boxrule=0.5pt,
+    arc=6pt, auto outer arc,
+    fonttitle=\bfseries\sffamily,
+    coltitle=white,
+    title=Метаданные билета: #1,
+    % Стиль заголовка: плавающая плашка
+    attach boxed title to top right={yshift=-12pt, xshift=-15pt},
+    boxed title style={colback=ticketdark, arc=4pt, boxrule=0pt, shadow={2mm}{-1mm}{0mm}{black!30}},
+    drop fuzzy shadow, % Легкая тень под всей карточкой
+    left=15pt, right=15pt, top=15pt, bottom=10pt,
+}
+
+% Команды для структуры внутри костяка билета
+\newcommand{\ticketsection}[1]{\vspace{0.5em}\noindent\textbf{\textcolor{ticketdark}{\sffamily #1}}\par}
+
+% ==========================================
+% ДОПОЛНИТЕЛЬНО: ССЫЛКИ И МАКРОСЫ
+% ==========================================
+\usepackage[colorlinks=true, linkcolor=thmblue, urlcolor=thmblue, citecolor=defgreen]{hyperref}
+\usepackage[russian]{cleveref}
+\usepackage{import}
+
+% ==========================================
+% 6. МАКРОСЫ-ОБЕРТКИ ДЛЯ БЫСТРОЙ ВЕРСТКИ (Для ИИ)
+% ==========================================
+% Использование: \mkthm{Название (или пусто)}{label}{Текст теоремы}
+\newcommand{\mkdef}[3]{\begin{definition}{#1}{#2} #3 \end{definition}}
+\newcommand{\mkthm}[3]{\begin{theorem}{#1}{#2} #3 \end{theorem}}
+\newcommand{\mklem}[3]{\begin{lemma}{#1}{#2} #3 \end{lemma}}
+\newcommand{\mkprop}[3]{\begin{proposition}{#1}{#2} #3 \end{proposition}}
+\newcommand{\mkcor}[3]{\begin{corollary}{#1}{#2} #3 \end{corollary}}
+\newcommand{\mkex}[3]{\begin{exercise}{#1}{#2} #3 \end{exercise}}
+\newcommand{\mkrem}[1]{\begin{remark} #1 \end{remark}}
+\newcommand{\mkproof}[1]{\begin{proofbox} #1 \end{proofbox}}
+\newcommand{\mksolution}[1]{\begin{solutionbox} #1 \end{solutionbox}}
+
+% ==========================================
+% 7. МАТЕМАТИЧЕСКИЕ СОКРАЩЕНИЯ (Специфика ТерВера)
+% ==========================================
+% Базовые операторы
+\renewcommand{\P}{\mathbb{P}}      % Вероятность
+\newcommand{\E}{\mathbb{E}}        % Мат. ожидание
+\newcommand{\D}{\mathbb{D}}        % Дисперсия
+\newcommand{\I}{\mathbb{I}}        % Индикатор
+\DeclareMathOperator{\cov}{cov}    % Ковариация
+\DeclareMathOperator{\Var}{Var}    % Дисперсия (альтернатива)
+
+% Стрелки сходимостей (часто встречаются в приложенных PDF)
+\newcommand{\toP}{\xrightarrow{\Prob}}          % По вероятности
+\newcommand{\toAS}{\xrightarrow{\text{п.н.}}}   % Почти наверное
+\newcommand{\toD}{\xrightarrow{d}}              % По распределению
+\newcommand{\toL}[1]{\xrightarrow{L^{#1}}}      % В среднем порядка p
+
+
+% ==========================================
+% НАЧАЛО ДОКУМЕНТА (ПРИМЕР ИСПОЛЬЗОВАНИЯ)
+% ==========================================
+\begin{document}
+
+\begin{titlepage}
+    % Временно убираем поля для обложки, чтобы залить ее цветом на 100%
+    \newgeometry{left=0cm, right=0cm, top=0cm, bottom=0cm}
+    
+    \begin{tikzpicture}[remember picture, overlay]
+        % 1. Вставляем фотографию на верхние 60% страницы
+        % Scope используется для того, чтобы аккуратно обрезать фото, если оно не влезает, без искажения пропорций
+        \begin{scope}
+            \clip (current page.north west) rectangle ([yshift=-0.6\paperheight]current page.north east);
+            \node[anchor=north, inner sep=0pt] at (current page.north) {
+                \includegraphics[width=\paperwidth]{photo.png} % <-- ВСТАВЬ ИМЯ СВОЕГО ФАЙЛА ЗДЕСЬ
+            };
+        \end{scope}
+        
+        % 2. Темный блок на нижние 40% страницы (цвет ticketdark)
+        \fill[ticketdark] (current page.south west) rectangle ([yshift=-0.6\paperheight]current page.north east);
+        
+        % 3. Тонкая акцентная полоса (thmblue) между фото и текстом для эстетики
+        \fill[thmblue] ([yshift=-0.6\paperheight]current page.north west) rectangle ([yshift=-0.6\paperheight-3pt]current page.north east);
+
+        % 4. Типографика обложки (выровнена по левому краю)
+        \node[anchor=north west, text=white, align=left] at ([xshift=2.5cm, yshift=-0.68\paperheight]current page.north west) {
+            {\sffamily\Huge\bfseries ТЕОРИЯ ВЕРОЯТНОСТЕЙ}\\[0.8em]
+            {\sffamily\Large Конспект для подготовки к коллоквиуму 2}\\[2.5em]
+            {\sffamily\large\textcolor{thmblue!50}{Автор:}} {\sffamily\large Dr\_papayka}\\[0.3em]
+        };
+    \end{tikzpicture}
+    
+    % Возвращаем стандартные поля для остального документа
+    \restoregeometry
+\end{titlepage}
+
+
+\tableofcontents
+\newpage
+
+\section{Билет 1}
+% ==================================================
+% БИЛЕТ 1
+% ==================================================
+\begin{ticketskeleton}{1. Виды сходимостей случайных величин}
+     Виды сходимостей случайных величин: с вероятностью 1, по вероятности, в среднем порядка $p > 0$, по распределению. Критерий сходимости с вероятностью 1. Теорема о взаимоотношении различных видов сходимостей.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:conv_as]{Определение 4.1: Сходимость с вероятностью 1 (почти наверное)}
+        \item \hyperref[def:conv_prob]{Определение 4.2: Сходимость по вероятности}
+        \item \hyperref[def:conv_lp]{Определение 4.3: Сходимость в среднем порядка $p>0$}
+        \item \hyperref[def:conv_dist]{Определение 4.4: Сходимость по распределению}
+        \item \hyperref[lem:crit_as]{Лемма 4.1: Критерий сходимости с вероятностью 1}
+        \item \hyperref[thm:conv_rel]{Теорема 4.1: Взаимоотношение различных видов сходимостей}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Базовые определения случайной величины и вероятностного пространства.
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 2: \hyperref[cor:suff_as]{Достаточное условие сходимости п.н.}
+        \item Билет 11: \hyperref[prop:vector_comp]{Взаимосвязь сходимостей случайных векторов}
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{1.tex}
+
+
+\section{Билет 2}
+% ==================================================
+% БИЛЕТ 2
+% ==================================================
+\begin{ticketskeleton}{2. Достаточное условие сходимости п.н. и ЗБЧ}
+     Достаточное условие сходимости почти наверное для последовательности случайных величин. Закон больших чисел в форме Чебышева. Усиленный закон больших чисел для некоррелированных случайных величин. Смысл усиленного закона больших чисел.
+
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[cor:suff_as]{Следствие 4.1: Достаточное условие сходимости почти наверное}
+        \item \hyperref[thm:lln_cheb]{Теорема 4.2: Закон больших чисел в форме Чебышёва}
+        \item \hyperref[thm:slln_uncorr]{Теорема 4.5: Усиленный закон больших чисел для некоррелированных с.в.}
+        \item \hyperref[rem:slln_meaning]{Замечание: Смысл УЗБЧ (обоснование устойчивости частот)}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 1: \hyperref[lem:crit_as]{Критерий сходимости п.н.}
+        \item Неравенства Маркова и Чебышева.
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 5: \hyperref[thm:slln_etemadi]{УЗБЧ в форме Этемади}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{2.tex}
+
+
+\section{Билет 3}
+% ==================================================
+% БИЛЕТ 3
+% ==================================================
+\begin{ticketskeleton}{3. Предельный переход под знаком матожидания}
+
+     Предельный переход под знаком математического ожидания. Теорема о монотонной сходимости, следствие из нее. Лемма Фату и теорема Лебега о мажорируемой сходимости.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[thm:monotone]{Теорема 3.1: Теорема о монотонной сходимости (и следствие)}
+        \item \hyperref[lem:fatou]{Лемма: Лемма Фату}
+        \item \hyperref[thm:lebesgue]{Теорема 3.3: Теорема Лебега о мажорируемой сходимости}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 1: \hyperref[def:conv_as]{Сходимость почти наверное}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 4: \hyperref[prop:crit_exp]{Критерий конечности матожидания}
+        \item Билет 5: \hyperref[thm:slln_etemadi]{Доказательство УЗБЧ Этемади}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{3.tex}
+
+
+
+
+
+\section{Билет 4}
+% ==================================================
+% БИЛЕТ 4
+% ==================================================
+\begin{ticketskeleton}{4. Леммы Бореля-Кантелли и Теплица. Критерий конечности МО}
+     Лемма Бореля--Кантелли, лемма Тёплица, критерий конечности математического ожидания неотрицательной случайной величины.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:inf_events]{ Событие бесконечного числа исходов}
+        \item \hyperref[lem:borel_cantelli]{ Лемма Бореля-Кантелли}
+        \item \hyperref[lem:toeplitz]{ Лемма Тёплица}
+        \item \hyperref[prop:crit_exp]{ Критерий конечности матожидания}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 3: \hyperref[thm:monotone]{Теорема о монотонной сходимости}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 5: \hyperref[thm:slln_etemadi]{УЗБЧ в форме Этемади} и \hyperref[cor:crit_slln]{Критерий выполнимости УЗБЧ}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{4.tex}
+
+
+
+
+
+
+\section{Билет 5}
+% ==================================================
+% БИЛЕТ 5
+% ==================================================
+\begin{ticketskeleton}{5. Усиленный закон больших чисел (Этемади и Колмогоров)}
+     Усиленный закон больших чисел в форме Этемади (для попарно независимых с.в.). Следствие: усиленный закон больших чисел в форме Колмогорова. Критерий выполнимости УЗБЧ для н.о.р.с.в.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:id_dist]{ Одинаковая распределенность}
+        \item \hyperref[thm:slln_etemadi]{ Усиленный закон больших чисел в форме Этемади}
+        \item \hyperref[cor:slln_kolm]{ Усиленный закон больших чисел в форме Колмогорова}
+        \item \hyperref[cor:crit_slln]{ Критерий выполнимости УЗБЧ для н.о.р.с.в.}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 4: \hyperref[lem:borel_cantelli]{Лемма Бореля-Кантелли} и \hyperref[lem:toeplitz]{Лемма Теплица}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 12: \hyperref[ex:ci_bernoulli]{Построение асимптотических доверительных интервалов}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{5.tex}
+
+
+
+
+
+
+
+
+
+
+\section{Билет 6}
+% ==================================================
+% БИЛЕТ 6
+% ==================================================
+\begin{ticketskeleton}{6. Схема Бернулли. Аппроксимации и уклонения}
+     Схема испытаний Бернулли. Аппроксимация биномиального распределения: теорема Пуассона и теорема Муавра--Лапласа (б/д). Неравенство Чернова для вероятности уклонения от среднего в схеме Бернулли. Сравнение оценок скорости убывания вероятности уклонения от среднего в схеме Бернулли по неравенству Чернова и по неравенству Чебышева.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:bernoulli]{Определение: Схема испытаний Бернулли и биномиальное распределение}
+        \item \hyperref[cor:poisson]{ Теорема Пуассона}
+        \item \hyperref[cor:moivre_laplace]{ Теорема Муавра-Лапласа}
+        \item \hyperref[thm:chernoff]{Неравенство Чернова для вероятности уклонения от среднего}
+        \item \hyperref[comp:chernoff_cheb]{Сравнение оценок Чернова и Чебышева}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 1: \hyperref[def:conv_dist]{Сходимость по распределению}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 12: \hyperref[ex:ci_bernoulli]{Асимптотический доверительный интервал для $p$}
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{6.tex}
+
+
+
+
+
+
+
+\section{Билет 7}
+% ==================================================
+% БИЛЕТ 7
+% ==================================================
+\begin{ticketskeleton}{7. Характеристические функции и их свойства}
+     Характеристические функции случайных величин. Основные свойства х.ф. случайных величин (единственность --- б/д). Примеры вычислений характеристических функций: биномиальное, экспоненциальное и стандартное нормальное распределения.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:char_func]{ Характеристическая функция случайной величины}
+        \item \hyperref[lem:char_props]{ Основные свойства х.ф.}
+        \item \hyperref[ex:char_calc]{Примеры вычислений характеристических функций (Пуассон, нормальное)}
+        \item \hyperref[ex:char_binomial]{Пример х.ф.: биномиальное распределение}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Независимость случайных величин, свойства МО.
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 8: \hyperref[thm:uniqueness]{Теорема единственности}
+        \item Билет 10: \hyperref[thm:continuity]{Теорема непрерывности для х.ф.}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{7.tex}
+
+
+
+\section{Билет 8}
+% ==================================================
+% БИЛЕТ 8
+% ==================================================
+\begin{ticketskeleton}{8. Формула обращения\, единственность и независимость}
+     Формула обращения для характеристических функций. Применение свойства единственности: нахождение распределения суммы независимых нормальных случайных величин. Критерий независимости набора случайных величин для характеристических функций.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[thm:inversion]{ Формула обращения}
+        \item \hyperref[thm:uniqueness]{ Теорема единственности}
+        \item \hyperref[ex:sum_normal]{ Нахождение распределения суммы независимых нормальных с.в.}
+        \item \hyperref[thm:indep_crit]{ Критерий независимости в терминах х.ф.}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 7: \hyperref[lem:char_props]{Свойства характеристических функций}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 13: \hyperref[thm:three_def]{Определения многомерного нормального распределения}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{8.tex}
+
+
+
+
+
+\section{Билет 9}
+% ==================================================
+% БИЛЕТ 9
+% ==================================================
+\begin{ticketskeleton}{9. Теорема Александрова}
+     Теорема Александрова.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:conv_main]{ Сходимость в основном}
+        \item \hyperref[def:conv_weak]{ Слабая сходимость}
+        \item \hyperref[def:borel_algebra]{ Слабая сходимость}
+        \item \hyperref[prop:prop_sep_borel]{ Слабая сходимость}
+        \item \hyperref[def:conv_main_metric]{ Сходимость в основном на метрических пространствах}
+        \item \hyperref[thm:alexandrov]{ Теорема Александрова}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 1: \hyperref[def:conv_dist]{Сходимость по распределению}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 10: \hyperref[thm:equiv_conv]{Теорема об эквивалентности сходимостей}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{9.tex}
+
+
+
+\section{Билет 10}
+% ==================================================
+% БИЛЕТ 10
+% ==================================================
+\begin{ticketskeleton}{10. Эквивалентные определения сходимости по распределению}
+     Теорема об эквивалентном определении сходимости по распределению для случайных величин. Теорема непрерывности для характеристических функций (б/д).
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[thm:equiv_conv]{Теорема 4.7: Эквивалентность сходимостей}
+        \item \hyperref[cor:equiv_dist]{Следствие 4.6: Эквивалентное определение сходимости по распределению}
+        \item \hyperref[thm:continuity]{Теорема 4.15: Теорема непрерывности для х.ф.}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 8: \hyperref[thm:inversion]{Формула обращения} и единственность
+        \item Билет 9: \hyperref[thm:alexandrov]{Теорема Александрова}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 14: \hyperref[thm:clt]{Доказательство Центральной Предельной Теоремы}
+    \end{itemize}
+\end{ticketskeleton}
+\import{ticket/}{10.tex}
+
+
+\section{Билет 11}
+% ==================================================
+% БИЛЕТ 11
+% ==================================================
+\begin{ticketskeleton}{11. Сходимости случайных векторов}
+     Сходимости случайных векторов: с вероятностью 1, по вероятности, по распределению. Взаимосвязь многомерной сходимости и одномерных сходимостей координат (б/д). Лемма о существовании подпоследовательности, сходящейся п.н., если последовательность сходится по вероятности. Теорема о наследовании сходимости.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:vector_conv]{Определение 5.1: Виды сходимостей случайных векторов}
+        \item \hyperref[prop:vector_comp]{Утверждение 5.1: Взаимосвязь многомерной сходимости и одномерных}
+        \item \hyperref[lem:subseq_prob]{Лемма 4.2: О существовании подпоследовательности, сходящейся п.н.}
+        \item \hyperref[thm:cont_mapping]{Теорема 5.3: Теорема о наследовании сходимости}
+        \item \hyperref[cor:conv_char]{Следствие 4.11: Сходимость по распределению через х.ф.}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 1: \hyperref[thm:conv_rel]{Взаимоотношение сходимостей случайных величин}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 12: \hyperref[thm:slutsky_gen]{Теорема Слуцкого}
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{11.tex}
+
+
+
+\section{Билет 12}
+% ==================================================
+% БИЛЕТ 12
+% ==================================================
+\begin{ticketskeleton}{12. Теорема Слуцкого и асимптотический дов. интервал}
+     Теорема Слуцкого (общий случай). Следствие из теоремы Слуцкого. Пример применения теоремы Слуцкого и теоремы о наследования сходимости: построение асимптотического доверительного интервала для неизвестного параметра $p$ в схеме Бернулли.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[thm:slutsky_gen]{Теорема 5.5: Теорема Слуцкого (общий случай)}
+        \item \hyperref[thm:slutsky_cor]{Теорема 5.4: Следствие из теоремы Слуцкого (скалярный)}
+        \item \hyperref[ex:ci_bernoulli]{Упражнение 5.2: Асимптотический доверительный интервал для $p$}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 11: \hyperref[thm:cont_mapping]{Теорема о наследовании сходимости}
+        \item Билет 14: \hyperref[thm:clt]{ЦПТ}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Математическая статистика (Дельта-метод)
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{12.tex}
+
+
+
+
+
+
+\section{Билет 13}
+% ==================================================
+% БИЛЕТ 13
+% ==================================================
+\begin{ticketskeleton}{13. Гауссовские случайные векторы}
+     Гауссовские случайные векторы (многомерное нормальное распределение). Теорема о трех эквивалентных определениях. Следствия: смысл параметров, корректность определения, линейные преобразования, независимость компонент.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:gaussian]{Определение 5.2: Гауссовский вектор}
+        \item \hyperref[thm:three_def]{Теорема 5.6: Теорема о трех эквивалентных определениях}
+        \item \hyperref[cor:gauss_props]{Следствия 5.1--5.4: Смысл параметров, независимость компонент}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 7: \hyperref[def:char_func]{Определение х.ф.}
+        \item Билет 8: \hyperref[thm:indep_crit]{Критерий независимости}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 14: \hyperref[thm:multi_clt]{Многомерная ЦПТ}
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{13.tex}
+
+
+
+
+\section{Билет 14}
+% ==================================================
+% БИЛЕТ 14
+% ==================================================
+\begin{ticketskeleton}{14. Центральная предельная теорема}
+     Центральная предельная теорема для независимых одинаково распределенных случайных величин, смысл ЦПТ. Скорость сходимости в ЦПТ: теорема Берри -- Эссеена (б/д). Многомерная центральная предельная теорема.
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[thm:clt]{Теорема 4.16: ЦПТ для н.о.р.с.в.}
+        \item \hyperref[thm:berry_esseen]{Теорема 4.17: Теорема Берри-Эссеена (скорость сходимости)}
+        \item \hyperref[thm:multi_clt]{Теорема 5.8: Многомерная центральная предельная теорема}
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Билет 10: \hyperref[thm:continuity]{Теорема непрерывности для х.ф.}
+        \item Билет 13: \hyperref[thm:three_def]{Определение гауссовского вектора}
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Билет 12: \hyperref[ex:ci_bernoulli]{Построение асимптотических доверительных интервалов}
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{14.tex}
+
+
+
+
+
+\section{Билет 15}
+% ==================================================
+% БИЛЕТ 15
+% ==================================================
+\begin{ticketskeleton}{15. Условное математическое ожидание}
+     Условное математическое ожидание случайной величины относительно другой случайной величины. Явный вид условного математического ожидания $\E(X|Y)$ в случае, если $Y$ имеет дискретное распределение. Основные свойства условного математического ожидания (10 штук, свойство 8 - б/д).
+
+    \ticketsection{Формулировки внутри билета:}
+    \begin{itemize}
+        \item \hyperref[def:cme_rv]{Определение 6.4: УМО случайной величины относительно другой с.в.}
+        \item \hyperref[eq:cme_discrete]{Формула 6.1: Явный вид УМО в дискретном случае}
+        \item \hyperref[thm:cme_props]{Теорема 6.2: Основные свойства УМО (10 штук)}
+
+    \end{itemize}
+
+    \ticketsection{Опирается на (База):}
+    \begin{itemize}
+        \item Теорема Радона-Никодима и понятие условной вероятности.
+    \end{itemize}
+
+    \ticketsection{Используется в (Следствия):}
+    \begin{itemize}
+        \item Случайные процессы (мартингалы), условные распределения.
+    \end{itemize}
+\end{ticketskeleton}
+
+\import{ticket/}{15.tex}
+
+
+
+\end{document}

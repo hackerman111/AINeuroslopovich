@@ -1,0 +1,196 @@
+\subsection*{Глава 5. Сходимости случайных векторов}
+
+В настоящей главе мы обсудим сходимости случайных векторов, а также ряд инструментов, позволяющих с ними работать.
+
+\vspace{1em}
+\subsection*{5.1 Основные виды сходимостей и их взаимоотношение}
+
+Начнем с определений, которые естественным образом обобщают соответствующие виды сходимостей случайных величин.
+
+\vspace{1em}
+\begin{definition}{Виды сходимостей случайных векторов}{vector_conv}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}, \xi$ --- случайные векторы размерности $m$ на вероятностном пространстве $(\Omega, \mathcal{F}, \P)$. Тогда последовательность $\xi_n$ сходится к $\xi$
+    
+    \vspace{0.5em}
+    1. с вероятностью 1 (почти наверное), если 
+    $$ \P(\lim_{n\to+\infty} \xi_n = \xi) = 1. $$
+    Обозначение: $\xi_n \xrightarrow{\text{п.н.}} \xi$.
+    
+    \vspace{0.5em}
+    2. по вероятности, если $\forall \varepsilon > 0$ выполнено 
+    $$ \P(\|\xi_n - \xi\|_2 \ge \varepsilon) \longrightarrow 0 \text{ при } n \to \infty, $$
+    где $\|x\|_2 = \sqrt{x_1^2 + \dots + x_m^2}$ для $x \in \mathbb{R}^m$. Обозначение: $\xi_n \xrightarrow{\P} \xi$.
+    
+    \vspace{0.5em}
+    3. в среднем порядка $p > 0$ (в пространстве $L^p$), если 
+    $$ \E(\|\xi_n - \xi\|_p)^p \longrightarrow 0 \text{ при } n \to \infty, $$
+    где $\|x\|_p = \sqrt[p]{|x_1|^p + \dots + |x_m|^p}$ для $x \in \mathbb{R}^m$. Обозначение: $\xi_n \xrightarrow{L^p} \xi$.
+    
+    \vspace{0.5em}
+    4. по распределению, если для любой ограниченной непрерывной функции $f : \mathbb{R}^m \to \mathbb{R}$ выполнено 
+    $$ \E f(\xi_n) \longrightarrow \E f(\xi) \text{ при } n \to \infty. $$
+    Обозначение: $\xi_n \xrightarrow{d} \xi$.
+\end{definition}
+
+\vspace{1em}
+Отметим, что первые три вида сходимостей не дают ничего принципиально нового по сравнению с одномерными сходимостями. А именно, сходимость векторов просто эквивалентна соответствующим сходимостям всех координат.
+
+\vspace{1em}
+\begin{proposition}{Взаимосвязь многомерной сходимости и одномерных}{vector_comp}
+    Если $\xi = (\xi^{(1)}, \dots, \xi^{(m)})$, $\xi_n = (\xi_n^{(1)}, \dots, \xi_n^{(m)})$, то
+    
+    1. $\xi_n \xrightarrow{\text{п.н.}} \xi \iff$ для всех $i = 1, \dots, m$ выполнено $\xi_n^{(i)} \xrightarrow{\text{п.н.}} \xi^{(i)}$;
+    
+    2. $\xi_n \xrightarrow{\P} \xi \iff$ для всех $i = 1, \dots, m$ выполнено $\xi_n^{(i)} \xrightarrow{\P} \xi^{(i)}$;
+    
+    3. $\xi_n \xrightarrow{L^p} \xi \iff$ для всех $i = 1, \dots, m$ выполнено $\xi_n^{(i)} \xrightarrow{L^p} \xi^{(i)}$.
+\end{proposition}
+
+\begin{proofbox}
+    1. Очевидно, ввиду того, что обычная сходимость векторов в $\mathbb{R}^m$ и есть сходимость всех координат, а пересечение конечного набора событий вероятности 1 тоже имеет вероятность 1.
+
+    \vspace{0.5em}
+    2. ($\Rightarrow$) Заметим, что для любого $i = 1, \dots, m$ и любого $\varepsilon > 0$
+    $$ \P(|\xi_n^{(i)} - \xi^{(i)}| \ge \varepsilon) \le \P(\|\xi_n - \xi\|_2 \ge \varepsilon) \longrightarrow 0 \text{ при } n \to \infty. $$
+    Значит, $\xi_n^{(i)} \xrightarrow{\P} \xi^{(i)}$.
+
+    ($\Leftarrow$) Воспользуемся стандартным неравенством: $\|x\|_2 \le \sqrt{m} \max_{i=1,\dots,m} |x_i|$ для любого $x \in \mathbb{R}^m$. Тогда для любого $\varepsilon > 0$
+    $$ \P(\|\xi_n - \xi\|_2 \ge \varepsilon) \le \sum_{i=1}^m \P\left(|\xi_n^{(i)} - \xi^{(i)}| \ge \frac{\varepsilon}{\sqrt{m}}\right) \longrightarrow 0 \text{ при } n \to \infty. $$
+    Значит, $\xi_n \xrightarrow{\P} \xi$.
+
+    \vspace{0.5em}
+    3. Здесь почти все очевидно. Заметим, что для любого $i = 1, \dots, m$ и любого $x = (x_1, \dots, x_m) \in \mathbb{R}^m$ выполнено
+    $$ |x_i|^p \le (\|x\|_p)^p = \sum_{i=1}^m |x_i|^p, $$
+    а потому, если $\E(\|\xi_n - \xi\|_p)^p \longrightarrow 0$, то и каждое $\E|\xi_n^{(i)} - \xi^{(i)}|^p \longrightarrow 0$. И, наоборот, если для всех $i = 1, \dots, m$ выполнено $\E|\xi_n^{(i)} - \xi^{(i)}|^p \longrightarrow 0$, то и $\E(\|\xi_n - \xi\|_p)^p \longrightarrow 0$.
+\end{proofbox}
+
+\vspace{1em}
+Однако для сходимости по распределению ситуация становится не такой тривиальной. Сходимость векторов обеспечивает покомпонентную сходимость по распределению, но обратное, вообще говоря, неверно. Данное утверждение мы оставим читателю в виде упражнения.
+
+\begin{remark}[Упражнение 5.1]
+    Докажите, что если $\xi = (\xi^{(1)}, \dots, \xi^{(m)})$, $\xi_n = (\xi_n^{(1)}, \dots, \xi_n^{(m)})$ и выполнено $\xi_n \xrightarrow{d} \xi$, то для любого $i = 1, \dots, m$ выполнено $\xi_n^{(i)} \xrightarrow{d} \xi^{(i)}$. Приведите пример, показывающий, что обратное утверждение может быть неверно.
+\end{remark}
+
+\vspace{1em}
+Взаимоотношение различных видов сходимостей случайных векторов в многомерном случае ровно такое же, как и в одномерном. Сформулируем это в виде аналогичной теоремы.
+
+\vspace{1em}
+\begin{theorem}{Взаимоотношение сходимостей}{conv_rel}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}, \xi$ --- случайные векторы размерности $m$ на вероятностном пространстве $(\Omega, \mathcal{F}, \P)$.
+    
+    1. Если $\xi_n \xrightarrow{\text{п.н.}} \xi$, то $\xi_n \xrightarrow{\P} \xi$.
+    
+    2. Если $\xi_n \xrightarrow{L^p} \xi$, то $\xi_n \xrightarrow{\P} \xi$.
+    
+    3. Если $\xi_n \xrightarrow{\P} \xi$, то $\xi_n \xrightarrow{d} \xi$.
+\end{theorem}
+
+\begin{proofbox}
+    Первый и второй пункт теоремы сразу следуют из утверждения 5.1 и теоремы 4.1, поэтому докажем только третий.
+
+    Нам необходимо проверить сходимость по распределению $\xi_n \xrightarrow{d} \xi$. Пусть $f(x) : \mathbb{R}^m \to \mathbb{R}$ --- ограниченная непрерывная функция, пусть $|f(x)| \le c$ для всех $x \in \mathbb{R}^m$. Зафиксируем произвольное $\varepsilon > 0$. Выберем $N$ так, чтобы
+    $$ \P(\|\xi\|_2 > N) \le \frac{\varepsilon}{4c}. $$
+    В шаре радиуса $N$ с центром в нуле $f(x)$ равномерно непрерывна, т.е. существует такое $\delta > 0$, что для любых $x, y$ с условиями $\|x\|_2 \le N, \|x - y\|_2 \le \delta$ выполнено
+    $$ |f(x) - f(y)| \le \frac{\varepsilon}{2}. $$
+    
+    Рассмотрим следующее разбиение $\Omega$ :
+    \begin{align*}
+        A_1 &= \{\|\xi_n - \xi\|_2 \le \delta\} \cap \{\|\xi\|_2 \le N\}, \\
+        A_2 &= \{\|\xi_n - \xi\|_2 \le \delta\} \cap \{\|\xi\| > N\}, \\
+        A_3 &= \{\|\xi_n - \xi\|_2 > \delta\}.
+    \end{align*}
+    
+    Тогда
+    $$ |\E f(\xi_n) - \E f(\xi)| \le \E|f(\xi_n) - f(\xi)| \le \E \left[ |f(\xi_n) - f(\xi)| (\I_{A_1} + \I_{A_2} + \I_{A_3}) \right]. $$
+    
+    На множестве $A_1$ выполнено $|f(\xi_n) - f(\xi)| \le \frac{\varepsilon}{2}$, значит,
+    $$ \E|f(\xi_n) - f(\xi)|\I_{A_1} \le \frac{\varepsilon}{2}. $$
+    
+    На множествах $A_2, A_3$ выполнено $|f(\xi_n) - f(\xi)| \le 2c$, значит,
+    $$ \E|f(\xi_n) - f(\xi)|(\I_{A_2} + \I_{A_3}) \le 2c \cdot (\P(A_2) + \P(A_3)). $$
+    
+    В итоге,
+    \begin{align*}
+        |\E f(\xi_n) - \E f(\xi)| &\le \frac{\varepsilon}{2} + 2c (\P(A_2) + \P(A_3)) \le \\
+        &\le \frac{\varepsilon}{2} + 2c (\P(|\xi| > N) + 2c \cdot \P(|\xi_n - \xi| > \delta) \le \\
+        &\le | \text{ выбор } N| \le \frac{\varepsilon}{2} + \frac{\varepsilon}{2} + 2c \cdot \P(|\xi_n - \xi| > \delta) = \\
+        &= \varepsilon + 2c \cdot \P(|\xi_n - \xi| > \delta).
+    \end{align*}
+    Но $\P(\|\xi_n - \xi\|_2 > \delta) \to 0$ при $n \to +\infty$, т.к. $\xi_n \xrightarrow{\P} \xi$. Значит, для любого $\varepsilon > 0$ выполнено
+    $$ \varlimsup_n |\E f(\xi_n) - \E f(\xi)| \le \varepsilon. $$
+    Стало быть, $\E f(\xi_n) \to \E f(\xi)$, и $\xi_n \xrightarrow{d} \xi$.
+\end{proofbox}
+
+\begin{remark}[Замечание 5.1]
+    Обратных "стрелок" в общем случае в теореме 5.1 нет, как и в одномерном случае. Слушатели могут самостоятельно придумать соответствующие примеры.
+\end{remark}
+
+\vspace{1em}
+Как мы помним, в одномерном случае сходимость по распределению определялась, как поточечная сходимость функций распределения в точках непрерывности предельной функции. Оказывается, и в многомерном случае данная эквивалентность выполнена. \hypertarget{cor:conv_char}{}
+
+\begin{theorem}{Эквивалентность сходимостей через ф.р.}{conv_char}
+    Если $\{\xi_n, n \in \mathbb{N}\}, \xi$ --- случайные векторы из $\mathbb{R}^m$, то $\xi_n \xrightarrow{d} \xi$ тогда и только тогда, когда $F_{\xi_n}(x) \to F_{\xi}(x)$ для всех $x \in \mathcal{C}(F)$, где $\mathcal{C}(F)$ --- множество точек непрерывности ф.р. $F_{\xi}(x)$.
+\end{theorem}
+
+\vspace{1em}
+Доказательство теоремы 5.2 можно найти в [5]. Она хорошо показывает, что сходимость по распределению случайных величин является, на самом деле, сходимостью соответствующих распределений. Вспоминая теорему Александрова 4.6, получаем, что
+$$ \xi_n \xrightarrow{d} \xi \iff \P_{\xi_n} \xrightarrow{w} \P_{\xi} \iff \P_{\xi_n} \implies \P_{\xi}, $$
+где $\P_{\xi_n}$ и $\P_{\xi}$ --- это распределения $\xi_n$ и $\xi$, соответственно.
+
+\vspace{2em}
+\subsection*{5.2 Инструменты работы со сходимостями}
+
+Перейдем к обсуждению основных инструментов, позволяющих работать со сходимостями. Ключевым утверждением здесь является теорема о наследовании сходимости. Для ее доказательства нам понадобится следующий факт, напрямую вытекающий из свойства сходимости по вероятности.
+
+\vspace{1em}
+\begin{lemma}{Существование сходящейся п.н. подпоследовательности}{subseq_prob}
+    Если последовательность сходится по вероятности $\xi_{n_k} \xrightarrow{\P} \xi$, то существует подпоследовательность, сходящаяся почти наверное: $\xi_{n_{k_s}} \xrightarrow{\text{п.н.}} \xi$ при $s \to \infty$.
+\end{lemma}
+
+\vspace{1em}
+\begin{theorem}{О наследовании сходимости}{cont_mapping}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}, \xi$ --- случайные векторы размерности $m$. Пусть $h(x) : \mathbb{R}^m \to \mathbb{R}^k$ --- функция, непрерывная почти всюду относительно распределения $\xi$ (т.е. существует такое $B \in \mathcal{B}(\mathbb{R}^m)$, что $h$ непрерывна на $B$ и $\P(\xi \in B) = 1$). Тогда
+    
+    1) если $\xi_n \xrightarrow{\text{п.н.}} \xi$, то $h(\xi_n) \xrightarrow{\text{п.н.}} h(\xi)$,
+    
+    2) если $\xi_n \xrightarrow{\P} \xi$, то $h(\xi_n) \xrightarrow{\P} h(\xi)$,
+    
+    3) если $\xi_n \xrightarrow{d} \xi$, то $h(\xi_n) \xrightarrow{d} h(\xi)$.
+\end{theorem}
+
+\begin{proofbox}
+    1) Заметим, что
+    \begin{align*}
+        \P(\lim_{n\to\infty} h(\xi_n) = h(\xi)) &\ge \P(\lim_{n\to\infty} h(\xi_n) = h(\xi), \xi \in B) \ge \\
+        &\ge | \text{т.к. } h \text{ непр. на } B | \ge \P(\lim_{n\to\infty} \xi_n = \xi, \xi \in B) = 1,
+    \end{align*}
+    т.к. оба события имеют полную вероятность.
+
+    \vspace{0.5em}
+    2) Пусть $h(\xi_n) \not\xrightarrow{\P} h(\xi)$. Тогда существуют такие $\varepsilon_0, \delta_0 > 0$ и подпоследовательность $\{\xi_{n_k}, k \in \mathbb{N}\}$, что для любого $k \in \mathbb{N}$
+    $$ \P(\|h(\xi_{n_k}) - h(\xi)\|_2 \ge \varepsilon_0) \ge \delta_0. $$
+    Но $\xi_{n_k} \xrightarrow{\P} \xi$, значит, по \hyperref[lem:subseq_prob]{лемме 4.2} существует подпоследовательность, сходящаяся почти наверное: $\xi_{n_{k_s}} \xrightarrow{\text{п.н.}} \xi$ при $s \to \infty$. Согласно пункту 1) получаем, что $h(\xi_{n_{k_s}}) \xrightarrow{\text{п.н.}} h(\xi)$. Значит, $h(\xi_{n_{k_s}}) \xrightarrow{\P} h(\xi)$ при $s \to \infty$. Противоречие с выбором подпоследовательности $\xi_{n_k}$.
+
+    \vspace{0.5em}
+    3) Обозначим через $\mathbb{Q}_n$ распределение $h(\xi_n)$, а через $\mathbb{Q}$ --- распределение $h(\xi)$. Мы хотим показать, что $\mathbb{Q}_n \xrightarrow{w} \mathbb{Q}$. По теореме Александрова достаточно показать, что для любого замкнутого $F \subset \mathbb{R}^k$ выполнено
+    $$ \varlimsup_n \mathbb{Q}_n(F) \le \mathbb{Q}(F). $$
+    Имеем,
+    \begin{align*}
+        \varlimsup_n \mathbb{Q}_n(F) &= \varlimsup_n \P_{\xi_n}(h^{-1}(F)) \le \varlimsup_n \P_{\xi_n}([h^{-1}(F)]) \le \\
+        &\le | \text{т.к. } \P_{\xi_n} \xrightarrow{w} \P_{\xi} | \le \P_{\xi}([h^{-1}(F)]).
+    \end{align*}
+    Но в силу замкнутости $F$
+    $$ [h^{-1}(F)] \subset \overline{B} \cup h^{-1}(F). $$
+    Действительно, если $x_n \to x, x \in B$ и для всех $n$ выполнено $x_n \in h^{-1}(F)$, то $h(x_n) \in F$ и в силу непрерывности $h$ на $B$ получаем, что $h(x_n) \to h(x)$, т.е. $h(x) \in F$. Учитывая, что $\P_{\xi}(\overline{B}) = 0$, получаем, что $\P_{\xi}([h^{-1}(F)]) = \P_{\xi}(h^{-1}(F)) = \mathbb{Q}(F)$.
+\end{proofbox}
+
+\begin{remark}[Замечание 5.2]
+    Отметим, что если в пункте 3) функция $h$ является непрерывной везде, то доказательство утверждения становится совсем простым, ведь для любой непрерывной ограниченной функции $f : \mathbb{R}^k \to \mathbb{R}$ композиция $g = f \circ h : \mathbb{R}^m \to \mathbb{R}$ также является непрерывной ограниченной и мы сразу получаем сходимость $\E f(h(\xi_n)) \to \E f(h(\xi))$.
+\end{remark}
+
+\vspace{1em}
+Смысл теоремы о наследовании совершенно понятен. Если мы берем непрерывную функцию от сходящейся последовательности, то сходимость новых случайных величин или векторов наследуется. Безусловно, для применений наиболее удобен случай $k = 1$, когда мы берем одномерные функционалы от случайных векторов.
+
+\begin{corollary}{Сходимость по распределению через х.ф.}{conv_char}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}, \xi$ --- случайные величины. Тогда $\xi_n \toD \xi$ тогда и только тогда, когда для любого $t \in \mathbb{R}$ выполнено $\varphi_{\xi_n}(t) \to \varphi_\xi(t)$.
+\end{corollary}

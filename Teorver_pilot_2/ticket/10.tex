@@ -1,0 +1,93 @@
+
+Среди метрических пространств нас будут интересовать, в первую очередь, $(\mathbb{R}, \mathcal{B}(\mathbb{R}))$ и $(\mathbb{R}^n, \mathcal{B}(\mathbb{R}^{n}))$. Выведем из теоремы Александрова эквивалентность сходимостей вероятностных мер и соответствующих им функций распределения на прямой.
+
+\mkthm{Эквивалентность сходимостей}{equiv_conv}{
+    Для вероятностных мер $\{\P_n, n \in \mathbb{N}\}$, $\P$ на $(\mathbb{R}, \mathcal{B}(\mathbb{R}))$ и для соответствующих им ф.р. $\{F_n, n \in \mathbb{N}\}$, $F(x)$ следующие свойства эквивалентны:
+    
+    1. $\P_n \xrightarrow{w} \P$,
+    
+    2. $\P_n \Rightarrow \P$,
+    
+    3. $F_n \xrightarrow{w} F$,
+    
+    4. $F_n \Rightarrow F$.
+}
+
+\mkproof{
+    По теореме Александрова (1) $\Leftrightarrow$ (2).
+
+    Эквивалентность (1) $\Leftrightarrow$ (3) также почти очевидна в силу равенства интегралов
+    $$
+    \int\limits_{\mathbb{R}} f(x)\P_n(dx) = \int\limits_{\mathbb{R}} f(x)dF_n(x).
+    $$
+
+    Осталось лишь установить эквивалентность пунктов (2) и (4).
+
+    (2)$\Rightarrow$(4) Пусть выполнено (2). Если $\P_n \Rightarrow \P$, то $\forall x \in \mathbb{R}$ т.,ч. $\P(\{x\}) = 0$, выполнено
+    $$
+    \P_n((-\infty, x]) \longrightarrow \P((-\infty, x]).
+    $$
+    Но это в точности означает, что $F_n(x) \longrightarrow F(x)$ для подобных точек $x$. Осталось только заметить, что $\P(\{x_0\}) = 0$ тогда и только тогда, когда $F(x)$ не имеет скачка в точке $x_0$, т.е. когда $F(x)$ непрерывна в т. $x_0$.
+
+    (4)$\Leftarrow$ (2) Покажем, что $\liminf_n \P_n(A) \ge \P(A)$ для любого открытого $A \subset \mathbb{R}$. По теореме Александрова этого будет достаточно для доказательства (2). Если $A \subset \mathbb{R}$ --- открыто, то имеет место представление: $A = \bigsqcup_{k=1}^\infty I_k$, где $I_k = (a_k, b_k)$ --- непересекающиеся интервалы.
+
+    Пусть $\varepsilon > 0$. Выберем в интервале $I_k = (a_k, b_k)$ полуинтервал $I_k' = (a_k', b_k']$ так, чтобы $a_k'$ и $b_k'$ были точками непрерывности $F(x)$ и при этом
+    $$
+    \P((a_k, b_k)) \le \P(I_k') + \frac{\varepsilon}{2^k}.
+    $$
+    Такой выбор возможен (даже если $a_k = -\infty$ или $b_k = +\infty$) в силу непрерывности вероятностной меры и того факта, что $F(x)$ имеет не более чем счетное число точек разрыва. Таким образом, для любого $N \in \mathbb{N}$
+    \begin{align*}
+        \liminf_n \P_n(A) &= \liminf_n \sum_{k=1}^\infty \P_n(I_k) \ge \liminf_n \sum_{k=1}^N \P_n(I_k) \ge \\
+        &\ge \liminf_n \sum_{k=1}^N \P_n(I_k') \ge \sum_{k=1}^N \liminf_n \P_n(I_k').
+    \end{align*}
+
+    Устремляя $N \to +\infty$, получаем, что
+    $$
+    \liminf_n \P_n(A) \ge \sum_{k=1}^\infty \liminf_n \P_n(I_k').
+    $$
+    Но $\P_n(I_k') = F_n(b_k') - F_n(a_k') \to F(b_k') - F(a_k')$ при $n \to \infty$, т.к. $F_n \Rightarrow F$. Стало быть,
+    \begin{align*}
+        \liminf_n \P_n(A) &\ge \sum_{k=1}^\infty (F(b_k') - F(a_k')) = \sum_{k=1}^\infty \P(I_k') \ge |\text{выбор } I_k'| \ge \\
+        &\ge \sum_{k=1}^\infty \left( \P(I_k) - \frac{\varepsilon}{2^k} \right) = \P(A) - \varepsilon.
+    \end{align*}
+
+    В силу произвольности $\varepsilon$ получаем искомое неравенство: для любого открытого $A \in \mathbb{R}$
+    $$
+    \liminf_n \P_n(A) \ge \P(A).
+    $$
+}
+
+
+Теорема \hyperref[cor:equiv_conv]{о эквивалентности сходимостей} дает нам следующее эквивалентное определение сходимости по распределению случайных величин.
+
+\mkcor{Эквивалентное определение сходимости по распределению}{equiv_dist}{
+    Последовательность с.в. $\{\xi_n, n \in \mathbb{N}\}$ сходится по распределению к с.в. тогда и только тогда, когда для любой непрерывной ограниченной функции $f \colon \mathbb{R} \to R$ выполнено
+    $$
+    \E f(\xi_n) \longrightarrow \E f(\xi) \quad \text{при } n \to \infty.
+    $$
+}
+
+\mkproof{
+    Как мы помним, $\xi_n \xrightarrow{d} \xi$ тогда и только тогда, когда $F_{\xi_n} \Rightarrow F_\xi$. По теореме 4.7 последнее эквивалентно тому, что слабо сходятся распределения: $\P_{\xi_n} \xrightarrow{w} \P_\xi$. Но по определению слабой сходимости это означает, что для любой непрерывной ограниченной функции $f \colon \mathbb{R} \to \mathbb{R}$ выполнено
+    $$
+    \E f(\xi_n) = \int\limits_{\mathbb{R}} f(x)\P_{\xi_n}(dx) \longrightarrow \int\limits_{\mathbb{R}} f(x)\P_\xi(dx) = \E f(\xi).
+    $$
+}
+
+\mkrem{
+    Следствие \hyperref[cor:equiv_dist]{10.1} и теорема \hyperref[thm:equiv_conv]{10.1} показывают, чему эквивалентна сходимость по распределению случайных величин:
+    $$
+    \xi_n \xrightarrow{d} \xi \Leftrightarrow F_{\xi_n} \Rightarrow F_\xi \Leftrightarrow \P_{\xi_n} \xrightarrow{w} \P_\xi.
+    $$
+}
+
+Наконец, мы готовы сформулировать и доказать теорему непрерывности для характеристических функций.
+
+\mkthm{Теорема непрерывности для х.ф.}{continuity}{
+    Пусть $\{\P_n, n \in \mathbb{N}\}$ --- последовательность вероятностных мер на $(\mathbb{R}, \mathcal{B}(\mathbb{R}))$, а $\{\varphi_n(t), n \in \mathbb{N}\}$ --- соответствующие им х.ф.
+    
+    1) Если $\P_n \xrightarrow{w} \P$, то для любого $t \in \mathbb{R}$ выполнено $\varphi_n(t) \to \varphi(t)$, где $\varphi(t)$ --- х.ф. $\P$.
+    
+    2) Если для любого $t \in \mathbb{R}$ существует предел $\lim_{n \to \infty} \varphi_n(t)$, причем функция $\varphi(t) = \lim_{n \to \infty} \varphi_n(t)$ непрерывна в нуле, то $\varphi(t)$ является х.ф. некоторой вероятностной меры $\P$ и $\P_n \xrightarrow{w} \P$.
+}
+

@@ -1,0 +1,159 @@
+\vspace{1em}
+
+Дадим определение характеристической функции случайной и случайного вектора.
+
+\mkdef{Характеристическая функция случайной величины}{char_func}{
+    Пусть $\xi$ --- случайная величина на вероятностном пространстве $(\Omega, \mathcal{F}, \P)$. Её характеристической функцией (х.ф.) называется
+    \begin{align*}
+        \varphi_\xi(t) &= \E e^{it\xi}, \quad t \in \mathbb{R}.
+    \end{align*}
+}
+
+\mkrem{
+    Характеристическая функция случайной величины является в общем случае комплекснозначной. Формально мы можем понимать $\E e^{it\xi}$ как сумму вещественной и мнимой частей $\E \cos t\xi + i \E \sin t\xi$. Однако, как несложно проверить, все разумные свойства математического ожидания для комплекснозначных случайных величин будут выполнены, что позволяет свободно оперировать им.
+}
+
+\mkdef{Характеристическая функция случайного вектора}{char_vec}{
+    Пусть $\xi = (\xi_1, \dots, \xi_n)$ --- случайный вектор. Его характеристической функцией называется
+    \begin{align*}
+        \varphi_\xi(t) &= \E e^{i\langle t, \xi \rangle}, \quad t = (t_1, \dots, t_n) \in \mathbb{R}^n,
+    \end{align*}
+    где $\langle t, \xi \rangle = \sum_{k=1}^n t_k \xi_k$.
+}
+
+\vspace{1em}
+\hypertarget{ex:char_calc}{}
+Прежде чем переходить к обсуждению свойств характеристических функций, приведем несколько примеров их вычисления.
+
+1. Пусть $\xi \sim \text{Pois}(\lambda)$ --- пуассоновская с.в., найдем ее характеристическую функцию:
+\begin{align*}
+    \varphi_\xi(t) &= \E e^{it\xi} = \sum_{k=0}^\infty e^{itk} \frac{\lambda^k}{k!} e^{-\lambda} = \sum_{k=0}^\infty \frac{(e^{it}\lambda)^k}{k!} e^{-\lambda} = e^{e^{it}\lambda} e^{-\lambda} = e^{\lambda(e^{it}-1)}.
+\end{align*}
+
+2. Пусть $\xi \sim \text{Exp}(\lambda)$ --- экспоненциальная с.в., найдем ее характеристическую функцию:
+\begin{align*}
+    \varphi_\xi(t) &= \E e^{it\xi} = \int_0^\infty e^{itx} \lambda e^{-\lambda x} dx = \lambda \int_0^\infty e^{(it-\lambda)x} dx = \lambda \left. \frac{e^{(it-\lambda)x}}{it - \lambda} \right|_0^\infty = \frac{\lambda}{\lambda - it}.
+\end{align*}
+
+3. Пусть $\xi \sim \mathcal{N}(0, 1)$ --- стандартная нормальная с.в., найдем ее характеристическую функцию. В силу нечетности синуса получаем представление:
+\begin{align*}
+    \varphi_\xi(t) &= \E e^{it\xi} = \int_{\mathbb{R}} e^{itx} \cdot \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} dx = \int_{\mathbb{R}} \cos(tx) \cdot \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} dx.
+\end{align*}
+
+Продифференцируем $\varphi_\xi(t)$ и проинтегрируем по частям:
+\begin{align*}
+    \varphi'_\xi(t) &= \int_{\mathbb{R}} \sin(tx)(-x) \cdot \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} dx \\
+    &= \left. \sin(tx) \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} \right|_{-\infty}^{+\infty} - t \int_{\mathbb{R}} \cos(tx) \cdot \frac{1}{\sqrt{2\pi}} e^{-\frac{x^2}{2}} dx \\
+    &= -t \cdot \varphi_\xi(t).
+\end{align*}
+
+Мы получили дифференциальное уравнение $\varphi'_\xi(t) = -t \cdot \varphi_\xi(t)$ или $(\ln \varphi_\xi(t))' = -t$. Значит, $\varphi_\xi(t) = C \cdot e^{-t^2/2}$ для некоторой $C > 0$. С учетом начального условия $\varphi_\xi(0) = 1$, ответ равен
+\begin{align*}
+    \varphi_\xi(t) &= e^{-\frac{t^2}{2}}.
+\end{align*}
+
+4. Пусть $\xi \sim \text{Bin}(n, p)$ --- биномиальная случайная величина, найдем ее характеристическую функцию.
+
+Вычисление можно провести двумя способами. 
+
+Первый способ (через сумму независимых величин):
+Случайную величину $\xi$ можно представить как сумму $n$ независимых случайных величин $\eta_k \sim \text{Bern}(p)$, принимающих значение $1$ с вероятностью $p$ и $0$ с вероятностью $q = 1 - p$.
+Характеристическая функция одной величины $\eta_k$ равна:
+\begin{align*}
+    \varphi_{\eta_k}(t) &= \E e^{it\eta_k} = e^{it \cdot 1} \P(\eta_k = 1) + e^{it \cdot 0} \P(\eta_k = 0) = pe^{it} + q.
+\end{align*}
+
+В силу свойства 7 (о характеристической функции суммы независимых величин), получаем:
+\begin{align*}
+    \varphi_\xi(t) &= \varphi_{\eta_1 + \dots + \eta_n}(t) = \prod_{k=1}^n \varphi_{\eta_k}(t) = (pe^{it} + q)^n.
+\end{align*}
+
+Второй способ (прямое вычисление):
+Воспользуемся определением математического ожидания и формулой бинома Ньютона:
+\begin{align*}
+    \varphi_\xi(t) &= \E e^{it\xi} = \sum_{k=0}^n e^{itk} \P(\xi = k) = \sum_{k=0}^n e^{itk} \binom{n}{k} p^k q^{n-k} \\
+    &= \sum_{k=0}^n \binom{n}{k} (pe^{it})^k q^{n-k} = (pe^{it} + q)^n.
+\end{align*}
+
+\vspace{1em}
+Перейдем к обсуждению основных свойств характеристических функций случайных величин.
+
+\mklem{Основные свойства х.ф.}{char_props}{
+    Пусть $\varphi(t)$ --- х.ф. с.в. $\xi$.
+    
+    1. Для любого $t \in \mathbb{R}$ выполнено неравенство
+    \begin{align*}
+        |\varphi(t)| &\le \varphi(0) = 1.
+    \end{align*}
+    
+    2. Если $\eta = a\xi + b$, где $a, b \in \mathbb{R}$. Тогда
+    \begin{align*}
+        \varphi_\eta(t) &= e^{itb}\varphi(at).
+    \end{align*}
+    
+    3. Функция $\varphi(t)$ равномерно непрерывна на $\mathbb{R}$.
+    
+    4. Выполнено равенство $\varphi(t) = \overline{\varphi(-t)}$ (комплексное сопряжение).
+    
+    5. Единственность. Х.ф. случайных величин $\xi$ и $\eta$ совпадают тогда и только тогда, когда $\xi \stackrel{d}{=} \eta$.
+    
+    6. Функция $\varphi(t)$ является действительнозначной тогда и только тогда, когда распределение $\xi$ симметрично, т.е. для любого $B \in \mathcal{B}(\mathbb{R})$
+    \begin{align*}
+        \P(\xi \in B) &= \P(-\xi \in B) \quad (\xi \stackrel{d}{=} -\xi).
+    \end{align*}
+    
+    7. Пусть $\xi_1, \dots, \xi_n$ --- независимые с.в., $S_n = \xi_1 + \dots + \xi_n$. Тогда
+    \begin{align*}
+        \varphi_{S_n}(t) &= \prod_{k=1}^n \varphi_{\xi_k}(t).
+    \end{align*}
+}
+
+\mkproof{
+    1. Пользуемся простыми неравенствами и свойствами комплексных чисел:
+    \begin{align*}
+        |\varphi(t)|^2 &= |\E e^{it\xi}|^2 = (\E \cos(t\xi))^2 + (\E \sin(t\xi))^2 \\
+        &\le \E \cos^2(t\xi) + \E \sin^2(t\xi) = 1.
+    \end{align*}
+    Равенство $\varphi(0) = \E e^{0i\xi} = 1$ очевидно.
+    
+    2. Выполнено
+    \begin{align*}
+        \varphi_\eta(t) &= \E e^{it\eta} = \E e^{it(a\xi + b)} = e^{itb} \E e^{i(at)\xi} = e^{itb} \varphi(at).
+    \end{align*}
+    
+    3. Рассмотрим
+    \begin{align*}
+        |\varphi(t + h) - \varphi(t)| &= |\E e^{i(t+h)\xi} - \E e^{it\xi}| = |\E[e^{it\xi}(e^{ih\xi} - 1)]| \\
+        &\le \E|e^{it\xi}(e^{ih\xi} - 1)| = \E|e^{ih\xi} - 1|.
+    \end{align*}
+    Ясно, что $|e^{ih\xi} - 1| \to 0$ п.н. при $h \to 0$. При этом, $|e^{ih\xi} - 1| \le 2$. По теореме Лебега о мажорируемой сходимости.
+    \begin{align*}
+        \E|e^{ih\xi} - 1| &\to 0 \text{ при } h \to 0.
+    \end{align*}
+    Значит, $\varphi(t)$ равномерно непрерывна на $\mathbb{R}$.
+    
+    4. Выполнено
+    \begin{align*}
+        \varphi(t) &= \E e^{it\xi} = \E \overline{e^{-it\xi}} = \overline{\E e^{-it\xi}} = \overline{\varphi(-t)}.
+    \end{align*}
+    
+    5. Докажем позже в теореме 4.10.
+    
+    6. ($\Rightarrow$) По свойствам 2) и 4) х.ф. $-\xi$ равна
+    \begin{align*}
+        \varphi_{-\xi}(t) &= \varphi_\xi(-t) = \overline{\varphi_\xi(-t)} = \varphi_\xi(t).
+    \end{align*}
+    По свойству 5) это означает, что распределения $\xi$ и $-\xi$ совпадают.
+    
+    ($\Leftarrow$) Раз $\xi \stackrel{d}{=} -\xi$, то их х.ф. равны. Отсюда по свойствам 2) и 4) получаем:
+    \begin{align*}
+        \varphi_\xi(t) &= \varphi_{-\xi}(t) = \varphi_\xi(-t) = \overline{\varphi_\xi(t)} \in \mathbb{R}.
+    \end{align*}
+    
+    7. Выполнено
+    \begin{align*}
+        \varphi_{S_n}(t) &= \E e^{iS_n t} = \E e^{i(\xi_1 + \dots + \xi_n)t} = \E\left(e^{i\xi_1 t} \cdot \dots \cdot e^{i\xi_n t}\right) \\
+        &= |\text{независимость}| = \E e^{i\xi_1 t} \cdot \dots \cdot \E e^{i\xi_n t} = \prod_{k=1}^n \varphi_{\xi_k}(t).
+    \end{align*}
+}
+

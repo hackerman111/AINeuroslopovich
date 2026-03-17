@@ -1,0 +1,95 @@
+Применим метод характеристических функций к доказательству одного из важнейших утверждений теории вероятностей --- центральной предельной теоремы.
+
+Сформулируем и докажем центральную предельную теорему.
+
+\begin{theorem}{Центральная предельная теорема}{clt}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ --- последовательность независимых одинаково распределенных случайных величин (н.о.р.с.в.), причем $0 < \D \xi_n < \infty$. Обозначим $S_n = \xi_1 + \dots + \xi_n$. Тогда
+    $$ \frac{S_n - \E S_n}{\sqrt{\D S_n}} \xrightarrow{d} \mathcal{N}(0, 1). $$
+\end{theorem}
+
+\begin{proofbox}
+    Положим $a = \E \xi_i$, $\sigma^2 = \D \xi_i$. Обозначим $\eta_i = \frac{\xi_i - a}{\sigma}$. Тогда $\E \eta_i = 0$, $\D \eta_i = 1$, они независимы и одинаково распределены. Кроме того,
+    $$ \frac{S_n - \E S_n}{\sqrt{\D S_n}} = \frac{\xi_1 + \dots + \xi_n - na}{\sqrt{n\sigma^2}} = \frac{\eta_1 + \dots + \eta_n}{\sqrt{n}}. $$
+    
+    Согласно следствию 4.11 из теоремы непрерывности нам достаточно показать, что х.ф. $\zeta_n = \frac{\eta_1 + \dots + \eta_n}{\sqrt{n}}$ сходится к $e^{-\frac{t^2}{2}}$ при $n \to +\infty$, то есть к х.ф. $\mathcal{N}(0, 1)$. Имеем:
+    
+    \begin{align*}
+    \varphi_{\zeta_n}(t) &= \E e^{i \frac{S_n - \E S_n}{\sqrt{\D S_n}} t} = \E e^{i \frac{\eta_1 + \dots + \eta_n}{\sqrt{n}} t} = |\text{независимость } \eta_1, \dots, \eta_n| = \\
+    &= \prod_{j=1}^{n} \varphi_{\eta_j} \left( \frac{t}{\sqrt{n}} \right) = |\text{одинак. распред.}| = \left( \varphi_{\eta_1} \left( \frac{t}{\sqrt{n}} \right) \right)^n.
+    \end{align*}
+    
+    По следствию 4.10 из теоремы о производных характеристических функций при $s \to 0$ выполнено
+    $$ \varphi_{\eta_1}(s) = 1 + is \E \eta_1 - \frac{1}{2} s^2 \E \eta_1^2 + o(s^2). $$
+    
+    Вспомним, что $\E \eta_1 = 0$, а $\E \eta_1^2 = 1$. Значит,
+    $$ \varphi_{\zeta_n}(t) = \left( 1 - \frac{t^2}{2n} + o\left( \frac{1}{n} \right) \right)^n \xrightarrow[n \to \infty]{} e^{-\frac{t^2}{2}}. $$
+\end{proofbox}
+
+\vspace{1em}
+Выведем несколько простых следствий из центральной предельной теоремы. Первое просто переформулирует ее в терминах функций распределений.
+
+\begin{corollary}{}{clt_dist}
+    В условиях ЦПТ для любого $x \in \mathbb{R}$ выполнено
+    $$ \P \left( \frac{S_n - \E S_n}{\sqrt{\D S_n}} \le x \right) \xrightarrow[n \to \infty]{} \int_{-\infty}^{x} \frac{1}{\sqrt{2\pi}} e^{-\frac{y^2}{2}} dy = \Phi(x). $$
+\end{corollary}
+
+Второе следствие разъясняет отличие ЦПТ от УЗБЧ.
+
+\begin{corollary}{}{clt_vs_lln}
+    В условиях ЦПТ обозначим $\E \xi_i = a$, $\D \xi_i = \sigma^2$. Тогда
+    $$ \sqrt{n} \left( \frac{S_n}{n} - a \right) \xrightarrow{d} \mathcal{N}(0, \sigma^2). $$
+\end{corollary}
+
+\begin{proofbox}
+    Заметим, что если $\xi_n \xrightarrow{d} \xi$, то $c \xi_n \xrightarrow{d} c \xi$ для любого $c \in \mathbb{R}$. Значит,
+    $$ \sqrt{n} \left( \frac{S_n}{n} - a \right) = \frac{S_n - \E S_n}{\sqrt{n}} \xrightarrow{d} \sigma \cdot \mathcal{N}(0, 1) = \mathcal{N}(0, \sigma^2). $$
+\end{proofbox}
+
+Следствие \hyperref[cor:clt_vs_lln]{4.13} показывает, что при больших $n$ с вероятностью $\sim 0,99$ выполнено
+$$ \sqrt{n} \left| \frac{S_n}{n} - a \right| \le 3\sigma. $$
+
+Из усиленного закона больших чисел мы знаем, что
+$$ \left| \frac{S_n}{n} - a \right| \xrightarrow{\text{п.н.}} 0. $$
+
+Центральная предельная теорема показывает, что типичная скорость убывания к нулю такой последовательности есть $O(n^{-1/2})$.
+
+\vspace{1.5em}
+Естественно задаться и вопросом о том, а какова скорость сходимости в самой ЦПТ? Как быстро мы приближаемся к ф.р. $\mathcal{N}(0, 1)$? Насколько большое $n$ мы должны взять, чтобы быть к ней достаточно близко? Ответы на подобные вопросы дает теорема Берри--Эссеена, доказательство которой можно найти в [4].
+
+\begin{theorem}{Теорема Берри--Эссеена}{berry_esseen}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ --- н.о.р.с.в., $\E |\xi_i|^3 < \infty$, $\E \xi_i = a$, $\D \xi_i = \sigma^2 > 0$. Обозначим
+    $$ T_n = \frac{S_n - \E S_n}{\sqrt{\D S_n}}. $$
+    Тогда существует такая абсолютная константа $C > 0$, что
+    $$ \sup_{x \in \mathbb{R}} |F_{T_n}(x) - \Phi(x)| \le C \cdot \frac{\E |\xi_1 - a|^3}{\sigma^3 \sqrt{n}}. $$
+\end{theorem}
+
+Что известно про константу $C$? В общем случае $C$ нельзя взять меньше, чем $\frac{1}{\sqrt{2\pi}} \sim 0,3989$. И известно, что
+$$ C \le 0,478\dots < \frac{1}{2}. $$
+
+\vspace{1.5em}
+В заключение параграфа приведем теорему, показывающую, где возникает сходимость по распределению случайных векторов.
+
+\begin{theorem}{Многомерная центральная предельная теорема}{multi_clt}
+    Пусть $\{X_n, n \in \mathbb{N}\}$ --- независимые одинаково распределенные случайные векторы из $\mathbb{R}^m$, $\E X_n = a$, $\D X_n = \Sigma$. Обозначим $S_n = X_1 + \dots + X_n$. Тогда
+    $$ \sqrt{n} \left( \frac{S_n}{n} - a \right) \xrightarrow{d} \mathcal{N}(0, \Sigma). $$
+\end{theorem}
+
+\begin{proofbox}
+    Обозначим $T_n = \sqrt{n} \left( \frac{S_n}{n} - a \right)$. Нам достаточно показать, что характеристическая функция $T_n$ сходится к характеристической функции $\mathcal{N}(0, \Sigma)$. Сначала найдем ее:
+    
+    \begin{align*}
+    \varphi_{T_n}(t) &= \E e^{i \langle T_n, t \rangle} = \E e^{i \langle S_n - na, \frac{t}{\sqrt{n}} \rangle} = |\text{независимость } X_1, \dots, X_n| = \\
+    &= \prod_{k=1}^{n} \E e^{i \langle X_k - a, \frac{t}{\sqrt{n}} \rangle} = \left( \E e^{i \langle X_1 - a, \frac{t}{\sqrt{n}} \rangle} \right)^n = |\text{разложение х.ф. в ряд}| = \\
+    &= \left( 1 + i \E \left\langle X_1 - a, \frac{t}{\sqrt{n}} \right\rangle - \frac{1}{2} \E \left\langle X_1 - a, \frac{t}{\sqrt{n}} \right\rangle^2 + o\left( \frac{||t||^2}{n} \right) \right)^n.
+    \end{align*}
+    
+    Пусть $X_1 = (X_{1,1}, \dots, X_{1,m})$, $a = (a_1, \dots, a_m)$. Тогда
+    
+    \begin{align*}
+    \varphi_{T_n}(t) &= \left( 1 + i \left\langle \E(X_1) - a, \frac{t}{\sqrt{n}} \right\rangle - \frac{1}{2} \sum_{k,j=1}^{m} \E(X_{1,k} - a_k)(X_{1,j} - a_j) \frac{t_k t_j}{n} + o\left( \frac{1}{n} \right) \right)^n = \\
+    &= |\text{т.к. } \E X_1 - a = 0| = \left( 1 - \frac{1}{2} \langle \Sigma t, t \rangle \frac{1}{n} + o\left( \frac{1}{n} \right) \right)^n \xrightarrow[n \to \infty]{} e^{-\frac{1}{2} \langle \Sigma t, t \rangle},
+    \end{align*}
+    
+    где $e^{-\frac{1}{2} \langle \Sigma t, t \rangle}$ --- это х.ф. $\mathcal{N}(0, \Sigma)$.
+\end{proofbox}
+

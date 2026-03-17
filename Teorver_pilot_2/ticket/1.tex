@@ -1,0 +1,127 @@
+:%s/\([а-яА-ЯёЁa-zA-Z]\+\)[ ~]\+\\ref{\([^}]*\)}/\\hyperref[\2]{\1~\\ref*{\2}}/gc
+Начнем с определений четырех видов сходимостей. Первая — это сходимость с вероятностью 1, наиболее естественная сходимость случайных величин как числовых функций на вероятностном пространстве.
+
+\begin{definition}{Сходимость с вероятностью 1}{conv_as}
+    Последовательность с.в. $\{\xi_n, n \in \mathbb{N}\}$ сходится с вероятностью 1 к с.в. $\xi$ (сходится почти наверное), если
+    $$ \P(\lim_n \xi_n = \xi) = \P\Big(\omega : \lim_n \xi_n(\omega) = \xi(\omega)\Big) = 1. $$
+    Обозначения: $\xi_n \xrightarrow{\text{п.н.}} \xi$, $\xi_n \to \xi$ п.н., $\xi_n \to \xi$ $\P$-п.н..
+\end{definition}
+
+Второй вид сходимости мы уже неформально обсуждали при изучении дискретного вероятностного пространства, это сходимость по вероятности.
+
+\begin{definition}{Сходимость по вероятности}{conv_prob}
+    Последовательность с.в. $\{\xi_n, n \in \mathbb{N}\}$ сходится по вероятности к с.в. $\xi$, если для любого $\varepsilon > 0$ выполнено
+    $$ \P(|\xi_n - \xi| \ge \varepsilon) \to 0 \text{ при } n \to \infty. $$
+    Обозначение: $\xi_n \xrightarrow{\P} \xi$.
+\end{definition}
+
+Третий вид сходимости является параметрическим и, по сути, является сходимостью по норме в соответствующем нормированном пространстве $L^p$.
+
+\begin{definition}{Сходимость в среднем порядка $p > 0$}{conv_lp}
+    Последовательность с.в. $\{\xi_n, n \in \mathbb{N}\}$ сходится в среднем порядка $p > 0$ к с.в. $\xi$ (сходится в $L^p$), если
+    $$ \E |\xi_n - \xi|^p \to 0 \text{ при } n \to \infty. $$
+    Обозначение: $\xi_n \xrightarrow{L^p} \xi$.
+\end{definition}
+
+Наконец, четвертой является сходимость случайных величин по распределению, который определяется как сходимость функций распределения в точках непрерывности предельной функции распределения.
+
+\begin{definition}{Сходимость по распределению}{conv_dist}
+    Последовательность с.в. $\{\xi_n, n \in \mathbb{N}\}$ сходится по распределению к с.в. $\xi \Leftrightarrow$, если для точки $x \in C(F_\xi)$ — точки непрерывности функции распределения с.в. $\xi$ выполнено
+    $$ \lim_{n \to \infty} F_{\xi_n}(x) = F_\xi(x). $$
+    Обозначение: $\xi_n \xrightarrow{d} \xi$.
+\end{definition}
+
+Смысл сходимости по распределению ясен из определения — это аппроксимация распределений. Пусть $\eta$ — это некоторая с.в. со сложным распределением (т.е. сложно вычислить ее функцию распределения $F_\eta$). Предположим, однако, что $\xi_n \xrightarrow{d} \xi$, причем у $\xi$ “хорошее распределение” (легко численно вычислить ф.р., или она вообще известна) и, кроме того, $\eta \stackrel{d}{=} \xi_m$ с большим номером $m$. Тогда можно считать, что $F_\eta \sim F_\xi$.
+
+Естественно задаться вопросом, в каких случаях могут возникать сходимости перечисленных видов. Для трех видов сходимостей мы ответим на него в рамках настоящей главы, но сначала обсудим имеющиеся связи различных видов сходимостей. Начнем с критерия сходимости с вероятностью 1.
+
+\begin{lemma}{Критерий сходимости с вероятностью 1}{crit_as}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$, $\xi$ — случайные величины. Тогда $\xi_n \xrightarrow{\text{п.н.}} \xi$ тогда и только тогда, когда для любого $\varepsilon > 0$ выполнено
+    $$ \P\left(\sup_{k \ge n} |\xi_k - \xi| > \varepsilon\right) \to 0 \text{ при } n \to \infty. $$
+\end{lemma}
+
+Доказательство. Обозначим $A_n^\varepsilon = \{\omega : |\xi_n(\omega) - \xi(\omega)| > \varepsilon\}$, $A^\varepsilon = \bigcap_{n=1}^\infty \bigcup_{k \ge n} A_k^\varepsilon$. Тогда
+
+$$ \{\omega : \xi_n(\omega) \not\to \xi(\omega)\} = \bigcup_{m=1}^\infty A^{1/m}. $$
+
+Следовательно,
+
+$$ \P(\xi_n \not\to \xi) = 0 \Leftrightarrow \P\left(\bigcup_{m=1}^\infty A^{1/m}\right) = 0 \Leftrightarrow \forall m \in \mathbb{N} \; \P(A^{1/m}) = 0. $$
+
+Последнее равенство эквивалентно тому, что для любого $\varepsilon > 0$ верно, что $\P(A^\varepsilon) = 0$. Далее, в силу непрерывности вероятностной меры такие равенства могут выполняться только, если для любого $\varepsilon > 0$ выполнено, что
+
+$$ \P\left(\bigcup_{k \ge n} A_k^\varepsilon\right) \to 0 \text{ при } n \to \infty. $$
+
+Осталось заметить, что событие $\left\{\bigcup_{k \ge n} A_k^\varepsilon\right\}$ и есть в точности событие $\left\{\sup_{k \ge n} |\xi_k - \xi| > \varepsilon\right\}$ из условия леммы. \hfill$\square$
+
+Выведем из леммы \ref{lem:crit_as} полезное следствие, дающее достаточное условие сходимости с вероятностью 1.
+
+\begin{corollary}{Достаточное условие сходимости п.н.}{suff_as}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ — последовательность с.в., причем для любого $\varepsilon > 0$ сходится ряд
+    $$ \sum_{n=1}^{+\infty} \P(|\xi_n - \xi| > \varepsilon) < +\infty. $$
+    Тогда $\xi_n \xrightarrow{\text{п.н.}} \xi$.
+\end{corollary}
+
+Доказательство. Проверим критерий из леммы \ref{lem:crit_as}:
+
+$$ \P\left(\sup_{k \ge n} |\xi_k - \xi| > \varepsilon\right) = \P\left(\bigcup_{k \ge n} \{|\xi_k - \xi| > \varepsilon\}\right) \le \sum_{k=n}^{+\infty} \P(|\xi_k - \xi| > \varepsilon) \to 0 \text{ при } n \to \infty $$
+
+как остаток сходящегося ряда. \hfill$\square$
+
+С помощью леммы \ref{lem:crit_as} докажем теорему о взаимоотношении различных видов сходимостей.
+
+\begin{theorem}{Взаимоотношение видов сходимостей}{conv_rel}
+    Имеют место соотношения:
+    
+    1. если $\xi_n \xrightarrow{\text{п.н.}} \xi$, то $\xi_n \xrightarrow{\P} \xi$;
+    
+    2. если $\xi_n \xrightarrow{L^p} \xi$, то $\xi_n \xrightarrow{\P} \xi$;
+    
+    3. если $\xi_n \xrightarrow{\P} \xi$, то $\xi_n \xrightarrow{d} \xi$.
+\end{theorem}
+
+Доказательство. 1. Заметим, что $\{|\xi_n - \xi| \ge \varepsilon\} \subset \left\{\sup_{k \ge n} |\xi_k - \xi| > \varepsilon/2\right\}$. Вероятность же последнего события стремится к нулю в силу критерия сходимости с вероятностью 1. Значит,
+
+$$ \P(|\xi_n - \xi| \ge \varepsilon) \to 0 \text{ при } n \to \infty. $$
+
+2. Применим неравенство Маркова:
+
+$$ \P(|\xi_n - \xi| \ge \varepsilon) = \P(|\xi_n - \xi|^p \ge \varepsilon^p) \le \frac{\E |\xi_n - \xi|^p}{\varepsilon^p} \to 0 \text{ при } n \to \infty. $$
+
+3. Пусть $x \in C(F_\xi)$ — точка непрерывности функции распределения с.в. $\xi$. Для любого $\varepsilon > 0$ функцию распределения $F_{\xi_n}$ в точке $x$ можно оценить сверху следующим образом:
+
+\begin{align*}
+F_{\xi_n}(x) &= \P(\xi_n \le x) = \P(\xi_n \le x, \xi - \xi_n \le \varepsilon) + \P(\xi_n \le x, \xi - \xi_n > \varepsilon) \le \\
+&\le \P(\xi \le x + \varepsilon) + \P(|\xi_n - \xi| \ge \varepsilon) = \\
+&= F_\xi(x + \varepsilon) + \P(|\xi_n - \xi| \ge \varepsilon)
+\end{align*}
+
+Вероятность последнего события стремится к нулю с ростом $n$, поэтому получаем, что $\limsup_{n \to \infty} F_{\xi_n}(x) \le F_\xi(x + \varepsilon)$. Аналогично, получаем оценку снизу:
+
+\begin{align*}
+1 - F_{\xi_n}(x) &= \P(\xi_n > x) = \P(\xi_n > x, \xi - \xi_n > -\varepsilon) + \P(\xi_n > x, \xi - \xi_n \le -\varepsilon) \le \\
+&\le \P(\xi > x - \varepsilon) + \P(|\xi_n - \xi| \ge \varepsilon) = \\
+&\le 1 - F_\xi(x - \varepsilon) + \P(|\xi_n - \xi| \ge \varepsilon).
+\end{align*}
+
+Следовательно, $\liminf_{n \to \infty} F_{\xi_n}(x) \ge F_\xi(x - \varepsilon)$. В силу произвольности $\varepsilon$ и непрерывности $F_\xi$ в точке $x$ получаем искомое равенство:
+
+$$ \lim_{n \to \infty} F_{\xi_n}(x) = F_\xi(x). $$
+\hfill$\square$
+
+Отметим, что можно привести контрпримеры, показывающие, что обратные утверждения в теореме \ref{thm:conv_rel} неверны в общем случае. В частности, из сходимости по вероятности не следует в общей ситуации сходимость с вероятностью 1. Однако, как показывает следующая полезная лемма, всегда можно найти подпоследовательность, сходящуюся более сильным образом.
+
+\begin{lemma}{О подпоследовательности}{subseq_prob}
+    Если $\xi_n \xrightarrow{\P} \xi$, то найдется такая подпоследовательность $\{\xi_{n_k}, k \in \mathbb{N}\}$, что $\xi_{n_k} \xrightarrow{\text{п.н.}} \xi$ при $k \to \infty$.
+\end{lemma}
+
+Доказательство. Для любого $k \in \mathbb{N}$ выберем $n_k > n_{k-1}$ (полагаем $n_0 = 0$) так, чтобы для всех $n \ge n_k$ было выполнено
+
+$$ \P\left(|\xi_n - \xi| \ge \frac{1}{k}\right) \le 2^{-k}. $$
+
+Выбор возможен в силу того, что $\P(|\xi_n - \xi| \ge 1/k) \to 0$ при $n \to \infty$. Проверим, что подпоследовательность $\{\xi_{n_k}, k \in \mathbb{N}\}$ искомая. Для любого $\varepsilon > 0$ выберем $k_0 > 1/\varepsilon$. Тогда
+
+$$ \sum_{k \ge k_0} \P(|\xi_{n_k} - \xi| > \varepsilon) \le \sum_{k \ge k_0} \P\left(|\xi_{n_k} - \xi| \ge \frac{1}{k}\right) \le \sum_{k \ge k_0} 2^{-k} < +\infty. $$
+
+Согласно следствию \ref{cor:suff_as} получаем, что $\xi_{n_k} \xrightarrow{\text{п.н.}} \xi$. \hfill$\square$
+

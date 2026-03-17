@@ -1,0 +1,219 @@
+\vspace{1em}
+
+С первыми примерами сходимостей распределений на прямой мы уже сталкивались в первой главе, когда говорили о теоремах Пуассона и Муавра-Лапласа. Переформулируем их с использованием новых обозначений и свойств сходимостей случайных величин.
+
+\begin{definition}{Схема испытаний Бернулли и биномиальное распределение}{bernoulli}
+    Схемой испытаний Бернулли называется последовательность независимых одинаково распределенных случайных величин $\xi_1, \xi_2, \dots$, каждая из которых принимает значение $1$ с вероятностью $p$ и значение $0$ с вероятностью $q = 1 - p$.
+    
+    Сумма $S_n = \sum_{i=1}^n \xi_i$ описывает число успехов в $n$ испытаниях и имеет биномиальное распределение с параметрами $n$ и $p$, что обозначается как $S_n \sim \text{Bin}(n, p)$.
+\end{definition}
+
+\vspace{1em}
+Начнем с теоремы Пуассона, которая описывает предел биномиального распределения при редких событиях.
+
+\begin{corollary}{Теорема Пуассона}{poisson}
+    Пусть $\{\xi_n, n \in \mathbb{N}\}$ — случайные величины, $\xi_n \sim \text{Bin}(n, p(n))$, причем $np(n) \to \lambda > 0$. Тогда
+    \begin{align*}
+        \xi_n \toD \eta \sim \text{Pois}(\lambda).
+    \end{align*}
+    (другое обозначение: $\xi_n \toD \text{Pois}(\lambda)$)
+\end{corollary}
+
+\begin{proofbox}
+    По определению слабой сходимости $\xi_n \toD \eta \Leftrightarrow F_{\xi_n}(x) \to F_\eta(x)$ для всех $x \in \mathbb{C}(F_\eta)$. 
+    
+    Но все рассматриваемые случайные величины принимают с вероятностью $1$ значения в $\mathbb{Z}_+$. Следовательно, достаточно проверить, что для любого $k \in \mathbb{Z}_+$
+    \begin{align*}
+        \P(\xi_n \leqslant k) \to \P(\eta \leqslant k) \quad \text{при } n \to \infty,
+    \end{align*}
+    что напрямую вытекает из классической теоремы Пуассона.
+\end{proofbox}
+
+\vspace{1em}
+Следующий результат дает нормальную аппроксимацию для биномиального распределения.
+
+\begin{corollary}{Теорема Муавра-Лапласа}{moivre_laplace}
+    В условиях теоремы Муавра-Лапласа
+    \begin{align*}
+        \frac{S_n - np}{\sqrt{npq}} \toD \eta \sim \mathcal{N}(0, 1).
+    \end{align*}
+\end{corollary}
+
+\begin{proofbox}
+    По определению сходимости по распределению:
+    \begin{align*}
+        \frac{S_n - np}{\sqrt{npq}} \toD \eta \Leftrightarrow \forall x \in \mathbb{R} \quad \P\left( \frac{S_n - np}{\sqrt{npq}} \leqslant x \right) \to F_\eta(x) = \Phi(x) = \int_{-\infty}^x \frac{1}{\sqrt{2\pi}} e^{-\frac{y^2}{2}} dy,
+    \end{align*}
+    что и утверждает теорема Муавра-Лапласа.
+\end{proofbox}
+
+\vspace{1em}
+Закон больших чисел утверждает сходимость доли успехов $\frac{S_n}{n}$ к вероятности $p$. Для оценки вероятности значительного уклонения от этого предела используется неравенство Чернова.
+
+\begin{theorem}{Неравенство Чернова}{chernoff}
+    Пусть $S_n \sim \text{Bin}(n, p)$. Для любого $\varepsilon > 0$ вероятность уклонения доли успехов от математического ожидания оценивается сверху:
+    \begin{align*}
+        \P\left( \frac{S_n}{n} - p \geqslant \varepsilon \right) &\leqslant e^{-n I(p+\varepsilon, p)} \\
+        \P\left( \frac{S_n}{n} - p \leqslant -\varepsilon \right) &\leqslant e^{-n I(p-\varepsilon, p)}
+    \end{align*}
+    где функция $I(x, p) = x \ln\left(\frac{x}{p}\right) + (1-x) \ln\left(\frac{1-x}{1-p}\right)$ является строго положительной при $x \neq p$.
+\end{theorem}
+\begin{proofbox}
+\textbf{ВНИМАНИЕ ЭТОГО ДОКАЗАТЕЛьСТВА НЕТ В КОНСПЕКТЕ, ПОЭТОМУ ОНО СГЕНЕРИРОВАНО ИИ}
+
+    Как указано в замечании к теореме, воспользуемся экспоненциальной оценкой и неравенством Маркова. 
+    Докажем первое неравенство (оценку правого хвоста). Обозначим $x = p + \varepsilon$. Нам требуется оценить вероятность $\P(S_n \geqslant nx)$. 
+    
+    Для любого $\lambda > 0$ функция $e^{\lambda t}$ является монотонно возрастающей и неотрицательной. Поэтому событие $\{S_n \geqslant nx\}$ эквивалентно событию $\{e^{\lambda S_n} \geqslant e^{\lambda nx}\}$. Применим к последнему неравенство Маркова:
+    \begin{align}\label{eq:markov_exp}
+        \P(S_n \geqslant nx) = \P\left( e^{\lambda S_n} \geqslant e^{\lambda nx} \right) \leqslant \frac{\E \left[ e^{\lambda S_n} \right]}{e^{\lambda nx}}.
+    \end{align}
+
+    Случайная величина $S_n$ представляет собой сумму независимых одинаково распределенных величин $\xi_i \sim \text{Bernoulli}(p)$, $S_n = \sum_{i=1}^n \xi_i$. Найдем экспоненциальный момент для $S_n$:
+    \begin{align*}
+        \E \left[ e^{\lambda S_n} \right] = \E \left[ \prod_{i=1}^n e^{\lambda \xi_i} \right] = \prod_{i=1}^n \E \left[ e^{\lambda \xi_i} \right] = \left( p e^\lambda + q \right)^n,
+    \end{align*}
+    где $q = 1 - p$. Подставим это в оценку \eqref{eq:markov_exp}:
+    \begin{align*}
+        \P(S_n \geqslant nx) \leqslant \frac{(p e^\lambda + q)^n}{e^{\lambda nx}} = \left( e^{-\lambda x} (p e^\lambda + q) \right)^n.
+    \end{align*}
+
+    Эта оценка верна для любого $\lambda > 0$. Чтобы получить наилучшую оценку, найдем минимум функции $f(\lambda) = e^{-\lambda x} (p e^\lambda + q)$ по $\lambda$. 
+    Приравняем производную к нулю:
+    \begin{align*}
+        f'(\lambda) = -x e^{-\lambda x} (p e^\lambda + q) + e^{-\lambda x} p e^\lambda = e^{-\lambda x} \left[ p e^\lambda (1 - x) - q x \right] = 0.
+    \end{align*}
+    Отсюда находим точку минимума:
+    \begin{align*}
+        p e^\lambda (1 - x) = q x \quad \Rightarrow \quad e^\lambda = \frac{x q}{p (1 - x)}.
+    \end{align*}
+    Заметим, что поскольку $x = p + \varepsilon > p$, то $\frac{x}{p} > 1$ и $\frac{q}{1-x} = \frac{1-p}{1-x} > 1$, следовательно $e^\lambda > 1$, что дает допустимое $\lambda > 0$.
+
+    Подставим найденное оптимальное значение $e^\lambda$ обратно в функцию $f(\lambda)$:
+    \begin{align*}
+        p e^\lambda + q = p \left( \frac{x q}{p (1 - x)} \right) + q = q \left( \frac{x}{1-x} + 1 \right) = \frac{q}{1-x} = \frac{1-p}{1-x}.
+    \end{align*}
+    Для множителя $e^{-\lambda x}$ имеем:
+    \begin{align*}
+        e^{-\lambda x} = (e^\lambda)^{-x} = \left( \frac{p (1 - x)}{x (1 - p)} \right)^x.
+    \end{align*}
+
+    Тогда минимальное значение $f(\lambda)$ равно:
+    \begin{align*}
+        f_{min} = \left( \frac{p (1 - x)}{x (1 - p)} \right)^x \frac{1-p}{1-x} = \left( \frac{p}{x} \right)^x \left( \frac{1-p}{1-x} \right)^{1-x}.
+    \end{align*}
+
+    Возвращаясь к исходному неравенству и возводя $f_{min}$ в степень $n$, получаем:
+    \begin{align*}
+        \P(S_n \geqslant nx) &\leqslant \left( \left( \frac{p}{x} \right)^x \left( \frac{1-p}{1-x} \right)^{1-x} \right)^n \\
+        &= \exp\left( n \left[ x \ln\left(\frac{p}{x}\right) + (1-x) \ln\left(\frac{1-p}{1-x}\right) \right] \right) \\
+        &= \exp\left( -n \left[ x \ln\left(\frac{x}{p}\right) + (1-x) \ln\left(\frac{1-x}{1-p}\right) \right] \right).
+    \end{align*}
+    
+    Выражение в квадратных скобках есть в точности функция $I(x, p)$. Таким образом, подставляя $x = p + \varepsilon$, мы доказали первую часть теоремы:
+    \begin{align*}
+        \P\left( \frac{S_n}{n} - p \geqslant \varepsilon \right) \leqslant e^{-n I(p+\varepsilon, p)}.
+    \end{align*}
+
+    Второе неравенство (для левого уклонения) доказывается абсолютно симметрично, с применением неравенства Маркова для $e^{-\lambda S_n}$ при $\lambda > 0$ и минимизацией аналогичной функции. 
+\end{proofbox}
+
+
+\textbf{Док-во из старого конспекта Шабанова}
+
+\begin{theorem}{Неравенство Чернова}{chernoff_shabanov}
+    Пусть $S_n \sim \text{Bin}(n, p)$, а $\lambda = \E[S_n] = np$. Тогда для любого $t > 0$ выполнено следующее:
+    \begin{align*}
+        \P[S_n \ge \lambda + t] &\le \exp\left( -\frac{t^2}{2(\lambda + t/3)} \right) \\
+        \P[S_n \le \lambda - t] &\le \exp\left( -\frac{t^2}{2\lambda} \right).
+    \end{align*}
+\end{theorem}
+
+\begin{proofbox}
+    Крайний случай для первого неравенства — $t = n - \lambda$ — особого интереса не вызывает. Поэтому положим, что $t < n - \lambda$. Заметим, что для любого $u > 0$ выполнено следующее:
+    \begin{align*}
+        \P[S_n \ge \lambda + t] = \P[e^{u S_n} \ge e^{u(\lambda + t)}] \le \{\text{по неравенству Маркова}\} \le \frac{\E[e^{u S_n}]}{e^{u(\lambda + t)}}.
+    \end{align*}
+
+    Посчитаем $\E[e^{u S_n}]$:
+    \begin{align*}
+        \E[e^{u S_n}] = \sum_{k=0}^n e^{uk} \P[S_n = k] &= \sum_{k=0}^n e^{uk} \binom{n}{k} p^k (1 - p)^{n-k} = \\
+        &= \sum_{k=0}^n \binom{n}{k} (p e^u)^k (1 - p)^{n-k} = (1 - p + p e^u)^n.
+    \end{align*}
+
+    Положим $x = e^u$. Тогда
+    \begin{align*}
+        \P[S_n \ge \lambda + t] \le \frac{(1 - p + px)^n}{x^{\lambda + t}}.
+    \end{align*}
+
+    Минимизируем это выражение по $x$. Для этого посчитаем производную и приравняем её к нулю:
+    \begin{align*}
+        \left( \frac{(1 - p + px)^n}{x^{\lambda + t}} \right)'_x = -\frac{(\lambda + t)(1 - p + px)^n}{x^{\lambda + t + 1}} + \frac{np(1 - p + px)^{n-1}}{x^{\lambda + t}} = 0.
+    \end{align*}
+
+    Значит, $(1 - p + px)^{n-1} (npx - (\lambda + t)(1 - p + px)) = 0$, откуда $npx - (\lambda + t)(1 - p + px) = 0$. Раскрываем:
+    \begin{align*}
+        & npx - \lambda + \lambda p - \lambda px - t + tp - tpx = 0 \iff \\
+        \iff & x(np - \lambda p - tp) - \lambda(1 - p) - t(1 - p) = 0 \iff x = \frac{(\lambda + t)(1 - p)}{p(n - \lambda - t)}.
+    \end{align*}
+
+    Тогда получаем следующую оценку сверху:
+    \begin{align*}
+        \P[S_n \ge \lambda + t] &\le \left( \frac{p(n - \lambda - t)}{(\lambda + t)(1 - p)} \right)^{\lambda + t} \left( 1 - p + p \cdot \frac{(\lambda + t)(1 - p)}{p(n - \lambda - t)} \right)^n = \\
+        &= \left( \frac{p(n - \lambda - t)}{(\lambda + t)(1 - p)} \right)^{\lambda + t} \left( \frac{n(1 - p)}{n - \lambda - t} \right)^n = \\
+        &= \left( \frac{np}{\lambda + t} \right)^{\lambda + t} \left( \frac{n - np}{n - \lambda - t} \right)^{n - \lambda - t} = \\
+        &= \left( \frac{\lambda}{\lambda + t} \right)^{\lambda + t} \left( \frac{n - \lambda}{n - \lambda - t} \right)^{n - \lambda - t}.
+    \end{align*}
+
+    Прооптимизировали по параметру. Представим эту оценку в следующем виде:
+    \begin{align*}
+        \left( \frac{\lambda}{\lambda + t} \right)^{\lambda + t} \left( \frac{n - \lambda}{n - \lambda - t} \right)^{n - \lambda - t} = \exp\left\{ -(\lambda + t) \log\left( 1 + \frac{t}{\lambda} \right) - (n - \lambda - t) \log\left( 1 - \frac{t}{n - \lambda} \right) \right\}.
+    \end{align*}
+
+    Введём функцию $\varphi(x) = (1 + x) \log(1 + x) - x$ для $x > -1$. Тогда (проверьте):
+    \begin{align*}
+        \P[S_n \ge \lambda + t] \le \exp\left\{ -\lambda \varphi\left(\frac{t}{\lambda}\right) - (n - \lambda) \varphi\left(-\frac{t}{n - \lambda}\right) \right\}.
+    \end{align*}
+
+    Теперь заметим, что если $x > -1$, то $\varphi(x) > 0$. Тогда будет верно следующее (вторую оценку можно получить абсолютно аналогично первой, только взяв $-t$ вместо $t$):
+    \begin{align*}
+        \P[S_n \ge \lambda + t] &\le \exp\left\{ -\lambda \varphi\left(\frac{t}{\lambda}\right) \right\}, \\
+        \P[S_n \le \lambda - t] &\le \exp\left\{ -\lambda \varphi\left(-\frac{t}{\lambda}\right) \right\}.
+    \end{align*}
+
+    А теперь достаём бубен и начинаем яростно оценивать:
+
+    \textbf{[$\le$]} Заметим, что $\varphi(0) = 0$ и $\varphi'(x) = 1 - 1 + \log(x + 1) = \log(x + 1) \le x$. Тогда
+    \begin{align*}
+        -\varphi(y) = \int_y^0 \varphi'(x) \, dx \le \int_y^0 x \, dx = -\frac{y^2}{2}.
+    \end{align*}
+    Отсюда получаем, что $\varphi(y) \ge \frac{y^2}{2}$ и $\P[S_n \le \lambda - t] \le \exp\left\{ -\frac{t^2}{2\lambda} \right\}$.
+
+    \textbf{[$\ge$]} Дальше идёт полное ша(б)манство (sic!). Заметим, что
+    \begin{align*}
+        \varphi''(x) = \frac{1}{1 + x} \ge \frac{1}{(1 + x/3)^3} = \left( \frac{x^2}{2(1 + x/3)} \right)'' \implies \varphi(x) \ge \frac{x^2}{2(1 + x/3)}.
+    \end{align*}
+    Отсюда получаем, что $\P[S_n \ge \lambda + t] \le \exp\left\{ -\frac{t^2}{2(\lambda + t/3)} \right\}$.
+\end{proofbox}
+
+Теперь, используя неравенство Чернова, оценим скорость сходимости $\P\left[\left| \frac{S_n}{n} - p \right| \ge \varepsilon\right]$ к 0 иначе:
+\begin{align*}
+    \P\left[ \left| \frac{S_n}{n} - p \right| \ge \varepsilon \right] = \{ np = \lambda \} = \P[|S_n - \lambda| \ge n\varepsilon] \le \exp\left\{ -\frac{n\varepsilon^2}{2p} \right\} = \frac{1}{\exp\{\mathcal{O}(n)\}}.
+\end{align*}
+
+Заметим, что оценка через неравенство Чебышёва давала гораздо более слабую оценку вида $\frac{1}{\text{полином}}$. Неравенство Чернова даёт оценку $\frac{1}{\text{экспонента}}$, что сходится на порядки быстрее.
+
+
+\vspace{1em}
+Рассмотрим соотношение между различными оценками уклонения.
+
+\begin{remark}[Сравнение оценок скорости убывания вероятности]\label{comp:chernoff_cheb}
+    Если мы применим неравенство Чебышёва к случайной величине $\frac{S_n}{n}$, мы получим следующую оценку:
+    \begin{align*}
+        \P\left( \left| \frac{S_n}{n} - p \right| \geqslant \varepsilon \right) \leqslant \frac{\D \left(\frac{S_n}{n}\right)}{\varepsilon^2} = \frac{pq}{n \varepsilon^2}
+    \end{align*}
+    Неравенство Чебышёва дает убывание вероятности со скоростью $O\left(\frac{1}{n}\right)$.
+    
+    В схеме Бернулли исходные случайные величины ограничены. Это позволяет получить экспоненциальную оценку вероятности больших уклонений через характеристические функции и неравенство Маркова, что приводит к неравенству Чернова. Неравенство Чернова демонстрирует, что истинная скорость убывания имеет вид $O(e^{-cn})$, что обеспечивает принципиально лучшую точность при больших значениях $n$.
+\end{remark}
+
