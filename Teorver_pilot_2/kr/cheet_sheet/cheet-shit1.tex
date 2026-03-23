@@ -1,0 +1,180 @@
+\documentclass[8pt, a4paper, landscape]{extarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+\usepackage[margin=0.4cm]{geometry}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{sectsty}
+
+\sectionfont{\normalsize\bfseries\scshape\vspace{-2ex}\hrule\vspace{1ex}}
+\subsectionfont{\small\bfseries\vspace{-2ex}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\setlength{\abovedisplayskip}{1pt}
+\setlength{\belowdisplayskip}{1pt}
+\setlist{nosep, leftmargin=1.2em}
+
+% Macros for extreme density
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\newcommand{\toP}{\xrightarrow{\P}}
+\newcommand{\toD}{\xrightarrow{d}}
+\newcommand{\toAS}{\xrightarrow{a.s.}}
+\newcommand{\toL}{\xrightarrow{L^p}}
+\newcommand{\N}{\mathcal{N}}
+
+\begin{document}
+\begin{multicols*}{4}
+
+\section*{1. Асимптотика, ЛБК и Сходимости}
+\textbf{Леммы Бореля-Кантелли (ЛБК):}
+1. $\sum \P(A_n) < \infty \implies \P(A_n \text{ б.ч.}) = 0$.
+2. $\sum \P(A_n) = \infty$, \textbf{$A_n$ незав.} $\implies \P(A_n \text{ б.ч.}) = 1$.
+
+\textbf{Иерархия сходимостей:} $\toAS \implies \toP \implies \toD$. $L^p \implies L^q \implies \toP$ (при $p>q$).
+\textbf{Контрпример:} $\toP \not\implies \toAS$ («бегущий прямоугольник», где ряд длин расходится). $\toP \implies \toAS$ только если ряд вероятностей отклонений сходится!
+\textbf{Теорема Слуцкого:} Если $X_n \toD X, Y_n \toP c$, то: $X_n Y_n \toD cX$, $X_n + Y_n \toD X + c$.
+\textbf{CMT (Непрерывное отображение):} $X_n \xrightarrow{\text{любая}} X \implies f(X_n) \xrightarrow{\text{любая}} f(X)$ для непрерывной $f$.
+
+\textbf{Поиск $C = \varlimsup \frac{\xi_n - a_n}{b_n}$ (Алгоритм ЛБК):}
+1. \textbf{Порог:} $\varepsilon>0$, события $A_n^\pm = \{ \eta_n > C \pm \varepsilon \}$.
+2. \textbf{Хвосты:} $\P(A_n) = \P(\xi_n > a_n \!+\! b_n(C \pm \varepsilon))$. Заменяем на асимптотику хвоста:
+$\N(0,1): \sim \frac{1}{\sqrt{2\pi} x} e^{-x^2/2}$; $\Gamma(\alpha, \lambda): \sim \frac{\lambda^{\alpha-1}}{\Gamma(\alpha)} x^{\alpha-1} e^{-\lambda x}$;
+Exp$(\lambda): = e^{-\lambda x}$; Тяж. хвосты (Коши): $\sim c x^{-\alpha}$.
+3. \textbf{Ряды:} Подстановка дает $\sum \frac{(\ln n)^\beta}{n(\ln n)^C} \propto \sum \frac{1}{n(\ln n)^q}$. Сходится при $q>1$, расходится при $q \le 1$.
+4. \textbf{Синтез:} Подбираем $C$: для $A_n^+$ сходится ($\implies \varlimsup \le C$), для $A_n^-$ расходится ($\implies \varlimsup \ge C$).
+
+\textbf{Мастер-теорема для хвоста $K x^\beta e^{-\lambda x}$:}
+При норм-ке $a_n \!=\! \frac{1}{\lambda}\ln n, b_n \!=\! \frac{1}{\lambda}\ln\ln n$, граница: $\mathbf{C = \beta \!+\! 1}$.
+Exp$(\lambda): \beta=0 \Rightarrow \mathbf{C=1}$. $\Gamma(\alpha, \lambda): \beta=\alpha-1 \Rightarrow \mathbf{C=\alpha}$.
+$\N(0,1):$ $a_n=\sqrt{2\ln n}$, $\beta=-1 \Rightarrow \mathbf{C=-1/2}$. Тяж. хвосты: норм-ка степенная $b_n=n^{1/\alpha}$.
+
+\section*{2. ЦПТ и Дельта-метод}
+\textbf{Алгоритм $\toD$ для $g(\overline{X})$:}
+1. База $X_1$: $\mu = \E X_1$, $\sigma^2 = \Var X_1$.
+2. ЦПТ: $\sqrt{n}(\overline{X} - \mu) \toD \N(0, \sigma^2)$.
+3. Функция $g$: константа в условии строго $C = g(\mu)$.
+4. Дисперсия: $\sigma_{as}^2 = [g'(\mu)]^2 \sigma^2 \implies \N(0, \sigma_{as}^2)$.
+
+\textbf{Вырожденный случай 2-го порядка (Теорема о $\chi^2$):}
+Если $g'(\mu)=0$, но $g''(\mu)\ne 0$, классика дает $\toP 0$.
+Домножаем ряд на $n$: $n(g(\overline{X}) - g(\mu)) \toD \frac{\sigma^2 g''(\mu)}{2} \chi^2_1$.
+*(Предел — гамма-распределение, а не нормальное!)*
+
+\textbf{Многомерный:} $\vec{W}_i$ --- выборка, $\E[\vec{W}_1]\!=\!\vec{\mu}$, $\Sigma \!=\! \Cov(\vec{W}_1)$.
+$\sqrt{n}(g(\vec{\overline{W}}) - g(\vec{\mu})) \toD \N(0, \nabla g(\vec{\mu})^T \Sigma \nabla g(\vec{\mu}))$.
+\textit{Градиенты:} $g(y,z) = z/y^k \implies \nabla g = \left(-\frac{k\mu_z}{\mu_y^{k+1}}, \frac{1}{\mu_y^k}\right)^T$.
+
+\section*{3. Гауссовские векторы и Матрицы}
+Для $\vec{X} \sim \N(\vec{\mu}, \Sigma)$: маргинальные и условные распределения нормальные. $\Cov(AX, BY) = A\Cov(X,Y)B^T$.
+\textbf{Теорема о нормальном условном распределении:}
+Пусть вектор разбит на блоки $\vec{X}$ и $\vec{Y}$. Тогда $\vec{X}|\vec{Y} \sim \N(\mu_{X|Y}, \Sigma_{X|Y})$, где:
+$\mu_{X|Y} = \mu_X + \Sigma_{XY}\Sigma_{YY}^{-1}(\vec{Y} - \mu_Y)$
+$\Sigma_{X|Y} = \Sigma_{XX} - \Sigma_{XY}\Sigma_{YY}^{-1}\Sigma_{YX}$.
+\textit{Следствие:} $\E[X|Y]$ — всегда линейная функция от $Y$. $\Var(X|Y)$ — константа, не зависит от значения $Y$!
+$X \perp\!\!\perp Y \iff \Cov(X,Y) = 0$ (только для совм. норм!).
+
+\textbf{Нелинейное $\E[\cos(YZ)|X]$ (Комплексификация):}
+1. Проекции: $Y \!=\! aX\!+\!\tilde{Y}$, $Z \!=\! bX\!+\!\tilde{Z}$. $a \!=\! \frac{\Cov(Y,X)}{\Var(X)}$. 
+$\Var(\tilde{Y}) \!=\! \Var(Y) \!-\! \frac{\Cov^2(X,Y)}{\Var(X)}$. Найти $\Cov(\tilde{Y},\tilde{Z})$. Если 0 $\implies \tilde{Y} \perp\!\!\perp \tilde{Z}$.
+2. При фикс. $X=x$, $Y_x$ и $Z_x$ независимы. Ищем $\text{Re}(\E[e^{iY_x Z_x}])$.
+3. Башня: $\E[e^{i Z_x Y_x}|Z_x] = \exp(i\mu_{Y_x} Z_x - \frac{1}{2}\sigma_{Y_x}^2 Z_x^2)$.
+4. Интеграл Гаусса по $Z_x \sim \N(\mu_{Z_x}, \sigma_{Z_x}^2)$:
+$\E[e^{c\eta + d\eta^2}] = \frac{1}{\sqrt{1-2d\sigma^2}}\exp\left( \frac{c^2\sigma^2+2c\mu+2d\mu^2}{2(1-2d\sigma^2)} \right)$.
+
+\textbf{Формула Вика:} Для $\vec{X} \sim \N(\vec{0}, \Sigma)$: $\E[\text{нечетн.}]=0$.
+$\E[X_1 X_2 X_3 X_4] = \E[X_1 X_2]\E[X_3 X_4] + \E[X_1 X_3]\E[X_2 X_4] + \E[X_1 X_4]\E[X_2 X_3]$.
+
+\section*{4. Преобразования и Якобиан}
+\textbf{Свертки (Сумма, Частное, Произведение):} Если $X \perp\!\!\perp Y$:
+1. $Z = X+Y \implies p_Z(z) = \int p_X(x)p_Y(z-x)dx$
+2. $Z = X/Y \implies p_Z(z) = \int |y| p_{X}(zy) p_Y(y)dy$
+3. $Z = XY \implies p_Z(z) = \int \frac{1}{|x|} p_X(x) p_Y(z/x)dx$
+\textbf{Замена 1D:} $Y \!=\! h(X)$, $h$ монот. $\implies p_Y(y) \!=\! p_X(h^{-1}(y))|(h^{-1})'(y)|$.
+
+\textbf{Метод Якобиана (поиск $p_{X|Z}$ для $Z=f(X,Y)$):}
+1. $X \perp\!\!\perp Y \implies p_{X,Y}(x,y) = p_X(x)p_Y(y)$.
+2. Замена: $U=X, Y=h(X,Z)$. Якобиан $J = \partial h / \partial z$.
+$p_{X,Z}(x,z) = p_{X,Y}(x, h(x,z)) \cdot |J|$.
+3. \textbf{ДИНАМИЧЕСКИЕ ГРАНИЦЫ (Критично!):} Подставляем $y=h(x,z)$ в индикаторы $I_{\{y \in D\}}$. Разрешаем относительно $x$.
+\textit{Пример:} $x \in (0,1), xz \in (0,1) \implies 0 < x < \min(1, 1/z)$.
+4. Маргинализация $p_Z(z) \!=\! \int p_{X,Z} dx$. Из-за $\min$ интеграл бьется на ветви (напр. $z \le 1$ и $z > 1$). $p_{X|Z} = p_{X,Z}/p_Z$.
+
+\section*{5. Ожидания, Условия и Смеси}
+\textbf{Трюк измеримости:} Относительно $Z$, сама $Z$ — константа.
+$\E[XY | Z\!=\!Y/X] = \E[X(XZ)|Z] = Z\E[X^2|Z]$.
+\textbf{Формула полной дисперсии (Eve's Law):}
+$\Var(X) = \E[\Var(X|Y)] + \Var(\E[X|Y])$.
+\textbf{Немонотонные условия:} Если биекции нет ($Z=X^2$), при четной $p_X$, $\P(X\!=\!\pm\sqrt{z}|z) \!=\! 1/2 \implies \E[X|X^2\!=\!z] \!=\! 0$.
+
+\textbf{Алгоритм $\E[g(X,Y)]$ (Смешанная $X \perp\!\!\perp$ Непрерывн. $Y$):}
+1. \textbf{Тонелли:} Фиксируем $X=x$. $\psi(x) = \E[g(x,Y)] = \int g p_Y dy$.
+Если $Y \!\sim\! U(a,b)$, то $\E[Y^x] = (b^{x+1}\!-\!a^{x+1})/((b\!-\!a)(x\!+\!1))$.
+2. \textbf{Атомы:} Найти разрывы $x_k$. Веса: $p_k = F_X(x_k) \!-\! F_X(x_k-0)$.
+3. \textbf{Непрерывная:} Вне разрывов $p_{ac}(x) = F'_X(x)$. Проверка: $\int p_{ac}dx + \sum p_k = 1$.
+4. \textbf{Синтез:} $\E[g(X,Y)] \!=\! \int \psi(x) p_{ac}(x) dx \!+\! \sum \psi(x_k) p_k$.
+
+\textbf{Комбинаторная симметрия:} Если $X_1 \dots X_n$ н.о.р., $S = \sum X_i$.
+$\sum \E[X_k|S] = \E[S|S] = S \implies \E[X_k|S] = S/n$. Без интегралов!
+
+\section*{6. Порядковые статистики и Экспоненты}
+$X_{(1)} \le X_{(2)} \dots \le X_{(n)}$. Плотность $k$-й статистики:
+$p_{(k)}(x) = \frac{n!}{(k-1)!(n-k)!} F(x)^{k-1} (1-F(x))^{n-k} p(x)$.
+Максимум $X_{(n)}$: $F_{(n)}(x) = F(x)^n, \quad p_{(n)}(x) = n F(x)^{n-1}p(x)$.
+Минимум $X_{(1)}$: $1 - F_{(1)}(x) = (1-F(x))^n$.
+\textbf{Магия Exp($\lambda$):} Отсутствие памяти: $\P(X \!>\! t\!+\!s | X \!>\! s) \!=\! \P(X \!>\! t)$.
+Минимум независимых: $\min(X_1, X_2) \sim \text{Exp}(\lambda_1+\lambda_2)$.
+Вероятность победы: $\P(X_1 < X_2) = \lambda_1/(\lambda_1+\lambda_2)$.
+
+\section*{7. Характеристические функции и Суммы}
+$\varphi(t) = \E[e^{itX}]$. Свойства: $\varphi(0)\!=\!1$, $|\varphi(t)| \!\le\! 1$, $\varphi_{aX+b}(t) \!=\! e^{itb}\varphi_X(at)$.
+$\xi \perp\!\!\perp \eta \implies \varphi_{\xi+\eta} = \varphi_\xi \varphi_\eta$. Обратное неверно. $\E[X^k] = \varphi^{(k)}(0) / i^k$.
+\textbf{Решетчатость:} $|\varphi(t_0)|=1$ для $t_0 \ne 0 \iff$ распр. дискретное.
+\textbf{Таблица ХФ:}
+\begin{itemize}
+    \item $\N(\mu,\sigma^2): \exp(i\mu t - \frac{1}{2}\sigma^2 t^2)$
+    \item $\text{Po}(\lambda): \exp(\lambda(e^{it}-1))$
+    \item $\text{Bin}(n,p): (1-p+pe^{it})^n$
+    \item $U(a,b): (e^{itb}-e^{ita}) / (it(b-a))$
+    \item $\text{Exp}(\lambda): \lambda / (\lambda-it)$
+    \item Лаплас $L(0,b): 1 / (1+b^2 t^2)$; Коши $K(a): e^{-a|t|}$
+\end{itemize}
+
+\section*{8. Неравенства и Случайные суммы}
+\textbf{Марков:} Для $X \ge 0, a>0$: $\P(X \ge a) \le \E[X]/a$. Для любого: $\P(|X| \ge a) \le \E|X|^p/a^p$.
+\textbf{Чебышёв:} $\P(|X-\E X| \ge a) \le \Var(X)/a^2$.
+\textbf{Чернов:} $\P(X \ge a) \le \inf_{t>0} e^{-ta}\E[e^{tX}]$.
+\textbf{Йенсен:} Для выпуклой вниз $g(x)$ (напр. $x^2, e^x$): $g(\E X) \le \E[g(X)]$.
+
+\textbf{Случайные суммы:} $S_\nu = \sum_{i=1}^\nu \xi_i$ (где $\nu \perp\!\!\perp \xi_i$).
+\textbf{Тождества Вальда:} $\E[S_\nu] \!=\! \E\nu\E\xi_1$. $\Var(S_\nu) \!=\! \E\nu\Var\xi_1 \!+\! \Var\nu(\E\xi_1)^2$.
+\textbf{Пуассоновское расщепление:} Если $\nu \sim \text{Po}(\lambda)$, $\xi_i \sim \text{Be}(p)$, то успехи $S_\nu \sim \text{Po}(\lambda p)$ и неудачи $\nu-S_\nu \sim \text{Po}(\lambda(1-p))$ --- \textbf{независимы}!
+
+\section*{9. Базовые моменты и Быстрый счет}
+$\E[X^2] = \Var X + (\E X)^2$. Асимптотика Бернулли: $\P(X_n \text{ четно}) \to 1/2$.
+\textbf{Симметрия модулей:} Для $X \sim \N(0, \sigma^2)$ или Лапласа $\E[X^{\text{нечет}}]=0$. Ковариация: $\Cov(|X|, X^2) = \E[|X|^3] - \E|X|\E[X^2] = 0$. \textbf{Не нужно раскрывать модуль!}
+\textbf{Абсолютные моменты $\N(0, \sigma^2)$:} $\E|X|^p \!=\! \sigma^p 2^{p/2} \Gamma(\frac{p+1}{2})/\sqrt{\pi}$.
+$\E|X| = \sigma \sqrt{2/\pi}, \quad \E[X^2]=\sigma^2, \quad \mathbf{\E|X|^3 = 2\sigma^3 \sqrt{2/\pi}}$.
+
+\textbf{Сводка Распределений ($\E X, \Var X, \E[X^2]$):}
+\begin{itemize}
+    \item \textbf{Be($p$):} $p, \ p(1-p), \ p$
+    \item \textbf{Bin($n,p$):} $np, \ npq, \ npq+n^2p^2$
+    \item \textbf{Po($\lambda$):} $\lambda, \ \lambda, \ \lambda(\lambda+1)$
+    \item \textbf{Geom($p$) [от 1]:} $1/p, \ (1-p)/p^2, \ (2-p)/p^2$
+    \item \textbf{$U(a,b)$:} $\frac{a+b}{2}, \ \frac{(b-a)^2}{12}, \ \frac{a^2+ab+b^2}{3}$
+    \item \textbf{$\N(\mu,\sigma^2)$:} $\mu, \ \sigma^2, \ \mu^2+\sigma^2$
+    \item \textbf{Exp($\theta$):} $1/\theta, \ 1/\theta^2, \ 2/\theta^2$. (пл. $\theta e^{-\theta x}$)
+    \item \textbf{$\Gamma(\alpha,\lambda)$:} $\alpha/\lambda, \ \alpha/\lambda^2, \ \alpha(\alpha+1)/\lambda^2$
+    \item \textbf{Лаплас(0,$b$):} $0, \ 2b^2, \ 2b^2$ \quad (пл. $\frac{1}{2b}e^{-|x|/b}$)
+\end{itemize}
+
+\textbf{Sanity Checks (Проверки):}
+1. \textbf{Размерность:} $[X]\!=\!\text{м} \implies [\Var X]\!=\!\text{м}^2$. Для $g(X)\!=\!1/X^2$, дисперсия $\sigma_{as}^2 \sim [g]^2 \!=\! \text{м}^{-4}$. $\sigma_{as}^2<0$ --- ошибка в матрице Якоби!
+2. \textbf{Тест константы:} $\E[g(X,Y)|Z=z] = \varphi(z)$. Если $m \le g \le M \implies m \le \varphi(z) \le M$.
+
+\end{multicols*}
+\end{document}

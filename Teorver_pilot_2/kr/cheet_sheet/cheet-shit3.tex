@@ -1,0 +1,170 @@
+\documentclass[8pt, a4paper, landscape]{extarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage[margin=0.4cm]{geometry}
+\usepackage{multicol}
+\usepackage{enumitem}
+\usepackage{sectsty}
+
+\sectionfont{\normalsize\bfseries\scshape\vspace{-2ex}\hrule\vspace{1ex}}
+\subsectionfont{\small\bfseries\vspace{-2ex}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\setlength{\abovedisplayskip}{1pt}
+\setlength{\belowdisplayskip}{1pt}
+\setlist{nosep, leftmargin=1.2em}
+
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\N}{\mathcal{N}}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+
+\begin{document}
+\begin{multicols*}{4}
+
+\section*{1. Асимптотика и ЛБК}
+\textbf{Леммы Бореля-Кантелли (ЛБК):}
+\begin{enumerate}
+    \item $\sum \P(A_n) < \infty \implies \P(A_n \text{ б.ч.}) = 0$.
+    \item $\sum \P(A_n) = \infty$, $A_n$ незав. $\implies \P(A_n \text{ б.ч.}) = 1$.
+\end{enumerate}
+
+\textbf{Контрпример ($\xrightarrow{\P} \not\implies \xrightarrow{п.н.}$):} «Бегущий индикатор» на $[0,1]$ (отрезки длины $1/n$). Индикатор $\xrightarrow{\P} 0$, но любая точка покрывается бесконечно часто (т.к. $\sum 1/n = \infty$, ЛБК-2), п.н. предела нет. Сходимость есть, только если ряд вероятностей сходится!
+
+\textbf{Алгоритм поиска $C = \varlimsup \frac{\xi_n - a_n}{b_n}$:}
+\begin{enumerate}
+    \item \textbf{Порог:} Вводим $\varepsilon>0$, $A_n^\pm = \{ \xi_n > a_n + b_n(C \pm \varepsilon) \}$.
+    \item \textbf{Хвосты:} Заменяем $\P(A_n)$ на асимптотику хвоста.
+    \item \textbf{Ряды (Шкала Бертрана):} Обобщ. гарм. ряд $\sum \frac{(\ln n)^\beta}{n(\ln n)^C} \propto \sum \frac{1}{n(\ln n)^q}$. Сходится при $q>1$, расходится при $q \le 1$.
+    \item \textbf{Синтез:} Подбираем $C$: для $A_n^+$ ряд сходится (ЛБК-1 $\implies \varlimsup \le C$), для $A_n^-$ расходится (ЛБК-2 $\implies \varlimsup \ge C$).
+\end{enumerate}
+
+\textbf{Асимптотика хвостов $\P(\xi > x)$ при $x \to \infty$:}
+\begin{itemize}
+    \item $\N(0,1): \sim \frac{1}{\sqrt{2\pi} x} e^{-x^2/2}$ (убывает как $x^{-1}$)
+    \item $\Gamma(\alpha, \lambda): \sim \frac{\lambda^{\alpha-1}}{\Gamma(\alpha)} x^{\alpha-1} e^{-\lambda x}$
+    \item $\text{Exp}(\lambda): = e^{-\lambda x}$ (точное равенство)
+    \item Тяж. хвосты (Коши): $\sim C x^{-\alpha}$. Нормировка $b_n=n^{1/\alpha}$.
+\end{itemize}
+
+\textbf{Мастер-теорема для $K x^\beta e^{-\lambda x}$:}
+При нормировке $a_n \!=\! \frac{1}{\lambda}\ln n, b_n \!=\! \frac{1}{\lambda}\ln\ln n$, граница сходимости (искомый предел): $\mathbf{C = \beta + 1}$. (Если знаменатель просто $\ln \ln n$, то $C \!=\! \frac{\beta}{\lambda}$).
+$\text{Exp}(\lambda): \beta=0 \Rightarrow C=1$. 
+$\Gamma(\alpha, \lambda): \beta=\alpha-1 \Rightarrow C=\alpha$. 
+$\N(0,1):$ $a_n=\sqrt{2\ln n}$, $\beta=-1 \Rightarrow C=-1/2$.
+
+\section*{2. ЦПТ и Дельта-метод}
+\textbf{Топология сходимостей:}
+\begin{itemize}
+    \item $\xi_n \xrightarrow{d} C \iff \xi_n \xrightarrow{\P} C$ (\textbf{только} если предел --- константа).
+    \item ЦПТ: $\eta_n = \sqrt{n}(\overline{X} - \mu)$ сходится по $d$, но \textbf{не имеет} предела по $\P$ ($\eta_n - \eta_m$ не стремится к $0$).
+    \item $\xi_n \xrightarrow{d} \xi, \eta_n \xrightarrow{d} \eta \not\Rightarrow (\xi_n, \eta_n) \xrightarrow{d} (\xi, \eta)$. Нужна независимость компонент или многомерная ЦПТ.
+\end{itemize}
+
+\textbf{Алгоритм Дельта-метода (Сходимость по $d$):}
+\begin{enumerate}
+    \item \textbf{База:} Найти параметры $X_1$: $\mu = \E X_1$, $\sigma^2 = \Var X_1$.
+    \item \textbf{ЦПТ:} Записать: $\sqrt{n}(\overline{X} - \mu) \xrightarrow{d} \N(0, \sigma^2)$.
+    \item \textbf{Константа:} Убедиться, что вычитаемое $C = g(\mu)$.
+    \item \textbf{Дисперсия:} Найти $g'(\mu)$. Асимпт. дисперсия $\sigma_{as}^2 = [g'(\mu)]^2 \sigma^2$. Предел: $\N(0, \sigma_{as}^2)$.
+\end{enumerate}
+
+\textbf{ВЫРОЖДЕННЫЙ СЛУЧАЙ (2-й порядок, $\chi^2$):}
+Если $g'(\mu)=0$, но $g''(\mu)\ne 0$, классика дает $\toP 0$. Домножаем ряд Тейлора на $n$ (а не на $\sqrt{n}$):
+$ n(g(\overline{X}) - g(\mu)) \xrightarrow{d} \frac{\sigma^2 g''(\mu)}{2} \chi^2_1 $
+\textit{Предел — гамма-распределение, а не нормальное!}
+
+\textbf{Многомерный Дельта-метод:} $\vec{W}_i=(Y_i, Z_i)^T$ --- выборка, $\E[\vec{W}_1]=\vec{\mu}$, $\Sigma = \Cov(\vec{W}_1)$. $\sigma_{as}^2 = \nabla g(\vec{\mu})^T \Sigma \nabla g(\vec{\mu})$.
+\textit{Синтез для $g(y,z) = z/y^k$:} $\nabla g = \left(-\frac{k\mu_z}{\mu_y^{k+1}}, \frac{1}{\mu_y^k}\right)^T$.
+$ \sigma^2_{as} \!=\! \frac{k^2 \mu_z^2}{\mu_y^{2k+2}} \Var(Y) - \frac{2k \mu_z}{\mu_y^{2k+1}} \Cov(Y, Z) + \frac{1}{\mu_y^{2k}} \Var(Z) $
+
+\section*{3. Гауссовские векторы}
+\textbf{ВНИМАНИЕ (Сдвиг средних):} Проекции и формула Вика применимы \textbf{ТОЛЬКО} к центрированным векторам ($\vec{\mu}=\vec{0}$). Иначе сначала замена: $X_0 = X-\mu_X$, $Y_0=Y-\mu_Y$.
+
+\textbf{Формула Шеппарда (Вероятности ортантов):} 
+Для центрированного $(X,Y)$ с корреляцией $\rho$:
+$\P(X \!>\! 0, Y \!>\! 0) \!=\! \frac{1}{4} + \frac{1}{2\pi}\arcsin(\rho)$, \ $\P(XY \!<\! 0) \!=\! \frac{1}{\pi}\arccos(\rho)$.
+
+\textbf{Многомерная ХФ (Экспонента от вектора):}
+Для $\vec{\xi} \sim \N(\vec{\mu}, \Sigma)$ интеграл берется аналитически:
+$ \E[\exp(\vec{t}^T \vec{\xi})] = \exp\left( \vec{t}^T \vec{\mu} + \frac{1}{2} \vec{t}^T \Sigma \vec{t} \right) $
+\textit{Пример:} $\E[e^{X+Y+Z}] \implies \vec{t}=(1,1,1)^T$, ответ --- экспонента от полусуммы всех элементов $\Sigma$.
+
+\textbf{Формула Вика (Теорема Иссерлиса):} Для $\N(\vec{0}, \Sigma)$: $\E[\text{нечетн.}]=0$. $\E[X_1 X_2 X_3 X_4] = \E[X_1 X_2]\E[X_3 X_4] + \E[X_1 X_3]\E[X_2 X_4] + \E[X_1 X_4]\E[X_2 X_3]$.
+
+\textbf{Алгоритм вычисления нелинейного $\E[\cos(YZ)|X]$:}
+\begin{enumerate}
+    \item \textbf{Проекции:} Представить $Y = aX+\tilde{Y}$, $Z=bX+\tilde{Z}$.
+    $a \!=\! \frac{\Cov(Y,X)}{\Var(X)}$, $\Var(\tilde{Y}) \!=\! \Var(Y) - \frac{\Cov^2(X,Y)}{\Var(X)}$.
+    Вычислить $\Cov(\tilde{Y},\tilde{Z}) \!=\! \Cov(Y,Z) - ab\Var(X)$. Если 0 $\implies \tilde{Y} \perp\!\!\perp \tilde{Z}$. Зафиксируем $X=x \implies Y_x, Z_x$ независимы.
+    \item \textbf{Формула Эйлера:} $\cos \alpha = \text{Re}(e^{i\alpha})$. Ищем $\text{Re}(\E[e^{iY_x Z_x}])$.
+    \item \textbf{Итерированное $\E$:} Обусловим по $Z_x$. Внутреннее $\E$ --- это ХФ $\N(\mu_{Y_x}, \sigma_{Y_x}^2)$: $\E[e^{i Z_x Y_x}|Z_x] = \exp(i\mu_{Y_x} Z_x - \frac{1}{2}\sigma_{Y_x}^2 Z_x^2)$.
+    \item \textbf{Интеграл Гаусса:} Внешнее $\E$ по $Z_x \sim \N(\mu_{Z_x}, \sigma_{Z_x}^2)$ (с константами $c=i\mu_{Y_x}, d=-\frac{1}{2}\sigma_{Y_x}^2$):
+    $ \E[e^{c\eta + d\eta^2}] = \frac{1}{\sqrt{1-2d\sigma^2}}\exp\left( \frac{c^2\sigma^2+2c\mu+2d\mu^2}{2(1-2d\sigma^2)} \right) $
+\end{enumerate}
+\textit{Шорткат для 1 переменной:} $\E[\cos W] = e^{-\sigma_W^2/2}\cos(\mu_W)$.
+
+\section*{4. Смешанные распределения}
+$X$ имеет скачки $x_k$ и непрерывн. участки. Плотность: $p_X^*(x) = F'_{ac}(x) + \sum p_k \delta(x-x_k)$. \textit{Проверка:} $\int p_{ac}dx + \sum p_k = 1$.
+\textbf{Алгоритм $\E[g(X,Y)]$ (Смешанная $X \perp\!\!\perp$ Непрерывн. $Y$):}
+\begin{enumerate}
+    \item \textbf{Внутреннее $\E$:} По непрерывной $Y$. Фиксируем $X=x$. $\psi(x) = \E[g(x,Y)] = \int g(x,y)p_Y(y)dy$.
+    \item \textbf{Атомы $X$:} Точки разрыва $x_k$. $p_k = F_X(x_k) - F_X(x_k-0)$.
+    \item \textbf{Синтез:} $\E[g(X,Y)] = \int \psi(x) F'_{ac}(x) dx + \sum \psi(x_k) p_k$.
+\end{enumerate}
+\textbf{БЫСТРАЯ ФОРМУЛА:} Если $Y \sim U(a,b)$, то $\E[Y^X] = \int_a^b y^X \frac{1}{b-a} dy = \frac{b^{X+1}-a^{X+1}}{(b-a)(X+1)}$.
+
+\section*{5. Условные плотности и Якобиан}
+\textbf{Алгоритм Якобиана (поиск $p_{X|Z}$ где $Z=f(X,Y)$):}
+\begin{enumerate}
+    \item \textbf{Совместная:} Если $X \perp\!\!\perp Y \implies p_{X,Y} = p_X(x)p_Y(y)$.
+    \item \textbf{Замена:} Вводим $U=X, Y=h(X,Z)$. Якобиан $J = \partial h(x,z) / \partial z$. Плотность: $p_{X,Z} = p_{X,Y}(x, h(x,z)) \cdot |J|$.
+    \item \textbf{ДИНАМИЧЕСКИЕ ГРАНИЦЫ (Критично!):} Подставляем $y=h(x,z)$ в индикаторы $I_{\{y \in D_y\}}$. Разрешаем относительно $x$. \textit{Пример:} $x \in (0,1), xz \in (0,1) \implies 0 < x < \min(1, 1/z)$.
+    \item \textbf{Маргинализация:} $\int p_{X,Z} dx$. Из-за $\min$ интеграл $p_Z(z)$ распадается на ветви (напр. $z \le 1$ и $z > 1$).
+    \item \textbf{Условная:} $p_{X|Z} \!=\! p_{X,Z}/p_Z$. $\E[g|Z=z] \!=\! \int g p_{X|Z}dx$.
+\end{enumerate}
+\textbf{Трюк измеримости:} $\E[XY | Z=Y/X] = \E[X(XZ)|Z] = Z \cdot \E[X^2|Z]$. Относительно условия $Z$ --- константа.
+
+\section*{Комбинаторика и Симметрия}
+\textbf{Комбинаторная симметрия:} Если $X_1 \dots X_n$ н.о.р., а функция условия $S = \sum X_i$ симметрична, то все $\E[X_k|S]$ равны.
+$\sum \E[X_k|S] = \E[S|S] = S \implies \E[X_k|S] = S/n$.
+\textbf{Немонотонные условия:} Если биекции нет ($Z=X^2$).
+$X \sim U(-a,a)$, плотность четная. Усл. распр. дискретно: $\P(X=\sqrt{z}|z) = \P(X=-\sqrt{z}|z) = 1/2 \implies \E[X|X^2=z] = 0$.
+
+\section*{Характеристические функции}
+$\varphi(t) = \E[e^{it\xi}]$. Свойства: $\varphi(0)=1$, $|\varphi(t)| \le 1$, $\varphi_{aX+b}(t) = e^{itb}\varphi_X(at)$. Моменты: $\E[X^k] = \varphi^{(k)}(0) / i^k$.
+$\xi \perp\!\!\perp \eta \implies \varphi_{\xi+\eta} = \varphi_\xi \varphi_\eta$. \textbf{Решетчатость:} $|\varphi(t_0)|=1, t_0 \ne 0 \iff$ дискретное.
+\textbf{Таблица:} $\N(\mu,\sigma^2): \exp(i\mu t - \frac{1}{2}\sigma^2 t^2)$, $\text{Po}(\lambda): \exp(\lambda(e^{it}-1))$, $\text{Bin}(n,p): (1-p+pe^{it})^n$, $\text{Exp}(\lambda): \lambda / (\lambda-it)$, $U(a,b): \frac{e^{itb}-e^{ita}}{it(b-a)}$, Лаплас $L(0,b): 1 / (1+b^2 t^2)$, Коши $K(a): e^{-a|t|}$.
+
+\section*{Неравенства и Случайные суммы}
+\textbf{Чернов:} $\P(X \ge a) \le \inf_{t>0} e^{-ta}\E[e^{tX}]$.
+\textbf{Случ. суммы:} $S_\nu = \sum_{i=1}^\nu \xi_i$ ($\nu \perp\!\!\perp \xi_i$).
+\textbf{Вальд:} $\E[S_\nu] \!=\! \E\nu\E\xi_1$. $\Var(S_\nu) \!=\! \E\nu\Var\xi_1 \!+\! \Var\nu(\E\xi_1)^2$.
+Если $\nu \sim \text{Po}(\lambda)$, $\xi_i \sim \text{Be}(p)$, то успехи $S_\nu \sim \text{Po}(\lambda p)$ и неудачи $\nu-S_\nu \sim \text{Po}(\lambda(1-p))$ --- \textbf{независимы}!
+
+\section*{Моменты и Sanity Checks}
+Фундаментально: $\E[X^2] = \Var X + (\E X)^2$. 
+\textbf{Симметрия модулей:} Для $X \sim \N(0, \sigma^2)$ или Лапласа $\E[X^{\text{нечет}}]=0$. Ковариация: $\Cov(|X|, X^2) = \E[|X|^3] - \E|X|\E[X^2]$. \textbf{Не раскрывать модуль!} Считается в 1 строку.
+\textbf{Абс. моменты $\N(0, \sigma^2)$:} $\E|X|^p \!=\! \sigma^p 2^{p/2} \Gamma((p+1)/2)/\sqrt{\pi}$.
+$\E|X| = \sigma \sqrt{2/\pi}, \quad \E[X^2]=\sigma^2, \quad \mathbf{\E|X|^3 = 2\sigma^3 \sqrt{2/\pi}}$. $\E[X^4]=3\sigma^4$.
+
+\textbf{Сводка Распределений ($\E X, \Var X, \E[X^2]$):}
+\begin{itemize}
+    \item \textbf{Be($p$):} $p, \, pq, \, p$. \textbf{Bin($n,p$):} $np, \, npq, \, npq+n^2p^2$
+    \item \textbf{Po($\lambda$):} $\lambda, \, \lambda, \, \lambda(\lambda+1)$. \textbf{Geom($p$) [от 1]:} $1/p, \, q/p^2, \, (2-p)/p^2$
+    \item \textbf{$U(a,b)$:} $\frac{a+b}{2}, \, \frac{(b-a)^2}{12}, \, \frac{a^2+ab+b^2}{3}$
+    \item \textbf{Exp($\lambda$):} $1/\lambda, \, 1/\lambda^2, \, 2/\lambda^2$. \textbf{$\Gamma(\alpha,\lambda)$:} $\alpha/\lambda, \, \alpha/\lambda^2, \, \frac{\alpha(\alpha+1)}{\lambda^2}$
+    \item \textbf{Лаплас(0,$b$):} $0, \, 2b^2, \, 2b^2$ (пл. $\frac{1}{2b}e^{-|x|/b}$)
+    \item \textbf{Коши $K(x_0, \gamma)$:} $\E X, \Var X$ \textbf{не существуют}! ЗБЧ и ЦПТ неприменимы. $\overline{X} \sim K(x_0, \gamma)$.
+\end{itemize}
+
+\textbf{Sanity Checks (Самопроверка):}
+\begin{enumerate}
+    \item \textbf{Размерность:} $[X]\!=\!\text{м} \implies [\Var X]\!=\!\text{м}^2$. Для $g(X)\!=\!1/X^2$, дисперсия $\sigma_{as}^2 \sim [g]^2 \!=\! \text{м}^{-4}$. Нарушение = ошибка произв.
+    \item \textbf{Квадратичная форма / Дисперсия:} $\sigma_{as}^2 \ge 0$, $\Var(Y|X) \le \Var(Y)$. Иначе ошибка в знаках ковариации.
+\end{enumerate}
+
+\end{multicols*}
+\end{document}
