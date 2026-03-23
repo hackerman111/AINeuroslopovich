@@ -1,0 +1,936 @@
+% ==============================================================================
+% SYSTEM AI PROMPT & TYPESETTING RULES (STRICTLY ENFORCED)
+% ==============================================================================
+% ИНСТРУКЦИЯ ДЛЯ ИИ-ГЕНЕРАТОРА КОДА. ЧИТАТЬ ОБЯЗАТЕЛЬНО!
+% Вы — профессиональный LaTeX-верстальщик. При генерации контента внутри 
+% этого документа вы ОБЯЗАНЫ соблюдать следующие правила:
+%
+% 1. [КРИТИЧЕСКИ ВАЖНО] ПОЛНЫЙ ЗАПРЕТ НА MARKDOWN:
+%    - ЗАПРЕЩЕНО использовать `**жирный текст**` (используй \textbf{...})
+%    - ЗАПРЕЩЕНО использовать `*курсив*` (используй \textit{...} или \emph{...})
+%    - ЗАПРЕЩЕНО использовать `# Заголовок` (используй \section{...}, \subsection{...})
+%    - ЗАПРЕЩЕНО использовать обратные кавычки `код` (используй \texttt{...})
+%    Любое использование Markdown будет считаться фатальной ошибкой генерации.
+%
+% 2. СТРОГИЕ СПИСКИ:
+%    - Никаких списков через дефисы "-" или звездочки "* " текстом.
+%    - Все списки ДОЛЖНЫ быть обернуты в окружения \begin{itemize} ... \end{itemize} 
+%      или \begin{enumerate} ... \end{enumerate}. Элементы задаются через \item.
+%
+% 3. МАТЕМАТИЧЕСКАЯ СЕМАНТИКА И ОКРУЖЕНИЯ:
+%    - Используй \begin{equation}, \begin{align}, \begin{gather} для формул.
+%    - ЗАПРЕЩЕНО использовать устаревший синтаксис $$...$$ для выключных формул.
+%      Используй \[ ... \] или окружение equation*.
+%    - Системы уравнений и кусочные функции оформлять ТОЛЬКО через \begin{cases}.
+%    - Матрицы оформлять через pmatrix, bmatrix, vmatrix или pNiceMatrix (для блочных).
+%
+% 4. МИКРОТИПОГРАФИКА И ИНТЕРВАЛЫ:
+%    - Для контроля отступов использовать \vspace{...} и \hspace{...}.
+%    - Не использовать пустые строки для создания вертикального отступа.
+%    - После формул корректно расставлять знаки препинания (запятые, точки).
+%
+% 5. СТРУКТУРНЫЕ БЛОКИ (ТЕОРЕМЫ И ОПРЕДЕЛЕНИЯ):
+%    - Вся теория должна оформляться через семантические окружения:
+%      \begin{definition}, \begin{theorem}, \begin{lemma}, \begin{proof}, \begin{remark}.
+%    - Для выделенных блоков ОБЯЗАТЕЛЬНО использовать tcolorbox-окружения:
+%      \begin{tcbdefinition}, \begin{tcbtheorem}, \begin{tcblemma},
+%      \begin{tcbcorollary}, \begin{tcbalgorithmbox}, \begin{tcbwarning},
+%      \begin{tcbexample}, \begin{tcbinsight}, \begin{tcbproof}.
+%
+% 6. [КРИТИЧЕСКИ ВАЖНО] АЛГОРИТМЫ И ПОСЛЕДОВАТЕЛЬНЫЕ ТРЕБОВАНИЯ:
+%    - ЛЮБОЙ алгоритм, псевдокод, пошаговая инструкция или нумерованный список
+%      последовательных шагов/требований ОБЯЗАН быть обёрнут в \begin{tcbalgorithmbox}.
+%    - ЗАПРЕЩЕНО выносить алгоритмы, шаги и последовательности в голый текст или
+%      обычный \begin{enumerate} без обёртки в tcbalgorithmbox.
+%    - Если перечисление является логически упорядоченной процедурой (даже из 2 шагов),
+%      оно считается алгоритмом и требует tcbalgorithmbox.
+%
+% 7. [КРИТИЧЕСКИ ВАЖНО] ДОКАЗАТЕЛЬСТВА:
+%    - Все доказательства оформляются исключительно через \begin{tcbproof} ... \end{tcbproof}.
+%    - ЗАПРЕЩЕНО использовать стандартное amsthm окружение \begin{proof}.
+%    - Знак конца доказательства \qed расставляется АВТОМАТИЧЕСКИ окружением tcbproof,
+%      вручную его добавлять ЗАПРЕЩЕНО.
+%
+% 8. [КРИТИЧЕСКИ ВАЖНО] УМНЫЕ ССЫЛКИ (\cref и \Cref):
+%    - Для ссылок на теоремы, леммы, определения и алгоритмы ВСЕГДА использовать
+%      \cref{label} (строчная) или \Cref{label} (в начале предложения).
+%    - ЗАПРЕЩЕНО использовать \ref без \cref — это приводит к потере семантики.
+%    - Каждый tcolorbox-блок, на который планируется ссылаться, ДОЛЖЕН иметь
+%      метку: добавляй \label{...} СРАЗУ после открывающего тега окружения.
+%    - Соглашение об именовании меток:
+%        определения  — \label{def:...}
+%        теоремы      — \label{thm:...}
+%        леммы        — \label{lem:...}
+%        следствия    — \label{cor:...}
+%        алгоритмы    — \label{alg:...}
+%        примеры      — \label{ex:...}
+%        уравнения    — \label{eq:...}
+%        разделы      — \label{sec:...}
+%    - ЗАПРЕЩЕНО использовать произвольные префиксы вне этого соглашения.
+%
+% 9. СПЕЦИФИКА МАТРИЧНЫХ ВЫЧИСЛЕНИЙ (ИСПОЛЬЗУЙ МАКРОСЫ):
+%    - Транспонирование: A\T (не A^T и не A^\top).
+%    - Эрмитово сопряжение: A\H.
+%    - Норма: \norm{A}, модуль: \abs{x}, скалярное произведение: \inner{x, y}.
+%    - Операторы: \rank(A), \tr(A), \diag(x), \im(A), \ker(A).
+% ==============================================================================
+
+\documentclass[12pt, a4paper]{article}
+
+% --- Кодировки, шрифты и языки ---
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian, english]{babel}
+\usepackage{cmap}
+\usepackage{lmodern}
+
+% --- Микротипографика ---
+\usepackage{microtype}
+\usepackage{indentfirst}
+
+% ==============================================================================
+% УЛУЧШЕННАЯ ПРЕАМБУЛА (ИСПРАВЛЕНИЕ ОШИБОК И ВЫРАВНИВАНИЕ ТЕКСТА)
+% ==============================================================================
+
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\tolerance=2000
+\emergencystretch=1.5em
+\hyphenpenalty=500
+\hbadness=10000
+
+\microtypesetup{
+    expansion=true,
+    protrusion=true
+}
+
+\setlist{
+    nosep,
+    itemsep=0.5ex,
+    parsep=0.5ex,
+    topsep=0.5ex,
+    partopsep=0pt,
+    leftmargin=*}
+
+\lccode`\-=`\-
+\def\hyph{\penalty10000\hskip0pt\penalty8000-\penalty10000\hskip0pt}
+
+% --- Настройка межстрочного интервала ---
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Геометрия страницы ---
+\usepackage[
+    left=10mm,
+    right=20mm,
+    top=20mm,
+    bottom=20mm,
+    headsep=10mm,
+    footskip=10mm
+]{geometry}
+
+% --- Мощная математика (AMS + Mathtools) ---
+\usepackage{amsmath, amsfonts, amssymb, amscd}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{bm}
+
+% --- Специфично для матричных вычислений ---
+\usepackage{nicematrix}
+\usepackage{blkarray}
+
+% --- Алгоритмы (Псевдокод) ---
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetKwInput{KwData}{Вход}
+\SetKwInput{KwResult}{Выход}
+
+% --- Теоремы, леммы, определения ---
+\usepackage{amsthm}
+\usepackage{thmtools}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Теорема}[section]
+\newtheorem{lemma}[theorem]{Лемма}
+\newtheorem{corollary}[theorem]{Следствие}
+\newtheorem{proposition}[theorem]{Утверждение}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Определение}[section]
+\newtheorem{example}{Пример}[section]
+\newtheorem{problem}{Задача}[section]
+
+\theoremstyle{remark}
+\newtheorem{remark}{Замечание}[section]
+
+% --- Графика и таблицы ---
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{calc, matrix, arrows.meta, positioning}
+
+% --- Списки ---
+\usepackage{enumitem}
+\setlist{nosep, itemsep=1ex, leftmargin=*}
+
+% --- Ссылки и навигация ---
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=magenta, urlcolor=teal]{hyperref}
+\usepackage[noabbrev, russian]{cleveref}
+
+% ==============================================================================
+% ЦВЕТОВАЯ ПАЛИТРА ДОКУМЕНТА
+% ==============================================================================
+
+\definecolor{TCBBlue}{RGB}{30, 80, 150}
+\definecolor{TCBBlueBg}{RGB}{235, 242, 252}
+\definecolor{TCBBlueLine}{RGB}{120, 170, 230}
+
+\definecolor{TCBGreen}{RGB}{25, 110, 60}
+\definecolor{TCBGreenBg}{RGB}{234, 247, 238}
+\definecolor{TCBGreenLine}{RGB}{100, 190, 130}
+
+\definecolor{TCBPurple}{RGB}{90, 40, 140}
+\definecolor{TCBPurpleBg}{RGB}{244, 238, 252}
+\definecolor{TCBPurpleLine}{RGB}{180, 140, 220}
+
+\definecolor{TCBTeal}{RGB}{15, 105, 120}
+\definecolor{TCBTealBg}{RGB}{232, 247, 249}
+
+\definecolor{TCBOrange}{RGB}{180, 80, 20}
+\definecolor{TCBOrangeBg}{RGB}{253, 243, 232}
+
+\definecolor{TCBGray}{RGB}{55, 60, 70}
+\definecolor{TCBGrayBg}{RGB}{245, 245, 247}
+
+\definecolor{TCBGold}{RGB}{155, 115, 0}
+\definecolor{TCBGoldBg}{RGB}{254, 250, 235}
+
+\definecolor{TCBSlate}{RGB}{50, 55, 75}       % Тёмно-сланцевый — доказательства
+\definecolor{TCBSlateBg}{RGB}{240, 241, 245}  % Холодный светлый фон
+
+% ==============================================================================
+% TCOLORBOX: ЗАГРУЗКА И БАЗОВЫЙ СТИЛЬ
+% ==============================================================================
+% АРХИТЕКТУРНОЕ РЕШЕНИЕ: все рамки — строго прямоугольники (sharp corners)
+% с левой цветной полосой. Ни одно окружение НЕ использует arc или скруглённые углы.
+% Это обеспечивает единый академический стиль документа.
+% ==============================================================================
+
+\usepackage[most]{tcolorbox}
+
+% ------------------------------------------------------------------------------
+% Единственный базовый стиль: прямоугольник + левая цветная полоса.
+% ВСЕ окружения документа строятся на этом стиле.
+% #1 — цвет полосы, #2 — цвет фона, #3 — цвет заголовка
+% ------------------------------------------------------------------------------
+\tcbset{
+    tcb@leftbar/.style n args={3}{
+        enhanced,
+        breakable,
+        sharp corners,          % ОБЯЗАТЕЛЬНО: все углы прямые, никаких arc=...
+        boxrule=0pt,
+        frame hidden,
+        borderline west={4pt}{0pt}{#1},
+        colback=#2,
+        colframe=#1,
+        coltitle=#3,
+        fonttitle=\bfseries\sffamily,
+        % --- ИСПРАВЛЕНИЕ: Встроенный заголовок ---
+        colbacktitle=#2,   % Фон заголовка совпадает с фоном блока
+        titlerule=0pt,     % Убираем линию между заголовком и текстом
+        toptitle=2pt,      % Внутренний отступ сверху до заголовка
+        bottomtitle=1pt,   % Внутренний отступ от заголовка до текста
+        % -----------------------------------------
+        top=4pt, bottom=6pt, left=8pt, right=6pt,
+        before skip=10pt, after skip=10pt,
+    }
+}
+
+% ==============================================================================
+% TCOLORBOX: АКАДЕМИЧЕСКИЕ ОКРУЖЕНИЯ
+% ==============================================================================
+
+% --- 1. ОПРЕДЕЛЕНИЕ (левая синяя полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={определение}{определения},
+    Crefname={Определение}{Определения},
+]{tcbdefinition}[1][]{
+    tcb@leftbar={TCBBlue}{TCBBlueBg}{TCBBlue},
+    title={Определение~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbdefinition,
+}
+
+% --- 2. ТЕОРЕМА (левая зелёная полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={теорема}{теоремы},
+    Crefname={Теорема}{Теоремы},
+]{tcbtheorem}[1][]{
+    tcb@leftbar={TCBGreen}{TCBGreenBg}{TCBGreen},
+    title={Теорема~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbtheorem,
+}
+
+% --- 3. ЛЕММА (левая пурпурная полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={лемма}{леммы},
+    Crefname={Лемма}{Леммы},
+]{tcblemma}[1][]{
+    tcb@leftbar={TCBPurple}{TCBPurpleBg}{TCBPurple},
+    title={Лемма~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcblemma,
+}
+
+% --- 4. СЛЕДСТВИЕ (левая бирюзовая полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={следствие}{следствия},
+    Crefname={Следствие}{Следствия},
+]{tcbcorollary}[1][]{
+    tcb@leftbar={TCBTeal}{TCBTealBg}{TCBTeal},
+    title={Следствие~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbcorollary,
+}
+
+% --- 5. ДОКАЗАТЕЛЬСТВО (левая сланцевая полоса, знак QED справа) ---
+% Использование: \begin{tcbproof} ... \end{tcbproof}
+% Знак \(\square\) добавляется АВТОМАТИЧЕСКИ — вручную \qed НЕ ставить.
+\newtcolorbox{tcbproof}[1][]{
+    tcb@leftbar={TCBSlate}{TCBSlateBg}{TCBSlate},
+    title={Доказательство\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    after upper={\hfill\(\square\)},
+}
+
+% --- 6. ЗАМЕЧАНИЕ (левая серая полоса) ---
+\newtcolorbox{tcbremark}[1][]{
+    tcb@leftbar={TCBGray!60}{TCBGrayBg}{TCBGray},
+    title={Замечание\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+}
+
+% --- 7. ПРЕДУПРЕЖДЕНИЕ / ВНИМАНИЕ (левая оранжевая полоса) ---
+\newtcolorbox{tcbwarning}[1][]{
+    tcb@leftbar={TCBOrange}{TCBOrangeBg}{TCBOrange},
+    title={\(\vartriangle\)\ Внимание\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+}
+
+% --- 8. ПРИМЕР (левая серая полоса, белый фон) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={пример}{примера},
+    Crefname={Пример}{Примера},
+]{tcbexample}[1][]{
+    tcb@leftbar={TCBGray!50}{white}{TCBGray},
+    title={Пример~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbexample,
+}
+
+% --- 9. КЛЮЧЕВАЯ ИДЕЯ / ИНСАЙТ (левая золотая полоса) ---
+\newtcolorbox{tcbinsight}[1][]{
+    tcb@leftbar={TCBGold}{TCBGoldBg}{TCBGold},
+    title={\(\star\)\ Ключевая идея\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+}
+
+% --- 10. АЛГОРИТМ (левая синяя полоса) ---
+% [КРИТИЧЕСКИ ВАЖНО] Использовать для ЛЮБОГО алгоритма, псевдокода,
+% пошаговой инструкции и нумерованного списка последовательных требований/шагов.
+% Использование: \begin{tcbalgorithmbox}[Название алгоритма] ... \end{tcbalgorithmbox}
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={алгоритм}{алгоритма},
+    Crefname={Алгоритм}{Алгоритма},
+]{tcbalgorithmbox}[1][]{
+    tcb@leftbar={TCBBlue}{TCBBlueBg}{TCBBlue},
+    title={Алгоритм~\thetcbcounter\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+    fontupper=\small,
+    label type=tcbalgorithmbox,
+}
+
+% ==============================================================================
+% КАСТОМНЫЕ МАКРОСЫ И ОПЕРАТОРЫ ДЛЯ МАТРИЧНЫХ ВЫЧИСЛЕНИЙ
+% ==============================================================================
+
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\im}{Im}
+\undef\ker
+\DeclareMathOperator{\ker}{Ker}
+\DeclareMathOperator{\Span}{span}
+\DeclareMathOperator{\cond}{cond}
+\DeclareMathOperator{\sign}{sign}
+
+\newcommand{\T}{^{\mathsf{T}}}
+\newcommand{\Htrans}{^{\mathsf{H}}}
+\let\H\Htrans
+
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter{\inner}{\langle}{\rangle}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+\usepackage{import}
+
+% ==============================================================================
+% КОНЕЦ ПРЕАМБУЛЫ. НАЧАЛО ДОКУМЕНТА
+% ==============================================================================
+
+\title{\textbf{Основы матричных вычислений}\\ \Large Семинар / Лекция}
+\author{Название университета / Факультет}
+\date{\today}
+
+\begin{document}
+\tableofcontents
+\newpage
+\maketitle
+
+% ==============================================================================
+% lec9.tex — Демонстрационный файл: все правила вёрстки + матричные примеры
+% Каждый блок явно помечен, какое правило промпта он иллюстрирует.
+% ==============================================================================
+
+\begin{abstract}
+    \noindent Данный документ демонстрирует корректное использование преамбулы.
+    Все генерации ИИ обязаны следовать строгой семантической структуре,
+    показанной ниже.
+\end{abstract}
+
+\vspace{5mm}
+
+% ==============================================================================
+\section{Сингулярное разложение (SVD)}
+\label{sec:svd}
+% ==============================================================================
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 1: никакого Markdown — только LaTeX-команды.
+% ПРАВИЛО 5: tcbdefinition для определений.
+% ПРАВИЛО 8: метка def:svd по соглашению def:...
+% ------------------------------------------------------------------------------
+\begin{tcbdefinition}[Сингулярное разложение]
+\label{def:svd}
+    Пусть матрица $\bm{A} \in \R^{m \times n}$.
+    \textit{Сингулярным разложением} (SVD) матрицы $\bm{A}$ называется
+    факторизация вида
+    % ПРАВИЛО 3: equation с меткой, никаких $$...$$
+    \begin{equation}
+        \bm{A} = \bm{U}\,\bm{\Sigma}\,\bm{V}\T,
+        \label{eq:svd}
+    \end{equation}
+    где $\bm{U} \in \R^{m \times m}$ и $\bm{V} \in \R^{n \times n}$ —
+    ортогональные матрицы, а $\bm{\Sigma} \in \R^{m \times n}$ —
+    псевдодиагональная матрица с сингулярными числами
+    $\sigma_1 \geq \sigma_2 \geq \cdots \geq \sigma_r > 0$,
+    $r = \rank(\bm{A})$.
+\end{tcbdefinition}
+
+% ПРАВИЛО 8: ссылки ТОЛЬКО через \cref / \Cref, никогда через голый \ref
+Согласно \cref{def:svd}, разложение~\cref{eq:svd} существует для любой
+вещественной матрицы.
+\Cref{thm:svd-exist} ниже доказывает это утверждение.
+
+% ПРАВИЛО 3: матрица через pNiceMatrix с подписями строк/столбцов
+% ПРАВИЛО 4: \vspace для отступов, не пустые строки
+Матрица $\bm{\Sigma}$ из~\cref{eq:svd} имеет вид
+\begin{equation}
+    \bm{\Sigma} =
+    \begin{pNiceMatrix}[first-row, first-col, margin]
+              & 1          & \Cdots  &              & n      \\
+        1     & \sigma_1   &         &              &        \\
+        \Vdots&            & \Ddots  &              & \Vdots \\
+              &            &         & \sigma_r     &        \\
+        m     &            & \Cdots  &              & 0
+    \end{pNiceMatrix},
+    \label{eq:sigma}
+\end{equation}
+где нули занимают все позиции вне главной диагонали.
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 5: tcbtheorem для утверждений.
+% ПРАВИЛО 8: метка thm:svd-exist по соглашению thm:...
+% ------------------------------------------------------------------------------
+\begin{tcbtheorem}[Существование SVD]
+\label{thm:svd-exist}
+    Для любой матрицы $\bm{A} \in \C^{m \times n}$ существует сингулярное
+    разложение $\bm{A} = \bm{U}\,\bm{\Sigma}\,\bm{V}\H$.
+    Сингулярные числа $\sigma_i$ определены однозначно;
+    при их попарной различности матрицы $\bm{U}$ и $\bm{V}$ единственны
+    с точностью до знаков столбцов.
+\end{tcbtheorem}
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 7: доказательство ТОЛЬКО через tcbproof.
+%            Знак \square добавляется АВТОМАТИЧЕСКИ — вручную \qed не ставить.
+% ------------------------------------------------------------------------------
+\begin{tcbproof}[теоремы~\ref{thm:svd-exist}]
+    Рассмотрим симметричную матрицу $\bm{A}\T\bm{A} \in \R^{n \times n}$.
+    Она положительно полуопределена, поэтому имеет спектральное разложение
+    \begin{equation}
+        \bm{A}\T\bm{A}
+        = \bm{V}\,\diag(\sigma_1^2, \ldots, \sigma_r^2, 0, \ldots, 0)\,\bm{V}\T.
+        \label{eq:ata}
+    \end{equation}
+    Полагая $\bm{u}_i = \bm{A}\bm{v}_i / \sigma_i$ для $i = 1, \ldots, r$
+    и дополняя до ортонормированного базиса, получаем матрицу $\bm{U}$.
+    Непосредственная проверка показывает, что $\bm{A} = \bm{U}\bm{\Sigma}\bm{V}\T$.
+\end{tcbproof}
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 5: tcbinsight для ключевых идей.
+% ------------------------------------------------------------------------------
+\begin{tcbinsight}[Геометрический смысл SVD]
+    SVD представляет линейное отображение $\bm{A}$ как последовательность
+    трёх геометрических преобразований: поворота $\bm{V}\T$, масштабирования
+    $\bm{\Sigma}$ и второго поворота $\bm{U}$.
+    Сингулярные числа $\sigma_i$ — коэффициенты растяжения вдоль главных осей.
+\end{tcbinsight}
+
+% ==============================================================================
+\subsection{Свойства SVD и вычислительные аспекты}
+\label{sec:svd-props}
+% ==============================================================================
+
+% ПРАВИЛО 2: список через \begin{itemize}, никаких дефисов текстом.
+% ПРАВИЛО 9: макросы \rank, \norm, \cond, \tr.
+Основные свойства сингулярного разложения:
+\begin{itemize}
+    \item Ранг матрицы равен числу ненулевых сингулярных чисел:
+          $\rank(\bm{A}) = r$.
+    \item Евклидова норма совпадает с максимальным сингулярным числом:
+          $\norm{\bm{A}}_2 = \sigma_1$.
+    \item Число обусловленности: $\cond_2(\bm{A}) = \sigma_1 / \sigma_r$.
+    \item Фробениусова норма: $\norm{\bm{A}}_F^2 = \tr(\bm{A}\T\bm{A})
+          = \sum_{i=1}^r \sigma_i^2$.
+\end{itemize}
+
+% ПРАВИЛО 5: tcbremark для пояснений.
+\begin{tcbremark}
+    Для иллюстрации блочных вычислений ниже используется окружение
+    \texttt{pNiceMatrix}. Пакет \texttt{nicematrix} идеально подходит
+    для работы с блочными матрицами, пунктирными линиями и сложными
+    выделениями.
+\end{tcbremark}
+
+% ПРАВИЛО 3: матрица через pNiceMatrix, через \[ ... \], не $$
+\[
+    \bm{M} =
+    \begin{pNiceMatrix}
+        a_{11} & a_{12} \\
+        a_{21} & a_{22}
+    \end{pNiceMatrix}.
+\]
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 6: ЛЮБОЙ алгоритм / пошаговая процедура — ТОЛЬКО в tcbalgorithmbox.
+%            Голый enumerate без обёртки ЗАПРЕЩЁН для последовательных шагов.
+% ПРАВИЛО 8: метка alg:power-svd по соглашению alg:...
+% ------------------------------------------------------------------------------
+\begin{tcbalgorithmbox}[Степенная итерация для нахождения $\sigma_1$]
+\label{alg:power-svd}
+    \textbf{Вход:} матрица $\bm{A} \in \R^{m \times n}$,
+    начальный вектор $\bm{x}_0 \in \R^n$, точность $\varepsilon > 0$.\\
+    \textbf{Выход:} наибольшее сингулярное число $\sigma_1$
+    и правый сингулярный вектор $\bm{v}_1$.
+    \begin{enumerate}
+        \item Нормировать: $\bm{v} \gets \bm{x}_0 / \norm{\bm{x}_0}$.
+        \item Повторять до сходимости:
+        \begin{enumerate}
+            \item $\bm{u} \gets \bm{A}\bm{v}$;\quad
+                  $\sigma \gets \norm{\bm{u}}$;\quad
+                  $\bm{u} \gets \bm{u}/\sigma$.
+            \item $\bm{v} \gets \bm{A}\T\bm{u}$;\quad
+                  $\bm{v} \gets \bm{v}/\norm{\bm{v}}$.
+            \item Если $\abs{\sigma_{\mathrm{new}} - \sigma_{\mathrm{old}}}
+                  < \varepsilon$ — остановиться.
+        \end{enumerate}
+        \item Вернуть $(\sigma,\,\bm{v})$.
+    \end{enumerate}
+\end{tcbalgorithmbox}
+
+% ПРАВИЛО 8: ссылка на алгоритм через \cref
+Сходимость \cref{alg:power-svd} определяется отношением $\sigma_2/\sigma_1$:
+чем оно меньше, тем быстрее итерация.
+
+% ==============================================================================
+\section{Структурные матрицы с корректной сеткой}
+\label{sec:structured}
+% ==============================================================================
+
+В этом разделе представлены матрицы, где структура блоков строго соответствует
+количеству строк и столбцов.
+
+% ==============================================================================
+\subsection{Блочно-ленточная матрица}
+\label{sec:block-band}
+% ==============================================================================
+
+Для корректной работы \texttt{\textbackslash Block\{2-2\}} в нижней части
+матрицы явно добавляем пустую строку, расширяя сетку до нужного размера.
+
+\begin{equation}
+    \bm{\mathcal{M}} =
+    \begin{pNiceMatrix}[margin, columns-width=10mm]
+        \Block[draw]{2-2}{\bm{B}_1} & & \bm{0}   & \Cdots & \bm{0}   \\
+        & & \Vdots   &        & \Vdots   \\
+        \bm{0} & \Cdots & \bm{B}_i & \Cdots & \bm{0}   \\
+        \Vdots &        & \Vdots   & \Block[draw]{2-2}{\bm{B}_n} & \\
+        \bm{0} & \Cdots & \bm{0}   &        &
+    \end{pNiceMatrix}.
+    \label{eq:block-band}
+\end{equation}
+
+% ==============================================================================
+\subsection{Разреженная трёхдиагональная матрица}
+\label{sec:tridiag}
+% ==============================================================================
+
+\begin{equation}
+    \bm{A} =
+    \begin{pNiceMatrix}
+        a_{11} & a_{12} & 0         & \Cdots    & 0            \\
+        a_{21} & a_{22} & a_{23}    &           & \Vdots       \\
+        0      & a_{32} & \Ddots    & \Ddots    & 0            \\
+        \Vdots &        & \Ddots    & \Ddots    & a_{n-1,n}    \\
+        0      & \Cdots & 0         & a_{n,n-1} & a_{nn}
+    \end{pNiceMatrix}.
+    \label{eq:tridiag}
+\end{equation}
+
+% ==============================================================================
+\subsection{Блочная матрица с дополнением Шура}
+\label{sec:schur}
+% ==============================================================================
+
+Тонкие внутренние линии визуально разделяют подматрицы.
+
+\begin{equation}
+    \bm{K} =
+    \begin{pNiceMatrix}[
+        margin,
+        hvlines-except-borders,
+        rules/color=gray!30,
+        columns-width=12mm
+    ]
+        \Block{2-2}{\bm{A}_{11}} & & \Block{2-2}{\bm{A}_{12}} & \\
+        & & & \\
+        \Block{2-2}{\bm{A}_{21}} & & \Block[fill=red!5]{2-2}{\bm{S}} & \\
+        & & &
+    \end{pNiceMatrix}.
+    \label{eq:schur-block}
+\end{equation}
+
+% ПРАВИЛО 5: tcbcorollary.
+% ПРАВИЛО 8: метка cor:schur по соглашению cor:...
+\begin{tcbcorollary}[Дополнение Шура]
+\label{cor:schur}
+    Если матрица $\bm{A}_{11}$ невырождена, то дополнение Шура блока
+    $\bm{A}_{11}$ в матрице~\cref{eq:schur-block} равно
+    \[
+        \bm{S} = \bm{A}_{22} - \bm{A}_{21}\,\bm{A}_{11}^{-1}\,\bm{A}_{12}.
+    \]
+\end{tcbcorollary}
+
+% ПРАВИЛО 7: доказательство следствия — tcbproof.
+\begin{tcbproof}[следствия~\ref{cor:schur}]
+    Блочное разложение
+    \begin{equation}
+        \bm{K} =
+        \begin{pNiceMatrix}
+            \bm{I} & \bm{0} \\
+            \bm{A}_{21}\bm{A}_{11}^{-1} & \bm{I}
+        \end{pNiceMatrix}
+        \begin{pNiceMatrix}
+            \bm{A}_{11} & \bm{0} \\
+            \bm{0}      & \bm{S}
+        \end{pNiceMatrix}
+        \begin{pNiceMatrix}
+            \bm{I} & \bm{A}_{11}^{-1}\bm{A}_{12} \\
+            \bm{0} & \bm{I}
+        \end{pNiceMatrix}
+        \label{eq:schur-proof}
+    \end{equation}
+    проверяется прямым умножением.
+    Из~\cref{eq:schur-proof} немедленно следует
+    $\det(\bm{K}) = \det(\bm{A}_{11})\cdot\det(\bm{S})$.
+\end{tcbproof}
+
+% ==============================================================================
+\subsection{Двухдиагональная матрица Голуба–Кахана}
+\label{sec:bidiag}
+% ==============================================================================
+
+Применяется на первом этапе алгоритмов вычисления SVD.
+
+\begin{equation}
+    \bm{B} =
+    \begin{pNiceMatrix}
+        \alpha_1 & \beta_1  & 0        & \Cdots & 0           \\
+        0        & \alpha_2 & \beta_2   &        & \Vdots      \\
+        \Vdots   & \Ddots   & \Ddots    & \Ddots & 0           \\
+        \Vdots   &          & \Ddots    & \alpha_{n-1} & \beta_{n-1} \\
+        0        & \Cdots   & \Cdots    & 0      & \alpha_n
+    \end{pNiceMatrix}.
+    \label{eq:bidiag}
+\end{equation}
+
+% ПРАВИЛО 5: tcbwarning — для предупреждений, ОБЯЗАТЕЛЬНО в блоке.
+\begin{tcbwarning}[Типичная ошибка: Block too large]
+    При возникновении ошибки компилятора \texttt{Block too large} проверить:
+    \begin{enumerate}
+        \item Соответствует ли число символов \texttt{\&} размеру блока.
+              Для блока \texttt{\{2-2\}} в последнем столбце нужно
+              добавить ещё один пустой столбец справа.
+        \item Добавлена ли пустая строка \texttt{\textbackslash\textbackslash}
+              после блока, если он расположен в самом низу матрицы.
+    \end{enumerate}
+\end{tcbwarning}
+
+% ==============================================================================
+\section{Продвинутые примеры с пакетом \texttt{nicematrix}}
+\label{sec:nicematrix}
+% ==============================================================================
+
+\begin{tcbremark}
+    Пакет \texttt{nicematrix} идеально подходит для работы с блочными
+    матрицами, пунктирными линиями и сложными выделениями.
+    Ниже представлены структурные примеры, расширяющие базовый функционал.
+\end{tcbremark}
+
+% ==============================================================================
+
+\begin{equation}
+    \bm{D} =
+    \begin{pNiceMatrix}[margin]
+        % \Block с пустыми скобками {} красит фон, но оставляет текст ячеек независимым
+        \Block[fill=blue!10]{2-2}{} d_{11} & d_{12} & 0      & 0      & \Cdots & 0      \\
+        d_{21} & d_{22} & 0      & 0      &        & \Vdots \\
+        0      & 0      & \Block[fill=green!10]{2-2}{} d_{33} & d_{34} & \Ddots &        \\
+        0      & 0      & d_{43} & d_{44} & \Ddots & 0      \\
+        \Vdots &        & \Ddots & \Ddots & d_{55} & d_{56} \\
+        0      & \Cdots &        & 0      & d_{65} & d_{66}
+    \end{pNiceMatrix}.
+    \label{eq:block-diag}
+\end{equation}
+
+% ==============================================================================
+\subsection{Расширенная матрица для системы линейных уравнений}
+\label{sec:augmented}
+% ==============================================================================
+
+Окружение \texttt{pNiceArray} позволяет задавать спецификацию столбцов
+(как в стандартном \texttt{array}) — для вертикальной черты перед столбцом
+свободных членов.
+
+\begin{equation}
+    \bm{M}_{\mathrm{aug}} =
+    \begin{pNiceArray}{ccc|c}[margin]
+        a_{11} & a_{12} & a_{13} & b_1 \\
+        a_{21} & a_{22} & a_{23} & b_2 \\
+        a_{31} & a_{32} & a_{33} & b_3
+    \end{pNiceArray}.
+    \label{eq:augmented}
+\end{equation}
+
+% ==============================================================================
+\subsection{Матрица переходных вероятностей с подписями состояний}
+\label{sec:markov}
+% ==============================================================================
+
+Опции \texttt{first-row} и \texttt{first-col} выносят первую строку
+и первый столбец \emph{за} пределы математических скобок матрицы.
+
+\begin{equation}
+    \bm{P} =
+    \begin{pNiceMatrix}[first-row, first-col, margin]
+             & x_1    & x_2    & x_3    \\
+        y_1  & p_{11} & p_{12} & p_{13} \\
+        y_2  & p_{21} & p_{22} & p_{23} \\
+        y_3  & p_{31} & p_{32} & p_{33}
+    \end{pNiceMatrix}.
+    \label{eq:markov}
+\end{equation}
+
+% ПРАВИЛО 5: tcblemma.
+% ПРАВИЛО 8: метка lem:stochastic по соглашению lem:...
+\begin{tcblemma}[Стохастичность матрицы переходов]
+\label{lem:stochastic}
+    Матрица $\bm{P}$ из~\cref{eq:markov} является стохастической тогда
+    и только тогда, когда
+    \[
+        p_{ij} \geq 0 \quad \text{и} \quad \sum_{j} p_{ij} = 1
+        \quad \forall\, i.
+    \]
+\end{tcblemma}
+
+\begin{tcbproof}[леммы~\ref{lem:stochastic}]
+    \textit{Необходимость.} Если $\bm{P}$ стохастична, то по определению
+    все элементы неотрицательны, а сумма элементов каждой строки равна
+    единице, что в точности совпадает с формулой $\sum_j p_{ij} = 1$.\\
+    \textit{Достаточность.} При выполнении указанных условий вектор
+    $\mathbf{1}$ является правым собственным вектором $\bm{P}$ с
+    собственным значением $1$, откуда следует сохранение вероятностной
+    меры при умножении.
+\end{tcbproof}
+
+% ==============================================================================
+\subsection{Вложенные блоки с явной отрисовкой границ}
+\label{sec:nested-blocks}
+% ==============================================================================
+
+Опция \texttt{draw} обводит блок рамкой; \texttt{fill} задаёт фоновый цвет.
+
+\begin{equation}
+    \bm{H} =
+    \begin{pNiceMatrix}[margin, columns-width=12mm]
+        \Block[draw, fill=blue!5]{2-2}{\bm{H}_{11}} & &
+        \Block[draw]{2-2}{\bm{H}_{12}} & \\
+        & & & \\
+        \Block[draw]{2-2}{\bm{H}_{21}} & &
+        \Block[draw, fill=red!5]{2-2}{\bm{H}_{22}} & \\
+        & & &
+    \end{pNiceMatrix}.
+    \label{eq:nested-blocks}
+\end{equation}
+
+% ==============================================================================
+\subsection{Верхнетреугольная матрица QR-разложения}
+\label{sec:qr}
+% ==============================================================================
+
+\texttt{\textbackslash CodeAfter} позволяет рисовать поверх уже
+расставленных элементов; пунктирная диагональная линия обозначает границу
+нулевой нижней части.
+
+\begin{equation}
+    \bm{R} =
+    \begin{pNiceMatrix}[margin]
+        r_{11} & r_{12} & r_{13} & \Cdots & r_{1n}      \\
+        0      & r_{22} & r_{23} & \Cdots & r_{2n}      \\
+        \Vdots & \Ddots & \ddots &        & \Vdots      \\
+               &        &        &        & r_{n-1,\,n} \\
+        0      & \Cdots &        & 0      & r_{nn}
+    \CodeAfter
+        \tikz \draw [dashed, gray]
+            (2-|1) -| (3-|2) -| (4-|3) -| (5-|4) -| (6-|5);
+    \end{pNiceMatrix}.
+    \label{eq:qr-upper}
+\end{equation}
+
+% ПРАВИЛО 5: tcbexample.
+% ПРАВИЛО 8: метка ex:qr по соглашению ex:...
+\begin{tcbexample}[Применение QR-разложения к решению СЛАУ]
+\label{ex:qr}
+    Для матрицы $\bm{A} \in \R^{3 \times 3}$ процесс Грама–Шмидта даёт
+    ортогональный множитель $\bm{Q}$ и верхнетреугольный множитель
+    $\bm{R}$ (\cref{eq:qr-upper}) такой, что $\bm{A} = \bm{Q}\bm{R}$.
+    Система $\bm{A}\bm{x} = \bm{b}$ сводится к
+    $\bm{R}\bm{x} = \bm{Q}\T\bm{b}$, решаемой обратной подстановкой
+    за $O(n^2)$ операций.
+\end{tcbexample}
+
+% ==============================================================================
+\section{Сводная демонстрация правил 6 и 9}
+\label{sec:rules-demo}
+% ==============================================================================
+
+% ------------------------------------------------------------------------------
+% ПРАВИЛО 6: последовательность требований — ТОЛЬКО в tcbalgorithmbox,
+%            никогда в голом enumerate вне обёртки.
+% ПРАВИЛО 8: метка alg:golub-kahan
+% ------------------------------------------------------------------------------
+\begin{tcbalgorithmbox}[Алгоритм Голуба–Кахана (бидиагонализация)]
+\label{alg:golub-kahan}
+    \textbf{Вход:} $\bm{A} \in \R^{m \times n}$, $m \geq n$.\\
+    \textbf{Выход:} ортогональные $\bm{U}$, $\bm{V}$;
+    бидиагональная матрица $\bm{B}$ вида~\cref{eq:bidiag}.
+    \begin{enumerate}
+        \item Выбрать начальный вектор $\bm{p}_1$ с $\norm{\bm{p}_1} = 1$.
+        \item Для $j = 1, 2, \ldots, n$ выполнить:
+        \begin{enumerate}
+            \item $\bm{r}_j \gets \bm{A}\T\bm{p}_j
+                  - \beta_{j-1}\bm{q}_{j-1}$.
+            \item $\alpha_j \gets \norm{\bm{r}_j}$;\quad
+                  $\bm{q}_j \gets \bm{r}_j / \alpha_j$.
+            \item $\bm{s}_j \gets \bm{A}\bm{q}_j - \alpha_j\bm{p}_j$.
+            \item $\beta_j \gets \norm{\bm{s}_j}$;\quad
+                  $\bm{p}_{j+1} \gets \bm{s}_j / \beta_j$.
+        \end{enumerate}
+        \item Собрать $\bm{B}$ из $\{\alpha_j\}$ и $\{\beta_j\}$
+              по образцу~\cref{eq:bidiag}.
+    \end{enumerate}
+\end{tcbalgorithmbox}
+
+% ПРАВИЛО 8: ссылки на несколько объектов через \cref
+После выполнения \cref{alg:golub-kahan} к матрице $\bm{B}$ применяется
+\cref{alg:power-svd}, что существенно снижает вычислительную стоимость
+по сравнению с прямым SVD исходной матрицы $\bm{A}$ (см.~\cref{def:svd}).
+
+% ПРАВИЛО 9: макросы \norm, \inner, \abs, \rank, \tr в тексте
+Для матриц из данного раздела используются следующие нормы и операторы:
+\begin{itemize}
+    \item $\norm{\bm{A}}_2 = \sigma_1(\bm{A})$ — спектральная норма;
+    \item $\norm{\bm{A}}_F = \sqrt{\tr(\bm{A}\T\bm{A})}$ — норма Фробениуса;
+    \item $\inner{\bm{u}, \bm{v}} = \bm{u}\T\bm{v}$ — стандартное скалярное
+          произведение в $\R^n$;
+    \item $\abs{\lambda_i(\bm{A})} \leq \norm{\bm{A}}_2$ — оценка
+          собственных значений через норму.
+\end{itemize}
+
+% ПРАВИЛО 5: tcbinsight
+\begin{tcbinsight}[Связь SVD и спектрального разложения]
+    Из~\cref{eq:ata} в доказательстве \cref{thm:svd-exist} видно:
+    сингулярные числа $\bm{A}$ — это квадратные корни из собственных
+    значений $\bm{A}\T\bm{A}$, а столбцы $\bm{V}$ — соответствующие
+    собственные векторы.
+    Это связывает \cref{def:svd} со спектральной теорией симметричных матриц.
+\end{tcbinsight}
+
+\vspace{6pt}
+
+% Справочная таблица (booktabs, без лишних вертикальных линий)
+\begin{table}[h]
+\centering
+\caption{Справочник окружений и их назначений}
+\label{tab:envs}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Окружение}        & \textbf{Цвет полосы} & \textbf{Назначение}                    \\
+\midrule
+\texttt{tcbdefinition}    & синий                & Определения понятий                    \\
+\texttt{tcbtheorem}       & зелёный              & Утверждения с доказательством          \\
+\texttt{tcblemma}         & пурпурный            & Вспомогательные леммы                  \\
+\texttt{tcbcorollary}     & бирюзовый            & Следствия из теорем                    \\
+\texttt{tcbproof}         & сланцевый            & Доказательства (авто-\(\square\))      \\
+\texttt{tcbremark}        & серый                & Замечания и пояснения                  \\
+\texttt{tcbwarning}       & оранжевый            & Предупреждения и типичные ловушки      \\
+\texttt{tcbexample}       & серый/белый          & Числовые и задачные примеры            \\
+\texttt{tcbinsight}       & золотой              & Ключевые идеи                          \\
+\texttt{tcbalgorithmbox}  & синий                & Алгоритмы и пошаговые процедуры        \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
