@@ -1,0 +1,309 @@
+\section{План занятия}
+\label{sec:plan}
+\begin{enumerate}
+    \item Тензоры и матрицизации: мультилинейный ранг.
+    \item Разложение Таккера: тензорное произведение.
+    \item Каноническое разложение: канонический ранг, приближение тензоров большего канонического ранга тензорами меньшего канонического ранга.
+    \item Связь SVD, разложения Таккера и канонического разложения.
+    \item Неединственность разложения Таккера.
+\end{enumerate}
+
+\vspace{5mm}
+
+% ==============================================================================
+\section{Тензоры и матрицизации}
+\label{sec:tensors-and-matricization}
+% ==============================================================================
+
+Напомним операцию векторизации матрицы $\bm{A}$. Пусть $A_{ij}$ — элементы матрицы $\bm{A}$. Векторизация вытягивает элементы матрицы в один столбец. Векторизация может осуществляться по столбцам (Fortran-like) или по строкам (C-like). В дальнейшем будет использоваться исключительно порядок по столбцам (\texttt{order = 'F'}).
+
+\begin{tcbexample}[Векторизация тензора]
+\label{ex:vectorization}
+    Рассмотрим трехмерный тензор $A \in \R^{2 \times 2 \times 2}$, заданный своими фронтальными срезами (матрицами):
+    \[
+        A_{:,:,0} = \begin{bmatrix} 0 & 2 \\ 4 & 6 \end{bmatrix}, \quad
+        A_{:,:,1} = \begin{bmatrix} 1 & 3 \\ 5 & 7 \end{bmatrix}.
+    \]
+    Векторизация данного тензора по столбцам (\texttt{order = 'F'}) и по строкам (\texttt{order = 'C'}) имеет вид:
+    \[
+        \operatorname{vec}_F(A) = \begin{bmatrix} 0 \\ 4 \\ 2 \\ 6 \\ 1 \\ 5 \\ 3 \\ 7 \end{bmatrix}, \quad
+        \operatorname{vec}_C(A) = \begin{bmatrix} 0 \\ 1 \\ 2 \\ 3 \\ 4 \\ 5 \\ 6 \\ 7 \end{bmatrix}.
+    \]
+    Здесь $\operatorname{vec}_F(A)_{kji} = A_{ijk}$, а $\operatorname{vec}_C(A)_{ijk} = A_{ijk}$.
+\end{tcbexample}
+
+\begin{tcbdefinition}[Матрицизация тензора]
+\label{def:matricization}
+    Пусть задан тензор $A \in \R^{n \times m \times l}$. Разверткой или матрицизацией тензора $A$ называются следующие матрицы:
+    \begin{enumerate}
+        \item 1-матрицизация $A_{(1)} \in \R^{n \times (ml)}$, элементы которой определяются как $(A_{(1)})_{i, \overline{kj}} = A_{ijk}$.
+        \item 2-матрицизация $A_{(2)} \in \R^{m \times (nl)}$, где $(A_{(2)})_{j, \overline{ki}} = A_{ijk}$.
+        \item 3-матрицизация $A_{(3)} \in \R^{l \times (mn)}$, где $(A_{(3)})_{k, \overline{ji}} = A_{ijk}$.
+    \end{enumerate}
+\end{tcbdefinition}
+
+\begin{tcbexample}[Матрицизации тензора 2x2x2]
+\label{ex:matricization}
+    Для тензора $A$ из \cref{ex:vectorization} матрицизации принимают вид:
+    \[
+        A_{(1)} = \begin{bmatrix} 0 & 2 & 1 & 3 \\ 4 & 6 & 5 & 7 \end{bmatrix}, \quad
+        A_{(2)} = \begin{bmatrix} 0 & 4 & 1 & 5 \\ 2 & 6 & 3 & 7 \end{bmatrix}, \quad
+        A_{(3)} = \begin{bmatrix} 0 & 4 & 2 & 6 \\ 1 & 5 & 3 & 7 \end{bmatrix}.
+    \]
+\end{tcbexample}
+
+\begin{tcbdefinition}[Мультилинейный ранг тензора]
+\label{def:multilinear-rank}
+    Для тензора $A \in \R^{n_1 \times n_2 \times n_3}$ мультилинейным рангом называется вектор, составленный из рангов его матрицизаций:
+    \[
+        \operatorname{mlrank}(A) = \left( \rank(A_{(1)}), \rank(A_{(2)}), \rank(A_{(3)}) \right).
+    \]
+\end{tcbdefinition}
+
+Для тензора из \cref{ex:matricization} легко видеть, что $\operatorname{mlrank}(A) = (2, 2, 2)$.
+
+% ==============================================================================
+\section{Разложение Таккера}
+\label{sec:tucker-decomposition}
+% ==============================================================================
+
+\begin{tcbdefinition}[Разложение Таккера]
+\label{def:tucker}
+    Пусть заданы тензор $A \in \R^{n_1 \times n_2 \times n_3}$, ядро $G \in \R^{r_1 \times r_2 \times r_3}$ и факторные матрицы $U \in \R^{n_1 \times r_1}$, $V \in \R^{n_2 \times r_2}$, $W \in \R^{n_3 \times r_3}$. Разложением Таккера тензора $A$ называется представление вида:
+    \begin{equation}
+        A_{ijk} = \llbracket G; U, V, W \rrbracket_{ijk} = \sum_{\alpha_1, \alpha_2, \alpha_3}^{r_1, r_2, r_3} G_{\alpha_1 \alpha_2 \alpha_3} U_{i \alpha_1} V_{j \alpha_2} W_{k \alpha_3}.
+        \label{eq:tucker}
+    \end{equation}
+    Если при этом $\operatorname{mlrank}(A) = (r_1, r_2, r_3)$, данное представление является минимальным.
+\end{tcbdefinition}
+
+\begin{tcbremark}[Историческая справка]
+    Разложение названо в честь американского психометрика Ледьярда Таккера (Ledyard Tucker, США, 1910–2004). Стоит отличать его от Альберта Таккера (Albert Tucker, Канада, 1905–1995), в честь которого названы условия Каруша — Куна — Таккера (Karush–Kuhn–Tucker). Базовая публикация: \textit{Tucker, L.R.: Implications of factor analysis of three-way matrices for measurement of change (1963)}.
+\end{tcbremark}
+
+\begin{tcbdefinition}[Тензорное произведение]
+\label{def:tensor-product}
+    Пусть $A \in \R^{n_1 \times \dots \times n_d}$ и $B \in \R^{m_1 \times \dots \times m_d}$ — $d$-мерные тензоры. Их тензорным произведением называется тензор $(A \circ B) \in \R^{n_1 \times \dots \times n_d \times m_1 \times \dots \times m_d}$, элементы которого вычисляются как:
+    \[
+        (A \circ B)_{i_1 \dots i_d j_1 \dots j_d} = A_{i_1 \dots i_d} \cdot B_{j_1 \dots j_d}.
+    \]
+    По сути, это перемножение каждого элемента одного тензора на каждый элемент второго.
+\end{tcbdefinition}
+
+\begin{tcbinsight}[Разложение Таккера через тензорное произведение]
+    Используя операцию тензорного (внешнего) произведения векторов, разложение Таккера можно переписать в компактном виде:
+    \[
+        A = \sum_{\alpha_1, \alpha_2, \alpha_3}^{r_1, r_2, r_3} G_{\alpha_1 \alpha_2 \alpha_3} \left( u_{\alpha_1} \circ v_{\alpha_2} \circ w_{\alpha_3} \right),
+    \]
+    где $u_{\alpha_1} \in \R^{n_1}$, $v_{\alpha_2} \in \R^{n_2}$, $w_{\alpha_3} \in \R^{n_3}$ — столбцы соответствующих факторных матриц $U$, $V$ и $W$.
+\end{tcbinsight}
+
+\begin{tcbexample}[Задача 1. Вычисление мультилинейного ранга]
+\label{ex:task1}
+    Пусть векторы $a, b \in \R^n$, причем $a \neq b$. Задан тензор
+    \[
+        A = a \circ b \circ b + 2 (a \circ a \circ a) \in \R^{n \times n \times n}.
+    \]
+    Требуется вычислить мультилинейный ранг тензора $A$.
+\end{tcbexample}
+
+\begin{tcbproof}[решения Задачи~\ref{ex:task1}]
+    Идея решения: сначала найдем какое-либо разложение Таккера, а затем докажем минимальность полученных рангов.
+    Перепишем тензор в виде разложения:
+    \[
+        A = \sum_{\alpha_1, \alpha_2, \alpha_3} G_{\alpha_1 \alpha_2 \alpha_3} \left( u_{\alpha_1} \circ v_{\alpha_2} \circ w_{\alpha_3} \right) = a \circ b \circ b + 2 (a \circ a \circ a).
+    \]
+    Сформируем факторные матрицы из участвующих векторов:
+    \[
+        U = \begin{bmatrix} a \end{bmatrix} \in \R^{n \times 1}, \quad
+        V = \begin{bmatrix} b & a \end{bmatrix} \in \R^{n \times 2}, \quad
+        W = \begin{bmatrix} b & a \end{bmatrix} \in \R^{n \times 2}.
+    \]
+    Ненулевые элементы ядра $G$: $G_{111} = 1$, $G_{122} = 2$, остальные элементы равны $0$. 
+    В виде срезов (матриц $1 \times 2$):
+    \[
+        G_{:,:,0} = \begin{bmatrix} 1 & 0 \end{bmatrix}, \quad G_{:,:,1} = \begin{bmatrix} 0 & 2 \end{bmatrix}.
+    \]
+    Таким образом, мы нашли разложение с рангами $(1, 2, 2)$. Докажем, что меньшие ранги получить нельзя.
+    
+    Для 1-матрицизации: $A_{(1)} = U G_{(1)} (W \otimes_K V)\T$. Поскольку $\rank(U) = 1$, то $\rank(A_{(1)}) = 1$.
+    
+    Для 2-матрицизации:
+    \[
+        A_{(2)} = V G_{(2)} (W \otimes_K U)\T = \begin{bmatrix} b & a \end{bmatrix} \begin{bmatrix} 1 & 0 \\ 0 & 2 \end{bmatrix} \left( \begin{bmatrix} b & a \end{bmatrix} \otimes_K \begin{bmatrix} a \end{bmatrix} \right)\T.
+    \]
+    Заметим, что произведение Кронекера дает:
+    \[
+        \begin{bmatrix} b & a \end{bmatrix} \otimes_K \begin{bmatrix} a \end{bmatrix} = \begin{bmatrix} b \otimes_K a & a \otimes_K a \end{bmatrix}.
+    \]
+    Для любых скаляров $\alpha, \beta$ таких, что $\alpha^2 + \beta^2 > 0$, имеем:
+    \[
+        \alpha (b \otimes_K a) + \beta (a \otimes_K a) = (\alpha b + \beta a) \otimes_K a.
+    \]
+    Если $b \neq a$ (векторы линейно независимы), то данная линейная комбинация не обращается в нуль, следовательно $\rank(\begin{bmatrix} b & a \end{bmatrix} \otimes_K \begin{bmatrix} a \end{bmatrix}) = 2$. Матрица $V$ также имеет ранг 2. Значит, $\rank(A_{(2)}) = 2$ как произведение невырожденных по столбцам/строкам матриц.
+    Аналогично показывается, что $\rank(A_{(3)}) = 2$. Итоговый мультилинейный ранг равен $(1, 2, 2)$.
+\end{tcbproof}
+
+% ==============================================================================
+\section{Каноническое разложение}
+\label{sec:canonical-decomposition}
+% ==============================================================================
+
+\begin{tcbdefinition}[Каноническое разложение]
+\label{def:canonical}
+    Пусть $A \in \R^{n_1 \times n_2 \times n_3}$ — трехмерный тензор. Говорят, что $A$ допускает каноническое разложение (CP-разложение) с рангом $R$, если $R$ — минимальное число, такое что:
+    \[
+        A = \sum_{\alpha=1}^R u_\alpha \circ v_\alpha \circ w_\alpha, \quad u_\alpha \in \R^{n_1}, v_\alpha \in \R^{n_2}, w_\alpha \in \R^{n_3}.
+    \]
+    Кратко это записывается как $A = \llbracket U, V, W \rrbracket$, где $U, V, W$ — матрицы размерностей $n \times R$ (в случае кубического тензора), составленные из векторов-столбцов.
+\end{tcbdefinition}
+
+\begin{tcbremark}[Связь с разложением Таккера]
+    Каноническое разложение является частным случаем разложения Таккера, в котором ядро является гипердиагональным единичным тензором $G = \mathcal{I}$, где $\mathcal{I}_{ijk} = 1$ при $i=j=k$, и $\mathcal{I}_{ijk} = 0$ иначе.
+\end{tcbremark}
+
+Для тензора $A$ из Задачи 1 (\cref{ex:task1}) можно выписать каноническое представление:
+\[
+    A = \llbracket (a, 2a), (b, a), (b, a) \rrbracket,
+\]
+откуда следует, что канонический ранг $A$ не превосходит 2 (канонический ранг $\leq 2$).
+
+\begin{tcbexample}[Задача 2. Канонический ранг тензора $i+j+k$]
+\label{ex:task2}
+    Вычислить каноническое разложение тензора $a_{ijk} = i + j + k$.
+    
+    \textit{Решение.} Исходя из определения, запишем элементы тензора:
+    \[
+        a_{ijk} = i \cdot 1 \cdot 1 + 1 \cdot j \cdot 1 + 1 \cdot 1 \cdot k.
+    \]
+    Это можно представить в виде суммы трех компонент:
+    \[
+        A = \llbracket \begin{bmatrix} i \end{bmatrix}, \begin{bmatrix} 1 \end{bmatrix}, \begin{bmatrix} 1 \end{bmatrix} \rrbracket + \llbracket \begin{bmatrix} 1 \end{bmatrix}, \begin{bmatrix} j \end{bmatrix}, \begin{bmatrix} 1 \end{bmatrix} \rrbracket + \llbracket \begin{bmatrix} 1 \end{bmatrix}, \begin{bmatrix} 1 \end{bmatrix}, \begin{bmatrix} k \end{bmatrix} \rrbracket,
+    \]
+    где векторы составлены из соответствующих индексов и единиц. Это дает оценку $R \leq 3$. Оказывается, канонический ранг данного тензора в точности равен 3.
+\end{tcbexample}
+
+\begin{tcbtheorem}[Приближение тензора большего ранга тензором меньшего ранга]
+\label{thm:tensor-approximation}
+    В любой окрестности тензора $a_{ijk} = i + j + k$ существуют тензоры строго меньшего канонического ранга.
+\end{tcbtheorem}
+
+\begin{tcbproof}[теоремы~\ref{thm:tensor-approximation}]
+    Рассмотрим тензор $\tilde{a}_{ijk}^{(N)}$, заданный как:
+    \[
+        \tilde{a}_{ijk}^{(N)} = \left(1 + \frac{i}{N}\right)\left(1 + \frac{j}{N}\right)\left(1 + \frac{k}{N}\right), \quad N \in \N.
+    \]
+    Поскольку это прямое произведение трех векторов, тензор $\tilde{a}_{ijk}^{(N)}$ имеет канонический ранг 1.
+    Построим на его основе новый тензор $\hat{a}_{ijk}^{(N)}$:
+    \[
+        \hat{a}_{ijk}^{(N)} = N \cdot \left( \tilde{a}_{ijk}^{(N)} - 1 \right).
+    \]
+    Тензор $\hat{a}_{ijk}^{(N)}$ является линейной комбинацией тензора ранга 1 и константного тензора из единиц (также ранга 1). Следовательно, канонический ранг $\hat{a}_{ijk}^{(N)}$ не превосходит 2.
+    Раскрывая скобки и переходя к пределу при $N \to +\infty$, получаем:
+    \[
+        \hat{a}_{ijk}^{(N)} = N \left[ \left(1 + \frac{i}{N}\right)\left(1 + \frac{j}{N}\right)\left(1 + \frac{k}{N}\right) - 1 \right] = (i + j + k) + \mathcal{O}\left(\frac{1}{N}\right).
+    \]
+    В пределе мы получаем исходный тензор $a_{ijk}$ ранга 3. Таким образом, последовательность тензоров ранга $\leq 2$ сходится к тензору ранга 3.
+\end{tcbproof}
+
+\begin{tcbremark}[Матричный случай]
+    В матричном случае (двумерном) подобное вырождение ранга при предельном переходе невозможно. Если убрать одну из размерностей, мы получим:
+    \[
+        N \left[ \left(1 + \frac{i}{N}\right)\left(1 + \frac{j}{N}\right) - 1 \right] = (i + j) + \mathcal{O}\left(\frac{1}{N}\right).
+    \]
+    Здесь и предел (ранг 2), и аппроксимирующая матрица имеют ранг 2.
+    
+    Докажем, что в матричном случае предел матриц фиксированного ранга не может увеличить ранг:
+    \begin{enumerate}
+        \item Матрица $\bm{A}$ невырождена тогда и только тогда, когда $\det(\bm{A}) \neq 0$. Определитель является полиномом от элементов матрицы, то есть непрерывной функцией. Следовательно, если определитель отличен от нуля, он отделен от нуля в некоторой окрестности.
+        \item Через сингулярное разложение: $\bm{A} = \bm{U} \bm{\Sigma} \bm{V}\T$. Чтобы ранг строго уменьшился, необходимо обнулить некоторое сингулярное число $\sigma_r > 0$, что требует конечного скачка и не может произойти сколь угодно близко.
+    \end{enumerate}
+\end{tcbremark}
+
+\begin{tcbwarning}[Вычислительная неустойчивость]
+    Тензор $\hat{a}_{ijk}^{(N)}$ является малоранговым приближением тензора $a_{ijk}$ при больших $N$. Однако воспользоваться этим на ЭВМ едва ли получится из-то потери значимости при вычислениях:
+    \[
+        \hat{a}_{ijk}^{(N)} = \underbrace{N \left(1 + \frac{i}{N}\right)\left(1 + \frac{j}{N}\right)\left(1 + \frac{k}{N}\right)}_{\text{очень большое число при больших } N} - \underbrace{N}_{\text{очень большое число}}.
+    \]
+    Вычитание двух близких огромных чисел приводит к катастрофическому падению точности (catastrophic cancellation).
+\end{tcbwarning}
+
+% ==============================================================================
+\section{Псевдообратная матрица Мура — Пенроуза}
+\label{sec:pseudo-inverse}
+% ==============================================================================
+
+При решении задачи минимизации невязки $\min \norm{\bm{A}x - b}_2$ для матрицы $\bm{A} \in \R^{m \times n}$ точного решения может не существовать. Возникает необходимость проекции на образ оператора, что приводит к понятию псевдообратной матрицы.
+
+\begin{tcbdefinition}[Псевдообратная матрица]
+\label{def:pseudo-inverse}
+    Пусть задана произвольная матрица $\bm{A} \in \R^{m \times n}$. Матрица $\bm{A}^\dagger \in \R^{n \times m}$ называется псевдообратной (по Муру — Пенроузу), если она строится на основе сингулярного разложения $\bm{A} = \bm{U}\bm{\Sigma}\bm{V}\T$ по правилу:
+    \[
+        \bm{A}^\dagger = \bm{V} \bm{\Sigma}^\dagger \bm{U}\T,
+    \]
+    где $\bm{\Sigma}^\dagger = \diag(\sigma_1^\dagger, \dots, \sigma_r^\dagger, 0, \dots)$, а
+    \[
+        \sigma_i^\dagger = 
+        \begin{cases}
+            \frac{1}{\sigma_i}, & \text{если } \sigma_i \neq 0, \\
+            0, & \text{если } \sigma_i = 0.
+        \end{cases}
+    \]
+\end{tcbdefinition}
+
+В случае, если $\bm{A}$ полноранговая, псевдообратная выражается аналитически как $\bm{A}^\dagger = (\bm{A}\T \bm{A})^{-1} \bm{A}\T$.
+
+\begin{tcbremark}[Историческая справка]
+    Понятие псевдообратной матрицы ввел Элиаким Мур (Eliakim Moore, США, 1862–1932) в 1920 г. Независимо от него Арне Бьерхаммар (Arne Bjerhammar, Швеция, 1917–2011) ввел это понятие в 1951 г., а Роджер Пенроуз (Roger Penrose, Великобритания, 1931–) сформулировал его в современном виде в 1955 г.
+\end{tcbremark}
+
+% ==============================================================================
+\section{Связь разложения Таккера, канонического и SVD}
+\label{sec:svd-tucker-cp}
+% ==============================================================================
+
+Пусть задана матрица $\bm{A} \in \R^{m \times n}$. Ее мультилинейный ранг равен:
+\[
+    \operatorname{mlrank}(\bm{A}) = \left( \rank(\bm{A}_{(1)}), \rank(\bm{A}_{(2)}) \right) = \left( \rank(\bm{A}), \rank(\bm{A}\T) \right) = (r, r),
+\]
+где $r = \rank(\bm{A})$.
+
+Рассмотрим сингулярное разложение матрицы:
+\begin{equation}
+    \bm{A} = \bm{U} \bm{\Sigma} \bm{V}\T = \sum_{i=1}^r \sigma_i u_i v_i\T = \sum_{i=1}^r 1 \cdot (\sigma_i u_i) \circ v_i.
+    \label{eq:svd-tensor}
+\end{equation}
+Выражение \cref{eq:svd-tensor} представляет собой каноническое разложение $\bm{A} = \llbracket \bm{U}\bm{\Sigma}, \bm{V} \rrbracket$.
+Оно же является разложением Таккера с минимальным возможным рангом $r$. Таким образом, SVD матрицы одновременно является ее каноническим разложением и разложением Таккера.
+
+% ==============================================================================
+\section{Неединственность разложения Таккера}
+\label{sec:tucker-non-uniqueness}
+% ==============================================================================
+
+Разложение Таккера не является единственным из-за возможности введения произвольных невырожденных преобразований внутри факторов.
+
+\begin{tcbinsight}[Преобразование факторов]
+    Пусть $A \in \R^{n_1 \times n_2 \times n_3}$ и задано его разложение Таккера $A = \llbracket G; U, V, W \rrbracket$.
+    Выполним QR-разложение матриц факторов: 
+    $U = Q_u R_u$, $V = Q_v R_v$, $W = Q_w R_w$, где $Q$ — матрицы с ортонормированными столбцами, а $R$ — верхнетреугольные.
+    
+    Подставляя эти разложения в формулу Таккера, имеем:
+    \[
+        A_{ijk} = \sum_{\alpha_1, \alpha_2, \alpha_3} G_{\alpha_1 \alpha_2 \alpha_3} (Q_u R_u)_{i \alpha_1} (Q_v R_v)_{j \alpha_2} (Q_w R_w)_{k \alpha_3}.
+    \]
+    Раскроем умножение матриц $Q$ и $R$:
+    \[
+        (Q_u R_u)_{i \alpha_1} = \sum_{\hat{\alpha}_1} Q_u[i, \hat{\alpha}_1] R_u[\hat{\alpha}_1, \alpha_1].
+    \]
+    Тогда элементы тензора принимают вид:
+    \[
+        A_{ijk} = \sum_{\hat{\alpha}_1, \hat{\alpha}_2, \hat{\alpha}_3} \underbrace{\left( \sum_{\alpha_1, \alpha_2, \alpha_3} G_{\alpha_1 \alpha_2 \alpha_3} (R_u)_{\hat{\alpha}_1 \alpha_1} (R_v)_{\hat{\alpha}_2 \alpha_2} (R_w)_{\hat{\alpha}_3 \alpha_3} \right)}_{\text{Новое ядро } \tilde{G}_{\hat{\alpha}_1 \hat{\alpha}_2 \hat{\alpha}_3}} (Q_u)_{i \hat{\alpha}_1} (Q_v)_{j \hat{\alpha}_2} (Q_w)_{k \hat{\alpha}_3}.
+    \]
+    Мы получили эквивалентное разложение Таккера:
+    \[
+        A = \llbracket \tilde{G}; Q_u, Q_v, Q_w \rrbracket.
+    \]
+    Следовательно, всегда можно перейти к ортогональным факторам, абсорбировав соответствующие матричные множители (в данном случае $R_u, R_v, R_w$) в тензорное ядро.
+\end{tcbinsight}
+

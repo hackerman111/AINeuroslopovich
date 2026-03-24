@@ -1,0 +1,456 @@
+% ==============================================================================
+% SYSTEM AI PROMPT & TYPESETTING RULES (STRICTLY ENFORCED)
+% ==============================================================================
+% ИНСТРУКЦИЯ ДЛЯ ИИ-ГЕНЕРАТОРА КОДА. ЧИТАТЬ ОБЯЗАТЕЛЬНО!
+% Вы — профессиональный LaTeX-верстальщик. При генерации контента внутри 
+% этого документа вы ОБЯЗАНЫ соблюдать следующие правила:
+%
+% 1. [КРИТИЧЕСКИ ВАЖНО] ПОЛНЫЙ ЗАПРЕТ НА MARKDOWN:
+%    - ЗАПРЕЩЕНО использовать `**жирный текст**` (используй \textbf{...})
+%    - ЗАПРЕЩЕНО использовать `*курсив*` (используй \textit{...} или \emph{...})
+%    - ЗАПРЕЩЕНО использовать `# Заголовок` (используй \section{...}, \subsection{...})
+%    - ЗАПРЕЩЕНО использовать обратные кавычки `код` (используй \texttt{...})
+%    Любое использование Markdown будет считаться фатальной ошибкой генерации.
+%
+% 2. СТРОГИЕ СПИСКИ:
+%    - Никаких списков через дефисы "-" или звездочки "* " текстом.
+%    - Все списки ДОЛЖНЫ быть обернуты в окружения \begin{itemize} ... \end{itemize} 
+%      или \begin{enumerate} ... \end{enumerate}. Элементы задаются через \item.
+%
+% 3. МАТЕМАТИЧЕСКАЯ СЕМАНТИКА И ОКРУЖЕНИЯ:
+%    - Используй \begin{equation}, \begin{align}, \begin{gather} для формул.
+%    - ЗАПРЕЩЕНО использовать устаревший синтаксис $$...$$ для выключных формул.
+%      Используй \[ ... \] или окружение equation*.
+%    - Системы уравнений и кусочные функции оформлять ТОЛЬКО через \begin{cases}.
+%    - Матрицы оформлять через pmatrix, bmatrix, vmatrix или pNiceMatrix (для блочных).
+%
+% 4. МИКРОТИПОГРАФИКА И ИНТЕРВАЛЫ:
+%    - Для контроля отступов использовать \vspace{...} и \hspace{...}.
+%    - Не использовать пустые строки для создания вертикального отступа.
+%    - После формул корректно расставлять знаки препинания (запятые, точки).
+%
+% 5. СТРУКТУРНЫЕ БЛОКИ (ТЕОРЕМЫ И ОПРЕДЕЛЕНИЯ):
+%    - Вся теория должна оформляться через семантические окружения:
+%      \begin{definition}, \begin{theorem}, \begin{lemma}, \begin{proof}, \begin{remark}.
+%    - Для выделенных блоков ОБЯЗАТЕЛЬНО использовать tcolorbox-окружения:
+%      \begin{tcbdefinition}, \begin{tcbtheorem}, \begin{tcblemma},
+%      \begin{tcbcorollary}, \begin{tcbalgorithmbox}, \begin{tcbwarning},
+%      \begin{tcbexample}, \begin{tcbinsight}, \begin{tcbproof}.
+%
+% 6. [КРИТИЧЕСКИ ВАЖНО] АЛГОРИТМЫ И ПОСЛЕДОВАТЕЛЬНЫЕ ТРЕБОВАНИЯ:
+%    - ЛЮБОЙ алгоритм, псевдокод, пошаговая инструкция или нумерованный список
+%      последовательных шагов/требований ОБЯЗАН быть обёрнут в \begin{tcbalgorithmbox}.
+%    - ЗАПРЕЩЕНО выносить алгоритмы, шаги и последовательности в голый текст или
+%      обычный \begin{enumerate} без обёртки в tcbalgorithmbox.
+%    - Если перечисление является логически упорядоченной процедурой (даже из 2 шагов),
+%      оно считается алгоритмом и требует tcbalgorithmbox.
+%
+% 7. [КРИТИЧЕСКИ ВАЖНО] ДОКАЗАТЕЛЬСТВА:
+%    - Все доказательства оформляются исключительно через \begin{tcbproof} ... \end{tcbproof}.
+%    - ЗАПРЕЩЕНО использовать стандартное amsthm окружение \begin{proof}.
+%    - Знак конца доказательства \qed расставляется АВТОМАТИЧЕСКИ окружением tcbproof,
+%      вручную его добавлять ЗАПРЕЩЕНО.
+%
+% 8. [КРИТИЧЕСКИ ВАЖНО] УМНЫЕ ССЫЛКИ (\cref и \Cref):
+%    - Для ссылок на теоремы, леммы, определения и алгоритмы ВСЕГДА использовать
+%      \cref{label} (строчная) или \Cref{label} (в начале предложения).
+%    - ЗАПРЕЩЕНО использовать \ref без \cref — это приводит к потере семантики.
+%    - Каждый tcolorbox-блок, на который планируется ссылаться, ДОЛЖЕН иметь
+%      метку: добавляй \label{...} СРАЗУ после открывающего тега окружения.
+%    - Соглашение об именовании меток:
+%        определения  — \label{def:...}
+%        теоремы      — \label{thm:...}
+%        леммы        — \label{lem:...}
+%        следствия    — \label{cor:...}
+%        алгоритмы    — \label{alg:...}
+%        примеры      — \label{ex:...}
+%        уравнения    — \label{eq:...}
+%        разделы      — \label{sec:...}
+%    - ЗАПРЕЩЕНО использовать произвольные префиксы вне этого соглашения.
+%
+% 9. СПЕЦИФИКА МАТРИЧНЫХ ВЫЧИСЛЕНИЙ (ИСПОЛЬЗУЙ МАКРОСЫ):
+%    - Транспонирование: A\T (не A^T и не A^\top).
+%    - Эрмитово сопряжение: A\H.
+%    - Норма: \norm{A}, модуль: \abs{x}, скалярное произведение: \inner{x, y}.
+%    - Операторы: \rank(A), \tr(A), \diag(x), \im(A), \ker(A).
+% ==============================================================================
+
+\documentclass[12pt, a4paper,openany, twoside]{book}
+
+% --- Кодировки, шрифты и языки ---
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian, english]{babel}
+\usepackage{cmap}
+\usepackage{lmodern}
+\usepackage{stmaryrd} % Обеспечивает работу \llbracket и \rrbracket
+% --- Микротипографика ---
+\usepackage{microtype}
+\usepackage{indentfirst}
+
+% ==============================================================================
+% УЛУЧШЕННАЯ ПРЕАМБУЛА (ИСПРАВЛЕНИЕ ОШИБОК И ВЫРАВНИВАНИЕ ТЕКСТА)
+% ==============================================================================
+
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\tolerance=2000
+\emergencystretch=1.5em
+\hyphenpenalty=500
+\hbadness=10000
+
+\microtypesetup{
+    expansion=true,
+    protrusion=true
+}
+
+\setlist{
+    nosep,
+    itemsep=0.5ex,
+    parsep=0.5ex,
+    topsep=0.5ex,
+    partopsep=0pt,
+    leftmargin=*}
+
+\lccode`\-=`\-
+\def\hyph{\penalty10000\hskip0pt\penalty8000-\penalty10000\hskip0pt}
+
+% --- Настройка межстрочного интервала ---
+\usepackage{setspace}
+\onehalfspacing
+
+% --- Геометрия страницы ---
+\usepackage[
+    left=10mm,
+    right=10mm,
+    top=20mm,
+    bottom=20mm,
+    headsep=10mm,
+    footskip=10mm
+]{geometry}
+
+% --- Мощная математика (AMS + Mathtools) ---
+\usepackage{amsmath, amsfonts, amssymb, amscd}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{bm}
+
+% --- Специфично для матричных вычислений ---
+\usepackage{nicematrix}
+\usepackage{blkarray}
+
+% --- Алгоритмы (Псевдокод) ---
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\SetKwInput{KwData}{Вход}
+\SetKwInput{KwResult}{Выход}
+
+% --- Теоремы, леммы, определения ---
+\usepackage{amsthm}
+\usepackage{thmtools}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Теорема}[section]
+\newtheorem{lemma}[theorem]{Лемма}
+\newtheorem{corollary}[theorem]{Следствие}
+\newtheorem{proposition}[theorem]{Утверждение}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Определение}[section]
+\newtheorem{example}{Пример}[section]
+\newtheorem{problem}{Задача}[section]
+
+\theoremstyle{remark}
+\newtheorem{remark}{Замечание}[section]
+
+% --- Графика и таблицы ---
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{calc, matrix, arrows.meta, positioning}
+
+% --- Списки ---
+\usepackage{enumitem}
+\setlist{nosep, itemsep=1ex, leftmargin=*}
+
+% --- Ссылки и навигация ---
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=magenta, urlcolor=teal]{hyperref}
+\usepackage[noabbrev, russian]{cleveref}
+
+% ==============================================================================
+% ЦВЕТОВАЯ ПАЛИТРА ДОКУМЕНТА
+% ==============================================================================
+
+\definecolor{TCBBlue}{RGB}{30, 80, 150}
+\definecolor{TCBBlueBg}{RGB}{235, 242, 252}
+\definecolor{TCBBlueLine}{RGB}{120, 170, 230}
+
+\definecolor{TCBGreen}{RGB}{25, 110, 60}
+\definecolor{TCBGreenBg}{RGB}{234, 247, 238}
+\definecolor{TCBGreenLine}{RGB}{100, 190, 130}
+
+\definecolor{TCBPurple}{RGB}{90, 40, 140}
+\definecolor{TCBPurpleBg}{RGB}{244, 238, 252}
+\definecolor{TCBPurpleLine}{RGB}{180, 140, 220}
+
+\definecolor{TCBTeal}{RGB}{15, 105, 120}
+\definecolor{TCBTealBg}{RGB}{232, 247, 249}
+
+\definecolor{TCBOrange}{RGB}{180, 80, 20}
+\definecolor{TCBOrangeBg}{RGB}{253, 243, 232}
+
+\definecolor{TCBGray}{RGB}{55, 60, 70}
+\definecolor{TCBGrayBg}{RGB}{245, 245, 247}
+
+\definecolor{TCBGold}{RGB}{155, 115, 0}
+\definecolor{TCBGoldBg}{RGB}{254, 250, 235}
+
+\definecolor{TCBSlate}{RGB}{50, 55, 75}       % Тёмно-сланцевый — доказательства
+\definecolor{TCBSlateBg}{RGB}{240, 241, 245}  % Холодный светлый фон
+
+\definecolor{thmblue}{HTML}{2980B9}
+\definecolor{ticketdark}{HTML}{2C3E50}
+% ==============================================================================
+% TCOLORBOX: ЗАГРУЗКА И БАЗОВЫЙ СТИЛЬ
+% ==============================================================================
+% АРХИТЕКТУРНОЕ РЕШЕНИЕ: все рамки — строго прямоугольники (sharp corners)
+% с левой цветной полосой. Ни одно окружение НЕ использует arc или скруглённые углы.
+% Это обеспечивает единый академический стиль документа.
+% ==============================================================================
+
+\usepackage[most]{tcolorbox}
+
+% ------------------------------------------------------------------------------
+% Единственный базовый стиль: прямоугольник + левая цветная полоса.
+% ВСЕ окружения документа строятся на этом стиле.
+% #1 — цвет полосы, #2 — цвет фона, #3 — цвет заголовка
+% ------------------------------------------------------------------------------
+\tcbset{
+    tcb@leftbar/.style n args={3}{
+        enhanced,
+        breakable,
+        sharp corners,          % ОБЯЗАТЕЛЬНО: все углы прямые, никаких arc=...
+        boxrule=0pt,
+        frame hidden,
+        borderline west={4pt}{0pt}{#1},
+        colback=#2,
+        colframe=#1,
+        coltitle=#3,
+        fonttitle=\bfseries\sffamily,
+        % --- ИСПРАВЛЕНИЕ: Встроенный заголовок ---
+        colbacktitle=#2,   % Фон заголовка совпадает с фоном блока
+        titlerule=0pt,     % Убираем линию между заголовком и текстом
+        toptitle=2pt,      % Внутренний отступ сверху до заголовка
+        bottomtitle=1pt,   % Внутренний отступ от заголовка до текста
+        % -----------------------------------------
+        top=4pt, bottom=6pt, left=8pt, right=6pt,
+        before skip=10pt, after skip=10pt,
+    }
+}
+
+% ==============================================================================
+% TCOLORBOX: АКАДЕМИЧЕСКИЕ ОКРУЖЕНИЯ
+% ==============================================================================
+
+% --- 1. ОПРЕДЕЛЕНИЕ (левая синяя полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={определение}{определения},
+    Crefname={Определение}{Определения},
+]{tcbdefinition}[1][]{
+    tcb@leftbar={TCBBlue}{TCBBlueBg}{TCBBlue},
+    title={Определение~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbdefinition,
+}
+
+% --- 2. ТЕОРЕМА (левая зелёная полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={теорема}{теоремы},
+    Crefname={Теорема}{Теоремы},
+]{tcbtheorem}[1][]{
+    tcb@leftbar={TCBGreen}{TCBGreenBg}{TCBGreen},
+    title={Теорема~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbtheorem,
+}
+
+% --- 3. ЛЕММА (левая пурпурная полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={лемма}{леммы},
+    Crefname={Лемма}{Леммы},
+]{tcblemma}[1][]{
+    tcb@leftbar={TCBPurple}{TCBPurpleBg}{TCBPurple},
+    title={Лемма~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcblemma,
+}
+
+% --- 4. СЛЕДСТВИЕ (левая бирюзовая полоса) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={следствие}{следствия},
+    Crefname={Следствие}{Следствия},
+]{tcbcorollary}[1][]{
+    tcb@leftbar={TCBTeal}{TCBTealBg}{TCBTeal},
+    title={Следствие~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbcorollary,
+}
+
+% --- 5. ДОКАЗАТЕЛЬСТВО (левая сланцевая полоса, знак QED справа) ---
+% Использование: \begin{tcbproof} ... \end{tcbproof}
+% Знак \(\square\) добавляется АВТОМАТИЧЕСКИ — вручную \qed НЕ ставить.
+\newtcolorbox{tcbproof}[1][]{
+    tcb@leftbar={TCBSlate}{TCBSlateBg}{TCBSlate},
+    title={Доказательство\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    after upper={\hfill\(\square\)},
+}
+
+% --- 6. ЗАМЕЧАНИЕ (левая серая полоса) ---
+\newtcolorbox{tcbremark}[1][]{
+    tcb@leftbar={TCBGray!60}{TCBGrayBg}{TCBGray},
+    title={Замечание\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+}
+
+% --- 7. ПРЕДУПРЕЖДЕНИЕ / ВНИМАНИЕ (левая оранжевая полоса) ---
+\newtcolorbox{tcbwarning}[1][]{
+    tcb@leftbar={TCBOrange}{TCBOrangeBg}{TCBOrange},
+    title={\(\vartriangle\)\ Внимание\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+}
+
+% --- 8. ПРИМЕР (левая серая полоса, белый фон) ---
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={пример}{примера},
+    Crefname={Пример}{Примера},
+]{tcbexample}[1][]{
+    tcb@leftbar={TCBGray!50}{white}{TCBGray},
+    title={Пример~\thetcbcounter\ifx\relax#1\relax\else\ (\textit{#1})\fi},
+    label type=tcbexample,
+}
+
+% --- 9. КЛЮЧЕВАЯ ИДЕЯ / ИНСАЙТ (левая золотая полоса) ---
+\newtcolorbox{tcbinsight}[1][]{
+    tcb@leftbar={TCBGold}{TCBGoldBg}{TCBGold},
+    title={\(\star\)\ Ключевая идея\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+}
+
+% --- 10. АЛГОРИТМ (левая синяя полоса) ---
+% [КРИТИЧЕСКИ ВАЖНО] Использовать для ЛЮБОГО алгоритма, псевдокода,
+% пошаговой инструкции и нумерованного списка последовательных требований/шагов.
+% Использование: \begin{tcbalgorithmbox}[Название алгоритма] ... \end{tcbalgorithmbox}
+\newtcolorbox[
+    auto counter,
+    number within=section,
+    crefname={алгоритм}{алгоритма},
+    Crefname={Алгоритм}{Алгоритма},
+]{tcbalgorithmbox}[1][]{
+    tcb@leftbar={TCBBlue}{TCBBlueBg}{TCBBlue},
+    title={Алгоритм~\thetcbcounter\ifx\relax#1\relax\else:\ \textit{#1}\fi},
+    fontupper=\small,
+    label type=tcbalgorithmbox,
+}
+
+% ==============================================================================
+% КАСТОМНЫЕ МАКРОСЫ И ОПЕРАТОРЫ ДЛЯ МАТРИЧНЫХ ВЫЧИСЛЕНИЙ
+% ==============================================================================
+
+\newcommand{\R}{\mathbb{R}}
+\renewcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+
+\DeclareMathOperator{\rank}{rank}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\im}{Im}
+\undef\ker
+\DeclareMathOperator{\ker}{Ker}
+\DeclareMathOperator{\Span}{span}
+\DeclareMathOperator{\cond}{cond}
+\DeclareMathOperator{\sign}{sign}
+
+\newcommand{\T}{^{\mathsf{T}}}
+\newcommand{\Htrans}{^{\mathsf{H}}}
+\let\H\Htrans
+
+\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}
+\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}
+\DeclarePairedDelimiter{\inner}{\langle}{\rangle}
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
+
+\usepackage{import}
+
+% ==============================================================================
+% КОНЕЦ ПРЕАМБУЛЫ. НАЧАЛО ДОКУМЕНТА
+% ==============================================================================
+
+\title{\textbf{Основы матричных вычислений}\\ \Large Семинар / Лекция}
+\author{Название университета / Факультет}
+\date{\today}
+
+\begin{document}
+\begin{titlepage}
+    % Временно убираем поля для обложки, чтобы залить ее цветом на 100%
+    \newgeometry{left=0cm, right=0cm, top=0cm, bottom=0cm}
+    
+    \begin{tikzpicture}[remember picture, overlay]
+        % 1. Вставляем фотографию на верхние 60% страницы
+        % Scope используется для того, чтобы аккуратно обрезать фото, если оно не влезает, без искажения пропорций
+        \begin{scope}
+            \clip (current page.north west) rectangle ([yshift=-0.6\paperheight]current page.north east);
+            \node[anchor=north, inner sep=0pt] at (current page.north) {
+                \includegraphics[width=\paperwidth]{photo.jpeg} % <-- ВСТАВЬ ИМЯ СВОЕГО ФАЙЛА ЗДЕСЬ
+            };
+        \end{scope}
+        
+        % 2. Темный блок на нижние 40% страницы (цвет ticketdark)
+        \fill[ticketdark] (current page.south west) rectangle ([yshift=-0.6\paperheight]current page.north east);
+        
+        % 3. Тонкая акцентная полоса (thmblue) между фото и текстом для эстетики
+        \fill[thmblue] ([yshift=-0.6\paperheight]current page.north west) rectangle ([yshift=-0.6\paperheight-3pt]current page.north east);
+
+        % 4. Типографика обложки (выровнена по левому краю)
+        \node[anchor=north west, text=white, align=left] at ([xshift=2.5cm, yshift=-0.68\paperheight]current page.north west) {
+            {\sffamily\Huge\bfseries Основы матричных вычислений}\\[0.8em]
+            {\sffamily\Large Конспект семинаров и нейрослоп лекций }\\[2.5em]
+            {\sffamily\large\textcolor{thmblue!50}{Автор:}} {\sffamily\large Dr\_papayka}\\[0.3em]
+        };
+    \end{tikzpicture}
+    
+    % Возвращаем стандартные поля для остального документа
+    \restoregeometry
+\end{titlepage}
+
+
+\tableofcontents
+\newpage
+\part{Нейрослопные конспекты лекций}
+\chapter{8 лекция}
+\import{block}{lec8.tex}
+\chapter{9 лекция}
+\import{block}{lec9.tex}
+\part{Семинары Моложаненко}
+\chapter{7 сем}
+\import{block}{sem_mol7.tex}
+\chapter{8 сем}
+\import{block}{sem_mol8.tex}
+\chapter{9 сем}
+\import{block}{sem_mol9.tex}
+
+\end{document}
